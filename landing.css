@@ -11,6 +11,10 @@
             animation: fadein 4s;
 
 }
+body {
+    background: #23384d;
+  }
+  
 
 #test1 p1 {
     margin-top:auto;

@@ -17,13 +17,12 @@ body {
   max-width: 100%;
 }
 
+
+
 body { cursor: none, default; }
 
 
-html {
-  overflow-x: hidden;
-  max-width: 100%;
-}
+
 
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #eee;  
