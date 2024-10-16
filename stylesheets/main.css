@@ -293,3 +293,11 @@ iframe {
   font-weight: bold;
   font-style: normal;
 }
+
+.lead {
+  font-family: "Segoe UI", Tahoma, Geneva, sans-serif;  
+}
+
+/* .cd-container {
+  font-family: "Segoe UI", Tahoma, Geneva, sans-serif;  
+} */
