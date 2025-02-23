@@ -118,28 +118,9 @@ function renderPosts(posts) {
     const postItem = document.createElement('div');
     postItem.classList.add('post-item');
 
-    // 1) Convert "YYYY-MM-DD HH:MM:SS" (UTC) to a JS Date in UTC
-    //    We'll inject a 'T' and 'Z' to make it ISO-like: "YYYY-MM-DDTHH:MM:SSZ"
-    let localTimeString = post.timestamp; // fallback if parse fails
-    try {
-      const [datePart, timePart] = post.timestamp.split(' ');
-      const isoString = datePart + 'T' + timePart + 'Z'; // e.g. "2025-02-23T12:00:00Z"
-      const utcDate = new Date(isoString);
-
-      // 2) Convert from UTC to PST/PDT using 'America/Los_Angeles'
-      //    This automatically handles daylight savings.
-      localTimeString = utcDate.toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles', 
-        hour12: true // or false if you prefer 24-hour
-      });
-    } catch (error) {
-      console.error('Date parse error:', error);
-    }
-
-    // Display the converted local time
     const meta = document.createElement('div');
     meta.classList.add('post-meta');
-    meta.innerText = `${localTimeString} | ${post.username}`;
+    meta.innerText = `${post.timestamp} | ${post.username}`;
 
     const titleEl = document.createElement('h3');
     titleEl.innerText = post.title;
@@ -154,7 +135,8 @@ function renderPosts(posts) {
     // Show delete button only if user is logged in
     if (sessionToken) {
       const deleteBtn = document.createElement('button');
-      deleteBtn.innerText = 'Delete';
+      deleteBtn.classList.add('delete-btn');
+      deleteBtn.innerText = '✖';
       deleteBtn.addEventListener('click', () => {
         deletePost(post.id);
       });

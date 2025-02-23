@@ -1,10 +1,24 @@
+/* Add at start of file */
+#header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 60px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  z-index: 100;
+}
+
 /* GLOBAL STYLES */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
-  /* background: #3c6966; Dark background */
-  background: #000000; /* Darker background */
+  padding-top: 80px; /* Increase top padding to account for fixed header */
+  background: #3c6966; 
   color: #FFFFFF;      /* White text */
   text-align: center;  /* Center all text */
 }
@@ -48,7 +62,9 @@ textarea {
 
 /* BUTTONS */
 button {
-  background-color: #E8BA5A; /* Accent color */
+  /* background-color: #E8BA5A;  */
+  background-color: #df9fcf; 
+
   color: #FFFFFF;
   border: none;
   border-radius: 4px;
@@ -59,12 +75,19 @@ button {
 }
 
 button:hover {
-  background-color: #00433F; /* Slightly darker on hover */
+  background-color: #6f5f77; /* Slightly darker on hover */
 }
 
 /* LOGOUT BUTTON WRAPPER */
 #logoutSection {
+  margin: 0;  /* Override existing margin */
   margin: 20px 0;
+}
+
+#logoutBtn {
+  background-color: #df9fcf;
+  padding: 8px 16px;
+  font-size: 0.9rem;
 }
 
 /* POST LIST CONTAINER */
@@ -81,11 +104,12 @@ button:hover {
   padding: 15px;
   border-radius: 6px;
   color: #525252;
+  position: relative;  /* Added to enable absolute positioning of delete button */
 }
 
 .post-meta {
   font-size: 0.9em;
-  color: #CCCCCC;
+  color: #9e5d5d;
   margin-bottom: 5px;
 }
 
@@ -101,4 +125,30 @@ button:hover {
 .post-item button {
   margin-top: 10px;
   display: inline-block;
+}
+
+/* Delete Button Styling */
+.delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  background-color: #d4a6a6;
+  color: white;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  opacity: 0.7;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  background-color: #882b2b;
 }
