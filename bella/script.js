@@ -1,4 +1,4 @@
-const BASE_URL = 'https://bella-blog.onrender.com';
+const BASE_URL = 'https://snehithn-server.onrender.com';
 
 // Attempt to restore an existing session token
 let sessionToken = localStorage.getItem('sessionToken') || null;
