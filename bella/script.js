@@ -1,6 +1,5 @@
 const BASE_URL = 'https://snehithn-server.onrender.com';
 
-// Attempt to restore an existing session token
 let sessionToken = localStorage.getItem('sessionToken') || null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,8 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const postForm = document.getElementById('postForm');
   const logoutBtn = document.getElementById('logoutBtn');
   
+  // Update UI based on current session
   updateUI();
-  loadPosts();
+  
+  // Only fetch posts if there's an active session
+  if (sessionToken) {
+    loadPosts();
+  }
 
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
@@ -41,22 +45,27 @@ function updateUI() {
   const loginSection = document.getElementById('loginSection');
   const postSection = document.getElementById('postSection');
   const logoutSection = document.getElementById('logoutSection');
+  const postList = document.getElementById('postList');
 
   if (sessionToken) {
-    if (loginSection) loginSection.style.display = 'none';
-    if (postSection) postSection.style.display = 'block';
-    if (logoutSection) logoutSection.style.display = 'block';
+    // Logged in
+    loginSection.style.display = 'none';
+    postSection.style.display = 'block';
+    logoutSection.style.display = 'block';
   } else {
-    if (loginSection) loginSection.style.display = 'block';
-    if (postSection) postSection.style.display = 'none';
-    if (logoutSection) logoutSection.style.display = 'none';
+    // Logged out
+    loginSection.style.display = 'block';
+    postSection.style.display = 'none';
+    logoutSection.style.display = 'none';
+    // Clear the posts if you don't want them visible after logout:
+    postList.innerHTML = '';
   }
 }
 
 function login(username, password) {
   fetch(`${BASE_URL}/login`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
@@ -65,6 +74,7 @@ function login(username, password) {
       sessionToken = data.sessionToken;
       localStorage.setItem('sessionToken', sessionToken);
       updateUI();
+      // Now that we're logged in, fetch the posts
       loadPosts();
     } else {
       alert(data.message || 'Login failed.');
@@ -76,20 +86,24 @@ function login(username, password) {
 function logout() {
   fetch(`${BASE_URL}/logout`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionToken })
   })
   .then(res => res.json())
-  .then(data => {
+  .then(() => {
     sessionToken = null;
     localStorage.removeItem('sessionToken');
     updateUI();
-    loadPosts();
+    // Optionally, do NOT call loadPosts() here so posts stay hidden
   })
   .catch(err => console.error(err));
 }
 
 function loadPosts() {
+  if (!sessionToken) {
+    // If not logged in, do nothing
+    return;
+  }
   fetch(`${BASE_URL}/posts`)
   .then(res => res.json())
   .then(posts => {
@@ -122,7 +136,7 @@ function renderPosts(posts) {
     postItem.appendChild(titleEl);
     postItem.appendChild(bodyEl);
 
-    // Show delete button only if user is logged in (and the server still checks ownership)
+    // Show delete button only if user is logged in
     if (sessionToken) {
       const deleteBtn = document.createElement('button');
       deleteBtn.innerText = 'Delete';
@@ -137,9 +151,13 @@ function renderPosts(posts) {
 }
 
 function createPost(title, body) {
+  if (!sessionToken) {
+    alert('You must be logged in to create posts.');
+    return;
+  }
   fetch(`${BASE_URL}/create`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionToken, title, body })
   })
   .then(res => res.json())
@@ -156,9 +174,13 @@ function createPost(title, body) {
 }
 
 function deletePost(id) {
+  if (!sessionToken) {
+    alert('You must be logged in to delete posts.');
+    return;
+  }
   fetch(`${BASE_URL}/delete`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionToken, id })
   })
   .then(res => res.json())
