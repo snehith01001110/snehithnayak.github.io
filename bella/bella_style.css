@@ -3,7 +3,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
-  background: #23384D; /* Dark background */
+  background: #3c6966; /* Dark background */
   color: #FFFFFF;      /* White text */
   text-align: center;  /* Center all text */
 }
@@ -27,7 +27,7 @@ form {
   margin-bottom: 20px;
   display: inline-block;   /* Let forms shrink-wrap around content */
   text-align: left;        /* Inputs aligned left within the form */
-  background: #2C4B66;
+  background: #FFDDD6;
   padding: 20px;
   border-radius: 8px;
 }
@@ -47,7 +47,7 @@ textarea {
 
 /* BUTTONS */
 button {
-  background-color: #FB9633; /* Accent color */
+  background-color: #E8BA5A; /* Accent color */
   color: #FFFFFF;
   border: none;
   border-radius: 4px;
@@ -58,7 +58,7 @@ button {
 }
 
 button:hover {
-  background-color: #e8852d; /* Slightly darker on hover */
+  background-color: #00433F; /* Slightly darker on hover */
 }
 
 /* LOGOUT BUTTON WRAPPER */
@@ -75,16 +75,16 @@ button:hover {
 
 /* POST ITEM */
 .post-item {
-  background-color: #2C4B66;
+  background-color: #FFE0D1;
   margin-bottom: 15px;
   padding: 15px;
   border-radius: 6px;
-  color: #FFFFFF;
+  color: #424242;
 }
 
 .post-meta {
   font-size: 0.9em;
-  color: #CCCCCC;
+  color: #b38383;
   margin-bottom: 5px;
 }
 
