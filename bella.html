@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blog</title>
+    <link rel="stylesheet" href="bella_style.css">
+</head>
+<body>
+    <div id="login-form">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+    <div id="new-post-form" style="display:none;">
+        <h2>New Post</h2>
+        <input type="text" id="post-title" placeholder="Title">
+        <textarea id="post-body" placeholder="Body"></textarea>
+        <button onclick="createPost()">Create Post</button>
+    </div>
+    <div id="posts"></div>
+    <script src="bella_script.js"></script>
+</body>
+</html>
