@@ -1,0 +1,48 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f5f5f5;
+}
+
+h1, h2 {
+  margin-bottom: 10px;
+}
+
+form {
+  margin-bottom: 20px;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+  display: block;
+  margin: 5px 0 10px 0;
+  padding: 8px;
+  width: 250px;
+  max-width: 100%;
+}
+
+button {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+#postList {
+  margin-top: 20px;
+}
+
+.post-item {
+  background-color: #fff;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.post-meta {
+  font-size: 0.9em;
+  color: #777;
+}
+
+.post-item h3 {
+  margin: 5px 0;
+}

@@ -1,1 +1,10 @@
-[]
+[
+    {
+      "id": "sample-id-1234",
+      "timestamp": "2025-02-23 12:00:00",
+      "username": "admin",
+      "title": "My First Post",
+      "body": "This is the content of my first blog post."
+    }
+  ]
+  
