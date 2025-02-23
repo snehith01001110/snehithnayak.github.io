@@ -35,12 +35,38 @@
 
   <hr />
   
-  <!-- Posts List -->
-  <h2>Posts</h2>
-  <div id="postList">
-    <!-- Posts will be appended here by script.js -->
+  <!-- Posts List (hidden until logged in) -->
+  <div id="postsContainer" style="display: none;">
+    <h2>Posts</h2>
+    <div id="postList">
+      <!-- Posts will be appended here by script.js -->
+    </div>
   </div>
 
   <script src="./script.js"></script>
+  <script>
+    function updateUI() {
+      const loginSection = document.getElementById('loginSection');
+      const postSection = document.getElementById('postSection');
+      const logoutSection = document.getElementById('logoutSection');
+      const postsContainer = document.getElementById('postsContainer');
+      const postList = document.getElementById('postList');
+
+      if (sessionToken) {
+        // Logged in
+        loginSection.style.display = 'none';
+        postSection.style.display = 'block';
+        logoutSection.style.display = 'block';
+        postsContainer.style.display = 'block';
+      } else {
+        // Logged out
+        loginSection.style.display = 'block';
+        postSection.style.display = 'none';
+        logoutSection.style.display = 'none';
+        postsContainer.style.display = 'none';
+        postList.innerHTML = ''; // Clear posts when logged out
+      }
+    }
+  </script>
 </body>
 </html>
