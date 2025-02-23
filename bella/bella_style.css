@@ -3,7 +3,8 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
-  background: #3c6966; /* Dark background */
+  /* background: #3c6966; Dark background */
+  background: #000000; /* Darker background */
   color: #FFFFFF;      /* White text */
   text-align: center;  /* Center all text */
 }
