@@ -1,15 +1,16 @@
 const BASE_URL = 'https://snehithn-server.onrender.com';
 
+// Attempt to restore an existing session token
 let sessionToken = localStorage.getItem('sessionToken') || null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('loginForm');
   const postForm = document.getElementById('postForm');
   const logoutBtn = document.getElementById('logoutBtn');
-  
+
   // Update UI based on current session
   updateUI();
-  
+
   // Only fetch posts if there's an active session
   if (sessionToken) {
     loadPosts();
@@ -57,7 +58,6 @@ function updateUI() {
     loginSection.style.display = 'block';
     postSection.style.display = 'none';
     logoutSection.style.display = 'none';
-    // Clear the posts if you don't want them visible after logout:
     postList.innerHTML = '';
   }
 }
@@ -94,16 +94,12 @@ function logout() {
     sessionToken = null;
     localStorage.removeItem('sessionToken');
     updateUI();
-    // Optionally, do NOT call loadPosts() here so posts stay hidden
   })
   .catch(err => console.error(err));
 }
 
 function loadPosts() {
-  if (!sessionToken) {
-    // If not logged in, do nothing
-    return;
-  }
+  if (!sessionToken) return;
   fetch(`${BASE_URL}/posts`)
   .then(res => res.json())
   .then(posts => {
