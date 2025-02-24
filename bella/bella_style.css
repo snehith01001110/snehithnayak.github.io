@@ -12,15 +12,20 @@
   z-index: 100;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 /* GLOBAL STYLES */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  padding: 20px;
-  padding-top: 80px; /* Increase top padding to account for fixed header */
+  padding: 10px;
+  padding-top: 70px;
   background: #3c6966; 
-  color: #FFFFFF;      /* White text */
-  text-align: center;  /* Center all text */
+  color: #FFFFFF;
+  text-align: center;
+  line-height: 1.6;
 }
 
 /* HEADINGS */
@@ -39,11 +44,13 @@ hr {
 
 /* FORMS */
 form {
-  margin-bottom: 20px;
+  width: 90%;
+  max-width: 500px;
+  margin: 0 auto 20px;
+  padding: 15px;
   display: inline-block;   /* Let forms shrink-wrap around content */
   text-align: left;        /* Inputs aligned left within the form */
   background: #FFDDD6;
-  padding: 20px;
   border-radius: 8px;
 }
 
@@ -52,26 +59,29 @@ input[type="text"],
 input[type="password"],
 textarea {
   display: block;
-  margin: 10px 0 15px 0;
-  padding: 10px;
-  width: 300px;
+  margin: 8px 0;
+  padding: 12px;
+  width: 100%;
   max-width: 100%;
   border: none;
   border-radius: 4px;
+  font-size: 16px; /* Better for mobile */
 }
 
 /* BUTTONS */
 button {
   /* background-color: #E8BA5A;  */
   background-color: #df9fcf; 
-
+  min-height: 44px;
+  min-width: 44px;
   color: #FFFFFF;
   border: none;
   border-radius: 4px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 16px;
   transition: background-color 0.2s ease;
+  margin: 5px;
 }
 
 button:hover {
@@ -100,11 +110,13 @@ button:hover {
 /* POST ITEM */
 .post-item {
   background-color: #FFE0D1;
-  margin-bottom: 15px;
-  padding: 15px;
+  width: 90%;
+  margin: 15px auto;
+  padding: 20px;
   border-radius: 6px;
   color: #525252;
   position: relative;  /* Added to enable absolute positioning of delete button */
+  word-wrap: break-word;
 }
 
 .post-meta {
@@ -132,13 +144,13 @@ button:hover {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
   background-color: #d4a6a6;
   color: white;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -151,4 +163,75 @@ button:hover {
 .delete-btn:hover {
   opacity: 1;
   background-color: #882b2b;
+}
+
+/* Media Queries */
+@media screen and (max-width: 600px) {
+  body {
+    padding-top: 60px;
+    padding: 5px;
+  }
+
+  #header {
+    height: 50px;
+    padding: 5px 10px;
+  }
+
+  h1, h2 {
+    font-size: 1.5em;
+    margin: 10px 0;
+  }
+
+  form {
+    width: 95%;
+    padding: 10px;
+  }
+
+  textarea {
+    height: 100px;
+  }
+
+  .post-item {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .post-meta {
+    font-size: 0.8em;
+  }
+
+  hr {
+    width: 90%;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  body {
+    padding-top: 50px;
+  }
+
+  form {
+    width: 100%;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  button {
+    width: 100%;
+    margin: 5px 0;
+  }
+}
+
+/* Fix for iOS input zooming */
+@media screen and (max-width: 600px) {
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important;
+  }
 }
