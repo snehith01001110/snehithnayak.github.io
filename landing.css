@@ -118,3 +118,8 @@ body {
     font-style: normal;
 }
 
+.btn:hover {
+    color: white !important;
+    border-color: white !important;
+}
+
