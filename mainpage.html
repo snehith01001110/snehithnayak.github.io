@@ -1,240 +1,571 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Snehith Nayak – Software Engineer at Applied Materials, M.S. Applied Data Science at University of Michigan.">
+  <title>Snehith Nayak</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <title> Snehith Nayak</title>
+    :root {
+      --bg:          #080d1a;
+      --surface:     #0d1526;
+      --surface2:    #131f35;
+      --border:      #1e2d4a;
+      --text:        #e2e8f0;
+      --muted:       #8892a4;
+      --accent:      #FB9633;
+      --accent-dim:  rgba(251,150,51,0.08);
+      --accent2:     #ffc87a;
+      --mono:        'JetBrains Mono', 'Fira Code', monospace;
+      --sans:        'Inter', -apple-system, sans-serif;
+    }
 
-    <link rel="stylesheet" href="stylesheets/timeline.css">
-    <link rel="stylesheet" href="stylesheets/bootstrap.min.css">
-    <link rel="stylesheet" href="stylesheets/sticky.min.css">
-    <link rel="stylesheet" href="stylesheets/main.css">
+    html { scroll-behavior: smooth; }
 
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
 
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(8,13,26,0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 2rem;
+      height: 62px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: var(--mono); color: var(--accent);
+      font-size: 0.9rem; text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.88rem; font-weight: 500; letter-spacing: 0.03em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
 
-  </head>
+    /* ── LAYOUT ──────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 6rem 0; }
 
-  <body data-spy="scroll" data-target="#projects-nav" >
-    <a class='anchor' id="home"></a>
-    <nav class="navbar nav-links navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-collapse" id="bs-example-navbar-collapse-6">
-          <ul class="nav navbar-nav" id="navigation">
-            <li><a href="mainpage.html#home">Home</a></li>
-            <li><a href="mainpage.html#timeline">Timeline</a></li>
-            <li><a href="mainpage.html#portfolio">Portfolio</a></li>
+    /* ── HERO ────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding-top: 62px;
+    }
+    .hero-inner {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center; width: 100%;
+    }
 
-          </ul>
+    .hero-text .greeting {
+      font-family: var(--mono); color: var(--accent);
+      font-size: 0.92rem; margin-bottom: 1rem;
+    }
+    .hero-text h1 {
+      font-size: clamp(2.6rem, 5vw, 4rem);
+      font-weight: 700; line-height: 1.1; margin-bottom: 0.6rem;
+    }
+    .hero-text .role {
+      font-size: 1rem; color: var(--muted);
+      margin-bottom: 1.4rem; font-weight: 400;
+    }
+    .hero-text .role span { color: var(--accent2); font-weight: 500; }
+    .hero-text p.bio {
+      color: var(--muted); max-width: 460px;
+      margin-bottom: 2rem; line-height: 1.75;
+    }
+    .hero-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    /* ── BUTTONS ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.6rem 1.4rem; border-radius: 6px;
+      font-size: 0.88rem; font-weight: 500; text-decoration: none;
+      transition: all 0.2s; cursor: pointer; border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--accent-dim); color: var(--accent);
+      border-color: rgba(251,150,51,0.35);
+    }
+    .btn-primary:hover { background: rgba(251,150,51,0.15); border-color: var(--accent); }
+    .btn-secondary {
+      background: transparent; color: var(--muted);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── TERMINAL BOX ────────────────────────────────── */
+    .terminal-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      font-family: var(--mono); font-size: 0.84rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .terminal-bar {
+      background: var(--surface2); padding: 0.7rem 1rem;
+      display: flex; align-items: center; gap: 0.45rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red    { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green  { background: #27c93f; }
+    .terminal-bar .title { margin-left: auto; color: var(--muted); font-size: 0.78rem; }
+    .terminal-body { padding: 1.4rem 1.6rem; line-height: 2.1; }
+    .t-prompt { color: var(--accent); }
+    .t-cmd    { color: var(--text); }
+    .t-key    { color: var(--accent2); }
+    .t-str    { color: #f0a070; }
+    .t-brace  { color: var(--muted); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor { animation: blink 1.1s step-start infinite; color: var(--accent); }
+
+    /* ── SECTION HEADERS ─────────────────────────────── */
+    .section-header { margin-bottom: 3rem; }
+    .section-label {
+      font-family: var(--mono); color: var(--accent);
+      font-size: 0.82rem; margin-bottom: 0.5rem;
+    }
+    .section-header h2 {
+      font-size: 1.75rem; font-weight: 700;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .section-header h2::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border); max-width: 280px;
+    }
+
+    /* ── TIMELINE ────────────────────────────────────── */
+    .timeline { position: relative; padding-left: 1.75rem; }
+    .timeline::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--accent) 0%, var(--border) 60%, transparent 100%);
+    }
+    .timeline-item { position: relative; padding: 0 0 3rem 2rem; }
+    .timeline-item::before {
+      content: ''; position: absolute; left: -5px; top: 6px;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+      box-shadow: 0 0 8px rgba(251,150,51,0.4);
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+
+    .timeline-date { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); margin-bottom: 0.3rem; }
+    .timeline-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .timeline-company { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.7rem; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .tag {
+      background: var(--accent-dim); color: var(--accent);
+      border: 1px solid rgba(251,150,51,0.2);
+      padding: 0.18rem 0.6rem; border-radius: 4px;
+      font-size: 0.76rem; font-family: var(--mono);
+    }
+    .tag-gray {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .bullets { list-style: none; }
+    .bullets li {
+      color: var(--muted); font-size: 0.9rem;
+      padding-left: 1.25rem; position: relative;
+      margin-bottom: 0.45rem; line-height: 1.65;
+    }
+    .bullets li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
+
+    /* ── EDUCATION GRID ──────────────────────────────── */
+    .edu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .edu-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.75rem;
+      transition: border-color 0.2s;
+    }
+    .edu-card:hover { border-color: rgba(251,150,51,0.3); }
+    .edu-card .degree { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .edu-card .school { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .edu-card .date { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); margin-bottom: 0.8rem; }
+    .edu-card .courses { color: var(--muted); font-size: 0.84rem; line-height: 1.65; }
+
+    /* ── PROJECTS GRID ───────────────────────────────── */
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.5rem; }
+    .project-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.75rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .project-card:hover { border-color: rgba(251,150,51,0.35); transform: translateY(-3px); }
+    .project-card .p-date { font-family: var(--mono); font-size: 0.76rem; color: var(--accent); margin-bottom: 0.5rem; }
+    .project-card h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.6rem; }
+    .project-card p { color: var(--muted); font-size: 0.87rem; line-height: 1.65; margin-bottom: 1rem; }
+
+    /* ── SKILLS ──────────────────────────────────────── */
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.75rem; }
+    .skill-cat h3 {
+      font-family: var(--mono); font-size: 0.82rem; color: var(--accent);
+      margin-bottom: 0.75rem; padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .skill-tag {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.28rem 0.7rem; border-radius: 4px;
+      font-size: 0.8rem; font-family: var(--mono);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .skill-tag:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0; text-align: center;
+    }
+    footer p { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ──────────────────────────────────── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .fade { animation: fadeUp 0.55s ease forwards; }
+    .d1 { animation-delay:0.05s; opacity:0; }
+    .d2 { animation-delay:0.15s; opacity:0; }
+    .d3 { animation-delay:0.25s; opacity:0; }
+    .d4 { animation-delay:0.38s; opacity:0; }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 800px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+      .edu-grid   { grid-template-columns: 1fr; }
+      section     { padding: 4rem 0; }
+    }
+    @media (max-width: 500px) {
+      .nav-links  { display: none; }
+      .hero-text h1 { font-size: 2.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ───────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo">snehithn.com:~/$</a>
+    <ul class="nav-links">
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#education">Education</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-text">
+        <p class="greeting fade d1">$ whoami</p>
+        <h1 class="fade d2">Snehith<br>Nayak</h1>
+        <p class="role fade d3">
+          Software Engineer @ <span>Applied Materials</span>
+          &nbsp;·&nbsp;
+          M.S. Applied Data Science @ <span>University of Michigan</span>
+        </p>
+        <p class="bio fade d3">
+          I write code. Sometimes it even compiles.
+        </p>
+        <div class="hero-links fade d4">
+          <a href="https://github.com/snehith01001110" class="btn btn-primary" target="_blank">GitHub</a>
+          <a href="https://www.linkedin.com/in/snehithn/" class="btn btn-primary" target="_blank">LinkedIn</a>
+          <a href="resume.pdf" class="btn btn-primary" target="_blank">Resume</a>
         </div>
       </div>
-  </nav>
 
-    <div class="container";">
-      <div class="row">
-        <div class="col-md-4 hidden-xs hidden-sm">
-<pre id="whoami-terminal" class='ui sticky terminal'><span class="prompt">snehithn.com:~/$</span> whoami
-snehith<span class="blinking"></span></pre>
-
-
+      <div class="terminal-box fade d2">
+        <div class="terminal-bar">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="title">snehith &mdash; zsh</span>
         </div>
-
-        <div class="col-md-8" id="whoami">
-          <h1 style="font-family: pragmatapro; font-size: 3em;">Snehith Nayak</h1>
-
-              
-
-          <small style="font-family: pragmatapro;">Computer Engineering @ AMAT <br> C++, Python, Digital Logic, Circuit Design, Physics<br> San Ramon, CA - snehithn5@gmail.com <br>  </small>
-          <br/>
-          <br/>
-
-          <p class="lead">Nice to meet you! I'm a Computer Engineering student at the University of California Santa Barbara. My early interests in technology and growing up in the Bay Area sparked my interest in Computer Science and Programming. As of my senior year, I'm learning 
-            <b>Theories of CS, HRDW/SFTW Interface, Computer Architecture, and Machine Learning Design</b>. I also like to play around with <b>Machine Learning</b> and <b>Embedded Systems </b>in my spare time. 
-            
-          </p>
-          <br/>
-          <a href="https://github.com/snehith01001110" class="btn btn-default" style="margin-right: 10px;" target="_blank" role="button">GitHub</a>
-          <a href="https://www.linkedin.com/in/snehithn/" class="btn btn-default" style="margin-right: 10px;" target="_blank" role="button">LinkedIn</a>
-          <a href="resume.pdf" class="btn btn-default" target="_blank" role="button">Resume</a>
-
+        <div class="terminal-body">
+          <div><span class="t-prompt">~$</span> <span class="t-cmd">cat profile.json</span></div>
+          <div class="t-brace">{</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"name"</span>: <span class="t-str">"Snehith Nayak"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"role"</span>: <span class="t-str">"Software Engineer AIx"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"company"</span>: <span class="t-str">"Applied Materials"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"grad"</span>: <span class="t-str">"M.S. Applied Data Science"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"school"</span>: <span class="t-str">"Univ. of Michigan"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"location"</span>: <span class="t-str">"Bay Area, CA"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"interests"</span>: [<span class="t-str">"ML"</span>, <span class="t-str">"Semiconductors"</span>, <span class="t-str">"Data"</span>]</div>
+          <div class="t-brace">}</div>
+          <div><span class="t-prompt">~$</span> <span class="cursor">▌</span></div>
         </div>
-      </div> 
+      </div>
 
-<!-- start of timelinee -->
+    </div>
+  </div>
+</section>
 
-      <hr>
-        <a class='anchor' id="timeline"></a>
-        <div class="row">
-          <div class="col-md-4 hidden-xs hidden-sm">
-  <pre id="log-terminal" class='ui sticky terminal'><span class="prompt">snehithn.com:~/$</span> git log --reverse
-  <span style="color: #FB9633">commit 4cba1eab7c65dbf785a</span>
-  
-  Parents:  Sadashiv and Usha
-  Date:     Mon Dec 14 01:32:47 2001
-  
-      Add Baby Snehith
-  
-  </pre>
-          </div>
-          <div class="col-md-8" id="log";>
-  
-            <section id="cd-timeline" class="cd-container">
-  
-              <div class="cd-timeline-block">
-                <div class="cd-timeline-img">
-                </div>
-  
-                <div class="cd-timeline-content">
-                  <h2>Machine Learning Intern @ KLA</h2>
-                  <small>Jun 2023 - Sept 2023</small>
-                  <p>The BBP team I worked for specializes in design-based grouping, focusing on streamlining defect inspection in semiconductor manufacturing. <br>
-                    By leveraging advanced systems like BBP, the team drastically reduces wafer analysis time, enabling more efficient defect detection. <br>
-                    Their expertise guides high-resolution tools, such as e-beam systems, to specific defect locations, ensuring detailed examination and enhancing overall inspection accuracy.</p>
-                </div>
-              </div>
-  
-              <div class="cd-timeline-block">
-                <div class="cd-timeline-img">
-                </div>
-  
-                <div class="cd-timeline-content">
-                  <h2>Apps Development Intern @ Synopsys</h2>
-                  <small>Jun 2022 - Aug 2022</small>
-                  <p>Developed novel modifications to a branching process flow to reduce internal server load.<br>
-                    • Responsible for remodeling cross-functional integration and data synchronization between finance, payroll, and
-                    ERP system to increase employee efficiency and sync data between internal and external process flows.<br>
-                    • Automated contractor onboarding process saving 22,000 employee hours annually using Python and SQL.</p>
-                </div>
-              </div>
-            
-              <div class="cd-timeline-block">
-                <div class="cd-timeline-img">
-                </div>
-  
-  
-                <div class="cd-timeline-content">
-                  <h2>UCSB IEEE</h2>
-                  <small>Jan 2022 - present</small>
-                  <p>At UCSB's IEEE team, I'm working with several students and organizing technical projects. I'm also working on an Emotional Intelligence AI.</p>
-                </div>
-              </div>
-  
-              <div class="cd-timeline-block">
-                <div class="cd-timeline-img">
-                </div>
-  
-                <div class="cd-timeline-content">
-                  <h2>Chipotle</h2>
-                  <small>Aug 2021 - Nov 2021</small>
-                  <p>Managed orders, back-room inventory and customer service. Developed algorithm to optimize the resource and scheduling based on weekly forecast.</p>
-                </div>
-              </div>
-  
-              <div class="cd-timeline-block">
-                <div class="cd-timeline-img">
-                </div>
-  
-                <div class="cd-timeline-content">
-                  <h2>NPTutoring</h2>
-                  <small>Jun 2018 - Jan 2021</small>
-                  <p>Created a Non-Profit tutoring company entirely from scratch including HTML/CSS/PHP website development, SEO, marketing, tutoring students in STEM subjects, TCP/IP, and website hosting. Partnered with Saraswath Learning Foundation to improve educational facilities around the world and simultaneously tutor children in the local community.</p>
-                </div>
-              </div>
-  
-  
-            </section> <!-- cd-timeline -->
-  
-          </div>
-  
-  
-          </div>
-      <hr/>
-
-<!-- start of projcts -->
-
-      <a class='anchor' id="portfolio"></a>
-
-
-        <div class="row">
-          <div class="col-md-4  hidden-xs hidden-sm">
-            <div id="projects-terminal" class='ui sticky terminal'>
-              <span class="prompt">snehithn.com:~/$</span> ls projects<br/><br/>
-              <div id="projects-nav">
-                <ul class='nav'>
-
-                  <li><a href="mainpage.html#EMB">Chromatic Tuner Development</a></li>
-                  <li><a href="mainpage.html#SMA">Stock Market Analysis</a></li>
-                  <li><a href="mainpage.html#SCO">Supply Chain Optimization</a></li>
-                  <li><a href="mainpage.html#WD">Website Development</a></li>
-                  <li><a href="mainpage.html#EIA">Emotional intelligence AI</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-md-8" id="projects">
-
-            <a class='anchor' id='EMB'></a>
-            <h4>Chromatic Tuner FPGA Development </h4>
-            <p>Developed a tuner that identifies musical notes with high accuracy, focusing on optimal sample rates for Fast Fourier Transforms across various octaves.<br>
-              Implemented a GUI LCD display using a QP-nano based Hierarchical State Machine, integrating peripherals like rotary encoders and onboard pushbuttons for user interaction. <br>
-              Enhanced the default FFT code to achieve results in 30ms by constructing sine and cosine lookup tables, dynamically adjusting sample sizes, and determining optimal FFT parameters for accurate frequency identification. <br>
-              Utilized a speaker to play frequencies ranging from 65 Hz to 4500 Hz, ensuring accurate frequency detection, minimal noise interference, and correct octave convergence using various testing modes. <br>
-            </p>
-              <img src="images/FPGA.jpg" style="max-width:100%;height: auto; width: auto\9;padding-bottom: 2em;">
-
-
-            <a class='anchor' id='SMA'></a>
-            <h4>Stock Market Analysis Project - My personal favorite </h4>
-            <p>Developed a predictive model using sentiment analysis <br>
-              Created GUI visualization of sentiment analysis scores of news articles <br> 
-              Utilized APIs to crawl the news articles to find positive/negative pointers <br>
-            </p>
-              <img src="images/stockmarket.png" style="max-width:100%;height: auto; width: auto\9;padding-bottom: 2em;">
-
-
-            <a class='anchor' id='SCO'></a>
-              <h4>Supply Chain Optimization - My best performing competition </h4>
-              <p>Ran regression to optimize output for a jean manufacturing company at a national club conference. <br>
-                Optimized manufacturing machines, workers, and total output to maximize monthly revenue.<br> 
-              </p>
-                <img src="images/SupplyChain.png" style="max-width:100%;height: auto; width: auto\9; padding-bottom: 2em;">
-
-
-              <a class='anchor' id='WD'></a>
-              <h4>Website Development - https://www.snehithn.com</h4>
-              <p>Developed an interactive website for tutoring company as a platform to connect tutors and tutees and <br>
-                provide an automatic scheduling calendar <br>
-                Utilized php and SMTP to provide email functionality, SEO, and optimized hosting with Google Firebase<br> 
-              </p>
-                <img src="images/NPTutoring.jpg" style="max-width:100%;height: auto; width: auto\9; padding-bottom: 2em;">
-
-                <a class='anchor' id='EIA'></a>
-                <h4>Emotional Intelligence AI - My current project</h4>
-                <p>I'm currently working with 15 engineers at UCSB IEEE club to develop a deep learning algorithm<br>
-                  When completed, the program can detect up to 7 basic emotions based on a real-time webcam input<br> 
-                </p>
-                  <img src="images/Emotion.jpg" style="max-width:100%;height: auto; width: auto\9; padding-bottom: 2em;">
-
-            </div>
-        </div>
+<!-- ── EXPERIENCE ─────────────────────────────────────── -->
+<section id="experience">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">$ git log --reverse</p>
+      <h2>Experience</h2>
     </div>
 
+    <div class="timeline">
 
+      <!-- AMAT -->
+      <div class="timeline-item">
+        <div class="timeline-date">July 2024 — Present</div>
+        <div class="timeline-title">Software Engineer AIx</div>
+        <div class="timeline-company">Applied Materials &nbsp;·&nbsp; Santa Clara, CA</div>
+        <div class="tags">
+          <span class="tag">Python</span>
+          <span class="tag">Machine Learning</span>
+          <span class="tag">FastAPI</span>
+          <span class="tag">ClickHouse</span>
+          <span class="tag">AWS / S3</span>
+        </div>
+        <ul class="bullets">
+          <li>Building a data search platform to accelerate time-to-market for semiconductor process development, aggregating sensor data and automatically linking experiments to metrology results.</li>
+          <li>Drove the platform from proof-of-concept to production, now deployed broadly across the Etch division.</li>
+          <li>Enables process engineers to search and generate new processes, directly accelerating R&amp;D throughput.</li>
+        </ul>
+      </div>
 
+      <!-- KLA -->
+      <div class="timeline-item">
+        <div class="timeline-date">June 2023 — Sept 2023</div>
+        <div class="timeline-title">Machine Learning Engineer Intern &mdash; BBP</div>
+        <div class="timeline-company">KLA &nbsp;·&nbsp; Milpitas, CA</div>
+        <div class="tags">
+          <span class="tag">Python</span>
+          <span class="tag">TensorFlow</span>
+          <span class="tag">Image Classification</span>
+          <span class="tag">HDBSCAN</span>
+        </div>
+        <ul class="bullets">
+          <li>Developed a machine-learning autoencoder for BBP Nuisance Filtering, significantly reducing cluster count across IBM CAD and Samsung GMK datasets vs. the current DBG2 implementation.</li>
+          <li>Engineered an adaptable CNN framework for defect detection and classification, trained with unlabeled BBP hotspot images across multiple production datasets.</li>
+          <li>Applied HDBSCAN for efficient clustering of latent features, validated by silhouette scores.</li>
+        </ul>
+      </div>
 
-    
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
-    <script src="javascripts/sticky.min.js"></script>
-    <script src="javascripts/main.js"></script>
-    <script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
-  
-  
-  </body>
+      <!-- Synopsys -->
+      <div class="timeline-item">
+        <div class="timeline-date">June 2022 — Sept 2022</div>
+        <div class="timeline-title">Application Development Intern</div>
+        <div class="timeline-company">Synopsys &nbsp;·&nbsp; Santa Clara, CA</div>
+        <div class="tags">
+          <span class="tag">Java</span>
+          <span class="tag">SQL</span>
+          <span class="tag">Python</span>
+        </div>
+        <ul class="bullets">
+          <li>Optimized a branching process flow, significantly reducing server load processing time.</li>
+          <li>Automated the contractor onboarding process, saving significant employee hours annually and improving efficiency across the team.</li>
+        </ul>
+      </div>
+
+      <!-- NPTutoring -->
+      <div class="timeline-item">
+        <div class="timeline-date">Jun 2018 — Jan 2021</div>
+        <div class="timeline-title">Founder</div>
+        <div class="timeline-company">NPTutoring</div>
+        <div class="tags">
+          <span class="tag">HTML/CSS/PHP</span>
+          <span class="tag">SEO</span>
+          <span class="tag">Firebase</span>
+        </div>
+        <ul class="bullets">
+          <li>Founded a non-profit tutoring company, building a full website from scratch with scheduling, SMTP email functionality, SEO, and Firebase hosting.</li>
+          <li>Partnered with Saraswath Learning Foundation to improve educational facilities globally while tutoring local students in STEM subjects.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── EDUCATION ──────────────────────────────────────── -->
+<section id="education">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">$ cat education.md</p>
+      <h2>Education</h2>
+    </div>
+    <div class="edu-grid">
+      <div class="edu-card">
+        <div class="degree">M.S. Applied Data Science</div>
+        <div class="school">University of Michigan, Ann Arbor</div>
+        <div class="date">Aug 2025 — Present</div>
+        <div class="courses">Graduate studies in applied machine learning, data engineering, and advanced statistics.</div>
+      </div>
+      <div class="edu-card">
+        <div class="degree">B.S. Computer Engineering</div>
+        <div class="school">University of California, Santa Barbara</div>
+        <div class="date">Graduated Jun 2024</div>
+        <div class="courses">Machine Learning Design &nbsp;·&nbsp; Computer Vision &nbsp;·&nbsp; Deep Learning &nbsp;·&nbsp; HRDW/SFTW Interface &nbsp;·&nbsp; ASIC Design &nbsp;·&nbsp; Mobile Embedded Systems &nbsp;·&nbsp; Computer Architecture &nbsp;·&nbsp; Data Structures &amp; Algorithms</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROJECTS ───────────────────────────────────────── -->
+<section id="projects">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">$ ls projects/</p>
+      <h2>Projects</h2>
+    </div>
+    <div class="projects-grid">
+
+      <div class="project-card">
+        <div class="p-date">Nov 2023 — Jun 2024</div>
+        <h3>Health Monitoring Wearable &mdash; Capstone</h3>
+        <p>Designed and manufactured a health monitoring wearable for nursing home residents: vital signs, activity tracking, temperature, ambient noise, and continuous heart rate/SpO₂. Built a 4-layer PCB in Altium and a data-efficient Android app for real-time visualization.</p>
+        <div class="tags">
+          <span class="tag">Python</span><span class="tag">C</span><span class="tag">Java</span><span class="tag">ASIC Design</span><span class="tag">Altium</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="p-date">Jan 2023</div>
+        <h3>Chromatic Tuner FPGA Development</h3>
+        <p>Engineered a precise guitar tuner (65–4500 Hz) on FPGA. Enhanced FFT code for sub-30ms results using optimized lookup tables and hash-maps. Built an interactive GUI on a QP-nano Hierarchical State Machine with rotary encoders and onboard buttons.</p>
+        <div class="tags">
+          <span class="tag">C</span><span class="tag">C++</span><span class="tag">FPGA</span><span class="tag">Embedded Systems</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="p-date">Personal Project</div>
+        <h3>Stock Market Sentiment Analysis</h3>
+        <p>Developed a predictive model using NLP sentiment analysis on news articles, crawling APIs to surface positive/negative market signals. Built a GUI dashboard for real-time visualization of sentiment scores.</p>
+        <div class="tags">
+          <span class="tag">Python</span><span class="tag">NLP</span><span class="tag">ML</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="p-date">Competition</div>
+        <h3>Supply Chain Optimization</h3>
+        <p>Ran regression analysis to optimize manufacturing output for a jeans company at a national competition. Modeled machine allocation, staffing, and throughput to maximize monthly revenue.</p>
+        <div class="tags">
+          <span class="tag">Python</span><span class="tag">Regression</span><span class="tag">Optimization</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="p-date">UCSB IEEE</div>
+        <h3>Emotional Intelligence AI</h3>
+        <p>Collaborated with 15 engineers at UCSB IEEE to develop a deep learning model capable of detecting up to 7 basic emotions from real-time webcam input using computer vision.</p>
+        <div class="tags">
+          <span class="tag">Python</span><span class="tag">Deep Learning</span><span class="tag">Computer Vision</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SKILLS ─────────────────────────────────────────── -->
+<section id="skills">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">$ pip list &amp;&amp; cat skills.json</p>
+      <h2>Skills</h2>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-cat">
+        <h3>// Languages</h3>
+        <div class="skill-tags">
+          <span class="skill-tag">Python</span>
+          <span class="skill-tag">C++</span>
+          <span class="skill-tag">C</span>
+          <span class="skill-tag">SQL</span>
+          <span class="skill-tag">Java</span>
+          <span class="skill-tag">HTML / CSS</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <h3>// ML / AI</h3>
+        <div class="skill-tags">
+          <span class="skill-tag">PyTorch</span>
+          <span class="skill-tag">TensorFlow</span>
+          <span class="skill-tag">Deep Learning</span>
+          <span class="skill-tag">Computer Vision</span>
+          <span class="skill-tag">NLP</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <h3>// Tools &amp; Platforms</h3>
+        <div class="skill-tags">
+          <span class="skill-tag">FastAPI</span>
+          <span class="skill-tag">ClickHouse</span>
+          <span class="skill-tag">AWS / S3</span>
+          <span class="skill-tag">Firebase</span>
+          <span class="skill-tag">Git</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <h3>// Hardware</h3>
+        <div class="skill-tags">
+          <span class="skill-tag">FPGA</span>
+          <span class="skill-tag">ASIC Design</span>
+          <span class="skill-tag">PCB Design</span>
+          <span class="skill-tag">Embedded Systems</span>
+          <span class="skill-tag">Digital Logic</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p>
+      snehithn5@gmail.com &nbsp;·&nbsp; San Ramon, CA &nbsp;·&nbsp;
+      <a href="https://github.com/snehith01001110" target="_blank">github</a> &nbsp;·&nbsp;
+      <a href="https://www.linkedin.com/in/snehithn/" target="_blank">linkedin</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+
+</body>
 </html>
-
