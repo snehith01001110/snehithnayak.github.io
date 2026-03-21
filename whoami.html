@@ -201,6 +201,7 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 1.75rem;
       transition: border-color 0.2s;
+      text-decoration: none; color: inherit; display: block;
     }
     .edu-card:hover { border-color: rgba(251,150,51,0.3); }
     .edu-card .degree { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
@@ -214,6 +215,7 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 1.75rem;
       transition: border-color 0.2s, transform 0.2s;
+      text-decoration: none; color: inherit; display: block;
     }
     .project-card:hover { border-color: rgba(251,150,51,0.35); transform: translateY(-3px); }
     .project-card .p-date { font-family: var(--mono); font-size: 0.76rem; color: var(--accent); margin-bottom: 0.5rem; }
@@ -358,7 +360,7 @@
       <div class="timeline-item">
         <div class="timeline-date">July 2024 — Present</div>
         <div class="timeline-title">Software Engineer AIx</div>
-        <div class="timeline-company">Applied Materials &nbsp;·&nbsp; Santa Clara, CA</div>
+        <div class="timeline-company"><a href="https://www.appliedmaterials.com/us/en/semiconductor/solutions-and-software/ai-x.html" target="_blank" style="color: inherit; text-decoration: none;">Applied Materials</a> &nbsp;·&nbsp; Santa Clara, CA</div>
         <div class="tags">
           <span class="tag">Python</span>
           <span class="tag">Machine Learning</span>
@@ -375,7 +377,7 @@
       <div class="timeline-item">
         <div class="timeline-date">June 2023 — Sept 2023</div>
         <div class="timeline-title">Machine Learning Engineer Intern &mdash; BBP</div>
-        <div class="timeline-company">KLA &nbsp;·&nbsp; Milpitas, CA</div>
+        <div class="timeline-company"><a href="https://www.kla.com/documents/products/brochures/2835.pdf" target="_blank" style="color: inherit; text-decoration: none;">KLA</a> &nbsp;·&nbsp; Milpitas, CA</div>
         <div class="tags">
           <span class="tag">Python</span>
           <span class="tag">TensorFlow</span>
@@ -390,7 +392,7 @@
       <div class="timeline-item">
         <div class="timeline-date">June 2022 — Sept 2022</div>
         <div class="timeline-title">Application Development Intern</div>
-        <div class="timeline-company">Synopsys &nbsp;·&nbsp; Santa Clara, CA</div>
+        <div class="timeline-company"><a href="https://www.synopsys.com/" target="_blank" style="color: inherit; text-decoration: none;">Synopsys</a> &nbsp;·&nbsp; Santa Clara, CA</div>
         <div class="tags">
           <span class="tag">SQL</span>
           <span class="tag">Python</span>
@@ -427,18 +429,18 @@
       <h2>Education</h2>
     </div>
     <div class="edu-grid">
-      <div class="edu-card">
+      <a class="edu-card" href="https://www.si.umich.edu/programs/master-applied-data-science" target="_blank">
         <div class="degree">M.S. Applied Data Science</div>
         <div class="school">University of Michigan, Ann Arbor</div>
         <div class="date">Aug 2025 — Present</div>
         <div class="courses">Graduate studies in applied machine learning, data engineering, and advanced statistics.</div>
-      </div>
-      <div class="edu-card">
+      </a>
+      <a class="edu-card" href="https://www.ece.ucsb.edu/" target="_blank">
         <div class="degree">B.S. Computer Engineering</div>
         <div class="school">University of California, Santa Barbara</div>
         <div class="date">Graduated Jun 2024</div>
         <div class="courses">Machine Learning Design &nbsp;·&nbsp; Computer Vision &nbsp;·&nbsp; Deep Learning &nbsp;·&nbsp; HRDW/SFTW Interface &nbsp;·&nbsp; ASIC Design &nbsp;·&nbsp; Mobile Embedded Systems &nbsp;·&nbsp; Computer Architecture &nbsp;·&nbsp; Data Structures &amp; Algorithms</div>
-      </div>
+      </a>
     </div>
   </div>
 </section>
@@ -452,23 +454,23 @@
     </div>
     <div class="projects-grid">
 
-      <div class="project-card">
+      <a class="project-card" href="https://docs.google.com/presentation/d/1i2CXpXGompcRUWpghTWxZMa9jlVdfNEf/edit?usp=sharing&ouid=117853268674105555032&rtpof=true&sd=true" target="_blank">
         <div class="p-date">Nov 2023 — Jun 2024</div>
         <h3>Health Monitoring Wearable &mdash; Capstone</h3>
         <p>Designed and manufactured a health monitoring wearable for nursing home residents: vital signs, activity tracking, temperature, ambient noise, and continuous heart rate/SpO₂. Built a 4-layer PCB in Altium and a data-efficient Android app for real-time visualization.</p>
         <div class="tags">
           <span class="tag">Python</span><span class="tag">C</span><span class="tag">Java</span><span class="tag">ASIC Design</span><span class="tag">Altium</span>
         </div>
-      </div>
+      </a>
 
-      <div class="project-card">
+      <a class="project-card" href="https://github.com/snehith01001110/ChromaticTunerFPGADevelopment" target="_blank">
         <div class="p-date">Jan 2023</div>
         <h3>Chromatic Tuner FPGA Development</h3>
         <p>Engineered a precise guitar tuner (65–4500 Hz) on FPGA. Enhanced FFT code for sub-30ms results using optimized lookup tables and hash-maps. Built an interactive GUI on a QP-nano Hierarchical State Machine with rotary encoders and onboard buttons.</p>
         <div class="tags">
           <span class="tag">C</span><span class="tag">C++</span><span class="tag">FPGA</span><span class="tag">Embedded Systems</span>
         </div>
-      </div>
+      </a>
 
       <div class="project-card">
         <div class="p-date">Personal Project</div>
