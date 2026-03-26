@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Player Analytics Dashboard (1996-2023)</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #080d1a;
+            color: #e2e8f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            padding: 24px 20px 8px;
+        }
+        .header h1 { font-size: 1.6rem; color: #FB9633; margin-bottom: 4px; }
+        .header p { font-size: 0.85rem; color: #94a3b8; }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+        }
+        .controls label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        select {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        select:hover { border-color: #FB9633; }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            padding: 12px 20px 20px;
+            height: calc(100vh - 130px);
+            min-height: 500px;
+        }
+        .chart-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-title {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            padding: 10px 14px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chart-container { flex: 1; min-height: 0; }
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2rem;
+            color: #FB9633;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 300px);
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading NBA data...</div>
+    <div id="app" style="display:none;">
+        <div class="header">
+            <h1>NBA Player Analytics Dashboard</h1>
+            <p>Exploring player performance trends across 27 seasons (1996-2023)</p>
+        </div>
+        <div class="controls">
+            <label>Season:</label>
+            <select id="seasonSelect"></select>
+        </div>
+        <div class="dashboard">
+            <div class="chart-card">
+                <div class="chart-title">League Scoring Averages Over Time</div>
+                <div class="chart-container" id="lineChart"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title" id="barTitle">Top 10 Scorers</div>
+                <div class="chart-container" id="barChart"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Points vs Assists (size = games played)</div>
+                <div class="chart-container" id="scatterChart"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title" id="histTitle">Player Age Distribution</div>
+                <div class="chart-container" id="histChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let allData = [];
+    let seasons = [];
+    const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', size: 11 },
+        margin: { l: 50, r: 20, t: 10, b: 40 },
+        xaxis: { gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+        yaxis: { gridcolor: '#1e293b', zerolinecolor: '#1e293b' }
+    };
+    const config = { responsive: true, displayModeBar: false };
+
+    Papa.parse('data/nba_players.csv', {
+        download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+        complete: function(results) {
+            allData = results.data.filter(r => r.player_name && r.season);
+            seasons = [...new Set(allData.map(r => r.season))].sort();
+            var sel = document.getElementById('seasonSelect');
+            seasons.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                sel.appendChild(opt);
+            });
+            sel.value = seasons[seasons.length - 1];
+            sel.addEventListener('change', update);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            update();
+        }
+    });
+
+    function update() {
+        var season = document.getElementById('seasonSelect').value;
+
+        // Line chart — league avg PPG, RPG, APG per season
+        var avgs = seasons.map(function(s) {
+            var p = allData.filter(function(r) { return r.season === s; });
+            var sum = function(k) { return p.reduce(function(a, r) { return a + (r[k] || 0); }, 0) / p.length; };
+            return { season: s, pts: sum('pts'), reb: sum('reb'), ast: sum('ast') };
+        });
+        Plotly.newPlot('lineChart', [
+            { x: seasons, y: avgs.map(function(a) { return a.pts; }), name: 'PPG', line: { color: '#FB9633', width: 3 } },
+            { x: seasons, y: avgs.map(function(a) { return a.reb; }), name: 'RPG', line: { color: '#3b82f6', width: 2 } },
+            { x: seasons, y: avgs.map(function(a) { return a.ast; }), name: 'APG', line: { color: '#22c55e', width: 2 } }
+        ], Object.assign({}, layout, {
+            showlegend: true,
+            legend: { orientation: 'h', y: 1.12, x: 0.5, xanchor: 'center', font: { size: 10 } },
+            margin: { l: 50, r: 20, t: 30, b: 40 },
+            xaxis: { gridcolor: '#1e293b', type: 'category', tickangle: -45, dtick: 2 }
+        }), config);
+
+        // Bar chart — top 10 scorers
+        var sd = allData.filter(function(r) { return r.season === season && r.gp >= 20; });
+        sd.sort(function(a, b) { return b.pts - a.pts; });
+        var top = sd.slice(0, 10);
+        document.getElementById('barTitle').textContent = 'Top 10 Scorers (' + season + ')';
+        Plotly.newPlot('barChart', [{
+            y: top.map(function(r) { return r.player_name; }).reverse(),
+            x: top.map(function(r) { return r.pts; }).reverse(),
+            type: 'bar', orientation: 'h',
+            marker: { color: '#FB9633' },
+            text: top.map(function(r) { return r.team_abbreviation; }).reverse(),
+            textposition: 'inside', textfont: { color: '#fff', size: 10 }
+        }], Object.assign({}, layout, {
+            margin: { l: 130, r: 20, t: 10, b: 40 },
+            xaxis: { gridcolor: '#1e293b', title: 'Points Per Game' },
+            yaxis: { gridcolor: '#1e293b', type: 'category', tickfont: { size: 10 } }
+        }), config);
+
+        // Scatter — points vs assists
+        var sc = allData.filter(function(r) { return r.season === season && r.gp >= 10; });
+        Plotly.newPlot('scatterChart', [{
+            x: sc.map(function(r) { return r.ast; }),
+            y: sc.map(function(r) { return r.pts; }),
+            mode: 'markers', type: 'scatter',
+            marker: {
+                size: sc.map(function(r) { return Math.max(4, (r.gp || 10) / 8); }),
+                color: sc.map(function(r) { return r.ts_pct || 0.5; }),
+                colorscale: [[0, '#ef4444'], [0.5, '#FB9633'], [1, '#22c55e']],
+                colorbar: { title: { text: 'TS%', font: { size: 10 } }, thickness: 12, len: 0.6 },
+                opacity: 0.7
+            },
+            text: sc.map(function(r) { return r.player_name; }),
+            hovertemplate: '<b>%{text}</b><br>PPG: %{y:.1f}<br>APG: %{x:.1f}<extra></extra>'
+        }], Object.assign({}, layout, {
+            xaxis: { gridcolor: '#1e293b', title: 'Assists Per Game' },
+            yaxis: { gridcolor: '#1e293b', title: 'Points Per Game' }
+        }), config);
+
+        // Histogram — age distribution
+        var ages = allData.filter(function(r) { return r.season === season; }).map(function(r) { return r.age; });
+        var avgAge = (ages.reduce(function(a, b) { return a + b; }, 0) / ages.length).toFixed(1);
+        document.getElementById('histTitle').textContent = 'Player Age Distribution (' + season + ')';
+        Plotly.newPlot('histChart', [{
+            x: ages, type: 'histogram',
+            marker: { color: 'rgba(251,150,51,0.6)', line: { color: '#FB9633', width: 1 } },
+            xbins: { start: 18, end: 45, size: 1 }
+        }], Object.assign({}, layout, {
+            xaxis: { gridcolor: '#1e293b', title: 'Age', dtick: 2 },
+            yaxis: { gridcolor: '#1e293b', title: 'Number of Players' },
+            annotations: [{ x: parseFloat(avgAge), y: 1, yref: 'paper', text: 'Avg: ' + avgAge,
+                showarrow: false, font: { color: '#3b82f6', size: 11 }, yshift: -10 }]
+        }), config);
+    }
+    </script>
+</body>
+</html>
