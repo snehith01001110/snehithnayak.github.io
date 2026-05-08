@@ -221,6 +221,9 @@
     .project-card .p-date { font-family: var(--mono); font-size: 0.76rem; color: var(--accent); margin-bottom: 0.5rem; }
     .project-card h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.6rem; }
     .project-card p { color: var(--muted); font-size: 0.87rem; line-height: 1.65; margin-bottom: 1rem; }
+    .p-links { display: flex; gap: 1rem; margin-top: 0.9rem; font-family: var(--mono); font-size: 0.78rem; }
+    .p-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .p-links a:hover { color: var(--accent); }
 
     /* ── SKILLS ──────────────────────────────────────── */
     .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.75rem; }
@@ -454,14 +457,19 @@
     </div>
     <div class="projects-grid">
 
-      <a class="project-card" href="https://isocode.dev" target="_blank">
+      <div class="project-card">
         <div class="p-date">Apr 2026</div>
         <h3>iso-code &mdash; Safe Worktree Management for AI Agents</h3>
         <p>Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding agents (Claude Code, Cursor, Copilot). Prevents data loss from unmerged-commit deletion, orphaned worktrees, and git-crypt corruption with atomic state writes and cleanup-on-failure guarantees.</p>
         <div class="tags">
           <span class="tag">Rust</span><span class="tag">CLI</span><span class="tag">MCP Server</span><span class="tag">Git</span>
         </div>
-      </a>
+        <div class="p-links">
+          <a href="https://isocode.dev" target="_blank" rel="noopener">isocode.dev</a>
+          <a href="https://crates.io/crates/iso-code" target="_blank" rel="noopener">crates.io</a>
+          <a href="https://github.com/snehith01001110/ISO-Framework" target="_blank" rel="noopener">github</a>
+        </div>
+      </div>
 
       <a class="project-card" href="https://docs.google.com/presentation/d/1i2CXpXGompcRUWpghTWxZMa9jlVdfNEf/edit?usp=sharing&ouid=117853268674105555032&rtpof=true&sd=true" target="_blank">
         <div class="p-date">Nov 2023 — Jun 2024</div>
