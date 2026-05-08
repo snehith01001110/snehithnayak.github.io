@@ -85,15 +85,33 @@
       font-size: clamp(2.6rem, 5vw, 4rem);
       font-weight: 700; line-height: 1.1; margin-bottom: 0.6rem;
     }
-    .hero-text .role {
-      font-size: 1rem; color: var(--muted);
-      margin-bottom: 1.4rem; font-weight: 400;
+    .hero-facts {
+      display: grid; gap: 0.85rem;
+      margin: 1.35rem 0 1.6rem;
+      max-width: 520px;
     }
-    .hero-text .role span { color: var(--accent2); font-weight: 500; }
-    .hero-text p.bio {
-      color: var(--muted); max-width: 460px;
-      margin-bottom: 2rem; line-height: 1.75;
+    .hero-fact {
+      display: grid; grid-template-columns: auto 1fr; gap: 0.85rem;
+      align-items: flex-start;
+      background: rgba(13,21,38,0.72);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
     }
+    .hero-fact .fact-icon {
+      width: 2.15rem; height: 2.15rem; border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent-dim); color: var(--accent2);
+      font-size: 1.05rem;
+    }
+    .hero-fact .fact-label {
+      font-family: var(--mono); font-size: 0.72rem;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 0.12rem;
+    }
+    .hero-fact .fact-title { color: var(--text); font-weight: 600; line-height: 1.35; }
+    .hero-fact .fact-title span { color: var(--accent2); }
+    .hero-fact .fact-subtitle { color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
     .hero-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
     /* ── BUTTONS ─────────────────────────────────────── */
@@ -199,15 +217,41 @@
     .edu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     .edu-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 1.75rem;
-      transition: border-color 0.2s;
-      text-decoration: none; color: inherit; display: block;
+      border-radius: 14px; padding: 1.75rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      text-decoration: none; color: inherit; display: flex;
+      flex-direction: column; gap: 1.05rem;
+      min-height: 100%;
     }
-    .edu-card:hover { border-color: rgba(251,150,51,0.3); }
-    .edu-card .degree { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .edu-card .school { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.2rem; }
-    .edu-card .date { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); margin-bottom: 0.8rem; }
-    .edu-card .courses { color: var(--muted); font-size: 0.84rem; line-height: 1.65; }
+    .edu-card:hover {
+      border-color: rgba(251,150,51,0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.24);
+    }
+    .edu-card .school { color: var(--accent); font-size: 0.92rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .edu-card .degree { font-size: 1.08rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.55rem; }
+    .edu-card .date {
+      display: inline-flex; width: fit-content;
+      font-family: var(--mono); font-size: 0.74rem; color: var(--accent2);
+      background: var(--accent-dim); border: 1px solid rgba(74,222,128,0.18);
+      border-radius: 999px; padding: 0.18rem 0.55rem;
+    }
+    .edu-details {
+      display: grid; gap: 0.65rem;
+      color: var(--muted); font-size: 0.84rem; line-height: 1.6;
+    }
+    .edu-detail { display: grid; grid-template-columns: 5.6rem 1fr; gap: 0.7rem; }
+    .edu-detail strong {
+      color: var(--text); font-family: var(--mono);
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .course-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .course-chip {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 0.2rem 0.58rem; font-size: 0.76rem;
+    }
 
     /* ── PROJECTS GRID ───────────────────────────────── */
     .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.5rem; }
@@ -265,6 +309,9 @@
     @media (max-width: 500px) {
       .nav-links  { display: none; }
       .hero-text h1 { font-size: 2.4rem; }
+      .hero-fact { padding: 0.85rem; }
+      .edu-card { padding: 1.35rem; }
+      .edu-detail { grid-template-columns: 1fr; gap: 0.15rem; }
     }
 
     /* ── SECTION ACCENT OVERRIDES ────────────────────── */
@@ -307,11 +354,24 @@
       <div class="hero-text">
         <p class="greeting fade d1">$ whoami</p>
         <h1 class="fade d2">Snehith<br>Nayak</h1>
-        <p class="role fade d3">
-          Software Engineer @ <span>Applied Materials</span>
-          &nbsp;·&nbsp;
-          M.S. Applied Data Science @ <span>University of Michigan</span>
-        </p>
+        <div class="hero-facts fade d3" aria-label="Current role and schooling">
+          <div class="hero-fact">
+            <span class="fact-icon" aria-hidden="true">▣</span>
+            <div>
+              <div class="fact-label">Work</div>
+              <div class="fact-title">Software Engineer @ <span>Applied Materials</span></div>
+              <div class="fact-subtitle">AIx · Santa Clara, CA</div>
+            </div>
+          </div>
+          <div class="hero-fact">
+            <span class="fact-icon" aria-hidden="true">◈</span>
+            <div>
+              <div class="fact-label">School</div>
+              <div class="fact-title">M.S. Applied Data Science @ <span>University of Michigan</span></div>
+              <div class="fact-subtitle">Ann Arbor · Aug 2025 — Present</div>
+            </div>
+          </div>
+        </div>
 
         <div class="hero-links fade d4">
           <a href="https://github.com/snehith01001110" class="btn btn-primary" target="_blank">GitHub</a>
@@ -333,8 +393,11 @@
           <div>&nbsp;&nbsp;<span class="t-key">"name"</span>: <span class="t-str">"Snehith Nayak"</span>,</div>
           <div>&nbsp;&nbsp;<span class="t-key">"role"</span>: <span class="t-str">"Software Engineer AIx"</span>,</div>
           <div>&nbsp;&nbsp;<span class="t-key">"company"</span>: <span class="t-str">"Applied Materials"</span>,</div>
-          <div>&nbsp;&nbsp;<span class="t-key">"grad"</span>: <span class="t-str">"M.S. Applied Data Science"</span>,</div>
-          <div>&nbsp;&nbsp;<span class="t-key">"school"</span>: <span class="t-str">"Univ. of Michigan"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="t-key">"education"</span>: {</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">"degree"</span>: <span class="t-str">"M.S. Applied Data Science"</span>,</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">"school"</span>: <span class="t-str">"University of Michigan"</span>,</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">"status"</span>: <span class="t-str">"Aug 2025 — Present"</span></div>
+          <div>&nbsp;&nbsp;},</div>
           <div>&nbsp;&nbsp;<span class="t-key">"location"</span>: <span class="t-str">"Bay Area, CA"</span>,</div>
           <div>&nbsp;&nbsp;<span class="t-key">"interests"</span>: [<span class="t-str">"ML"</span>, <span class="t-str">"Semiconductors"</span>, <span class="t-str">"Data"</span>]</div>
           <div class="t-brace">}</div>
@@ -430,16 +493,45 @@
     </div>
     <div class="edu-grid">
       <a class="edu-card" href="https://www.si.umich.edu/programs/master-applied-data-science" target="_blank">
-        <div class="degree">M.S. Applied Data Science</div>
-        <div class="school">University of Michigan, Ann Arbor</div>
-        <div class="date">Aug 2025 — Present</div>
-        <div class="courses">Graduate studies in applied machine learning, data engineering, and advanced statistics.</div>
+        <div>
+          <div class="school">University of Michigan, Ann Arbor</div>
+          <div class="degree">M.S. Applied Data Science</div>
+          <div class="date">Aug 2025 — Present</div>
+        </div>
+        <div class="edu-details">
+          <div class="edu-detail">
+            <strong>Focus</strong>
+            <span>Applied machine learning, data engineering, and advanced statistics.</span>
+          </div>
+          <div class="edu-detail">
+            <strong>Status</strong>
+            <span>Current graduate student.</span>
+          </div>
+        </div>
       </a>
       <a class="edu-card" href="https://www.ece.ucsb.edu/" target="_blank">
-        <div class="degree">B.S. Computer Engineering</div>
-        <div class="school">University of California, Santa Barbara</div>
-        <div class="date">Graduated Jun 2024</div>
-        <div class="courses">Machine Learning Design &nbsp;·&nbsp; Computer Vision &nbsp;·&nbsp; Deep Learning &nbsp;·&nbsp; HRDW/SFTW Interface &nbsp;·&nbsp; ASIC Design &nbsp;·&nbsp; Mobile Embedded Systems &nbsp;·&nbsp; Computer Architecture &nbsp;·&nbsp; Data Structures &amp; Algorithms</div>
+        <div>
+          <div class="school">University of California, Santa Barbara</div>
+          <div class="degree">B.S. Computer Engineering</div>
+          <div class="date">Graduated Jun 2024</div>
+        </div>
+        <div class="edu-details">
+          <div class="edu-detail">
+            <strong>Focus</strong>
+            <span>Embedded systems, ML systems, and hardware/software interfaces.</span>
+          </div>
+          <div class="edu-detail">
+            <strong>Courses</strong>
+            <span class="course-list">
+              <span class="course-chip">Machine Learning Design</span>
+              <span class="course-chip">Computer Vision</span>
+              <span class="course-chip">Deep Learning</span>
+              <span class="course-chip">ASIC Design</span>
+              <span class="course-chip">Computer Architecture</span>
+              <span class="course-chip">Data Structures &amp; Algorithms</span>
+            </span>
+          </div>
+        </div>
       </a>
     </div>
   </div>
