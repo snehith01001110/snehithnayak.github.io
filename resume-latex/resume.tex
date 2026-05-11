@@ -1,0 +1,155 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[letterpaper,margin=0.55in,top=0.45in,bottom=0.42in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext}
+\usepackage{helvet}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{microtype}
+\usepackage{ragged2e}
+
+\definecolor{linkblue}{RGB}{0,102,204}
+\hypersetup{
+  colorlinks=true,
+  urlcolor=linkblue
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{1em}
+\linespread{1.01}
+
+\newcommand{\namestyle}{\fontfamily{phv}\selectfont}
+\newcommand{\sectionstyle}{\fontfamily{phv}\bfseries\selectfont}
+\newcommand{\link}[2]{\href{#1}{\textcolor{linkblue}{\underline{#2}}}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\resumesection}[1]{%
+  \vspace{5pt}%
+  {\centering{\sectionstyle\large #1}\par}%
+  \nointerlineskip\vspace{5pt}\hrule\vspace{6pt}%
+}
+
+\newcommand{\educationentry}[3]{%
+  \begin{tabularx}{\linewidth}{@{}Yr@{}}
+    {\sectionstyle #1} \textbar{} \textit{#2} & #3
+  \end{tabularx}%
+}
+
+\newcommand{\experienceentry}[5]{%
+  \begin{tabularx}{\linewidth}{@{}Yr@{}}
+    {\sectionstyle #1} \textbar{} \textit{#2} \textbar{} #3 & #4 \textbar{} #5
+  \end{tabularx}%
+}
+
+\newcommand{\projectentry}[4]{%
+  \begin{tabularx}{\linewidth}{@{}Yr@{}}
+    \link{#1}{\sectionstyle #2} \textbar{} #3 & #4
+  \end{tabularx}%
+}
+
+\newenvironment{resumebullets}{%
+  \RaggedRight
+  \begin{itemize}[
+    label=\raisebox{0.25ex}{\rule{3pt}{3pt}},
+    leftmargin=0.32in,
+    labelsep=0.12in,
+    itemsep=1.5pt,
+    topsep=1pt,
+    parsep=0pt,
+    partopsep=0pt
+  ]%
+}{\end{itemize}}
+
+\begin{document}
+
+\begin{minipage}[t]{0.28\linewidth}
+  \raggedright
+  \link{http://snehithn.com/}{http://snehithn.com/}\\
+  \link{mailto:snehithn5@gmail.com}{snehithn5@gmail.com}
+\end{minipage}\hfill%
+\begin{minipage}[t]{0.38\linewidth}
+  \centering
+  \vspace{-5pt}
+  {\namestyle\fontsize{25}{29}\selectfont Snehith Nayak}
+\end{minipage}\hfill%
+\begin{minipage}[t]{0.28\linewidth}
+  \raggedleft
+  SF Bay Area, CA
+\end{minipage}
+
+\resumesection{EDUCATION}
+
+\educationentry{University of Michigan Ann Arbor}{M.S. Applied Data Science}{Aug 2025 - Present}
+\educationentry{University of California Santa Barbara}{B.S. Computer Engineering}{Jun 2024}
+
+\resumesection{WORK EXPERIENCE}
+
+\experienceentry{Applied Materials}{Software Engineer \link{https://www.appliedmaterials.com/us/en/semiconductor/solutions-and-software/ai-x.html}{AIx}}{Python, Machine Learning}{Santa Clara, CA}{July 2024 - Present}
+\begin{resumebullets}
+  \item Creating a data search platform to accelerate time to market for semiconductor process development.
+  \item This platform aggregates sensor data, automatically links experiments done by process engineers to
+  metrology results, and allows for searching or generation of new processes to accelerate R\&D.
+  \item Serving as a core developer from initial proof-of-concept (Aug 2024) to production (Feb 2025), now
+  achieving 75\% adoption in Etch division (600+ monthly users).
+\end{resumebullets}
+
+\experienceentry{KLA}{Machine Learning Engineer Intern - \link{https://www.kla.com/products/broadband-plasma-inspection}{BBP}}{Python, Image Classification}{Milpitas, CA}{June-Sept 2023}
+\begin{resumebullets}
+  \item Developed a machine-learning autoencoder using TensorFlow for BBP Nuisance Filtering, reducing
+  cluster count by 30\% in IBM CAD and Samsung GMK dataset compared to DBG2 (current implementation).
+  \item Engineered an advanced, adaptable framework using convolutional layers, optimizing defect detection
+  and classification across multiple datasets, specialized by training with unlabeled BBP hotspot images.
+  \item Utilized HDBSCAN for efficient clustering of latent features, validated by silhouette scores.
+\end{resumebullets}
+
+\experienceentry{Synopsys}{Application Development Intern}{Java, SQL, Data Processing}{Santa Clara, CA}{June-Sept 2022}
+\begin{resumebullets}
+  \item Conducted performance analysis and optimized algorithms for a branching process flow resulting in a
+  reduction of server load processing time from 10 minutes to 2.5 minutes.
+  \item Automated contractor onboarding process saving 2,200 employee hours annually, improving system
+  efficiency for over 2,000 users.
+\end{resumebullets}
+
+\resumesection{PROJECT EXPERIENCE}
+
+\projectentry{https://isocode.dev}{iso-code -- Safe Worktree Management for AI Agents}{Rust, CLI, MCP Server, Git}{Apr 2026}
+\begin{resumebullets}
+  \item Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding
+  agents across Claude Code, Cursor, and Copilot.
+  \item Prevented data loss from unmerged-commit deletion, orphaned worktrees, and git-crypt corruption with
+  atomic state writes and cleanup-on-failure guarantees.
+\end{resumebullets}
+
+\projectentry{https://snehithn.com/}{Health Monitoring Wearable -- Capstone}{Python, C, Java, ASIC Design}{Nov 2023-June 2024}
+\begin{resumebullets}
+  \item Designed and manufactured a specialized health monitoring wearable for nursing home residents,
+  focusing on comprehensive remote monitoring and enhanced data accuracy.
+  \item Incorporated advanced sensors in the wearable for vital signs, activity tracking, temperature monitoring,
+  ambient noise detection, and continuous heart rate and oxygen level measurement.
+  \item Engineered a data-efficient Android app for real-time health data visualization and trend analysis.
+  \item Designed and manufactured a 4-Layer PCB design in Altium.
+\end{resumebullets}
+
+\projectentry{https://snehithn.com/}{Chromatic Tuner FPGA Development}{C, C++, Embedded Systems, FPGA development}{Jan 2023}
+\begin{resumebullets}
+  \item Engineered a tuner for precise musical note identification for guitar tuning (65-4500 Hz).
+  \item Built a user-friendly GUI with interactive peripherals on a QP-nano State Machine.
+  \item Enhanced FFT code for sub-30ms results with optimized lookup tables and hash-maps.
+\end{resumebullets}
+
+\resumesection{SKILLS \& INTERESTS}
+
+{\sectionstyle Programming Languages:} Python, C++, C, SQL\\
+{\sectionstyle Tools \& Platforms:} PyTorch, FastAPI, ClickHouse, TensorFlow, AWS/S3, Firebase, Git\\
+\begin{tabularx}{\linewidth}{@{}Yr@{}}
+  {\sectionstyle Neural Networks and Deep Learning} \textbar{} \textit{deeplearning.ai} & Jan 2022
+\end{tabularx}
+
+\end{document}

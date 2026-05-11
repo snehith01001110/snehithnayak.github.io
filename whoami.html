@@ -86,32 +86,38 @@
       font-weight: 700; line-height: 1.1; margin-bottom: 0.6rem;
     }
     .hero-facts {
-      display: grid; gap: 0.85rem;
-      margin: 1.35rem 0 1.6rem;
+      display: grid; gap: 0.48rem;
+      margin: 1.25rem 0 1.45rem;
       max-width: 520px;
+      padding-left: 1rem;
+      border-left: 1px solid var(--border);
     }
-    .hero-fact {
-      display: grid; grid-template-columns: auto 1fr; gap: 0.85rem;
-      align-items: flex-start;
-      background: rgba(13,21,38,0.72);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.9rem 1rem;
+    .hero-fact { display: block; }
+    .hero-fact > div {
+      display: grid;
+      grid-template-columns: 4.8rem minmax(0, 1fr);
+      column-gap: 0.75rem;
+      row-gap: 0.12rem;
+      align-items: baseline;
     }
-    .hero-fact .fact-icon {
-      width: 2.15rem; height: 2.15rem; border-radius: 8px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--accent-dim); color: var(--accent2);
-      font-size: 1.05rem;
-    }
+    .hero-fact .fact-icon { display: none; }
     .hero-fact .fact-label {
       font-family: var(--mono); font-size: 0.72rem;
       color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.08em; margin-bottom: 0.12rem;
+      letter-spacing: 0.08em;
+      grid-column: 1;
     }
-    .hero-fact .fact-title { color: var(--text); font-weight: 600; line-height: 1.35; }
+    .hero-fact .fact-title {
+      color: var(--text); font-size: 0.94rem;
+      font-weight: 500; line-height: 1.42;
+      grid-column: 2;
+    }
     .hero-fact .fact-title span { color: var(--accent2); }
-    .hero-fact .fact-subtitle { color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
+    .hero-fact .fact-subtitle {
+      color: var(--muted); font-size: 0.78rem; line-height: 1.4;
+      display: block;
+      grid-column: 2;
+    }
     .hero-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
     /* ── BUTTONS ─────────────────────────────────────── */
@@ -197,8 +203,8 @@
     .tag {
       background: var(--accent-dim); color: var(--accent);
       border: 1px solid rgba(251,150,51,0.2);
-      padding: 0.18rem 0.6rem; border-radius: 4px;
-      font-size: 0.76rem; font-family: var(--mono);
+      padding: 0.16rem 0.54rem; border-radius: 4px;
+      font-size: 0.72rem; font-family: var(--mono);
     }
     .tag-gray {
       background: var(--surface2); color: var(--muted);
@@ -254,20 +260,121 @@
     }
 
     /* ── PROJECTS GRID ───────────────────────────────── */
-    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.5rem; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.35rem; }
     .project-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 1.75rem;
-      transition: border-color 0.2s, transform 0.2s;
-      text-decoration: none; color: inherit; display: block;
+      background:
+        linear-gradient(180deg, rgba(248,113,113,0.035), transparent 42%),
+        var(--surface);
+      border: 1px solid rgba(248,113,113,0.16);
+      border-radius: 8px; padding: 1.45rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s, background 0.2s;
+      text-decoration: none; color: inherit; display: flex;
+      flex-direction: column; min-height: 285px;
+      cursor: pointer;
     }
-    .project-card:hover { border-color: rgba(251,150,51,0.35); transform: translateY(-3px); }
-    .project-card .p-date { font-family: var(--mono); font-size: 0.76rem; color: var(--accent); margin-bottom: 0.5rem; }
-    .project-card h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.6rem; }
-    .project-card p { color: var(--muted); font-size: 0.87rem; line-height: 1.65; margin-bottom: 1rem; }
-    .p-links { display: flex; gap: 1rem; margin-top: 0.9rem; font-family: var(--mono); font-size: 0.78rem; }
+    .project-card:hover {
+      border-color: rgba(248,113,113,0.42);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 46px rgba(0,0,0,0.28), 0 0 0 1px rgba(248,113,113,0.04);
+    }
+    .project-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
+    .project-card .p-date {
+      font-family: var(--mono); font-size: 0.72rem;
+      color: var(--accent); margin-bottom: 0.85rem;
+      letter-spacing: 0.03em;
+    }
+    .project-card h3 { font-size: 1rem; font-weight: 650; line-height: 1.42; margin-bottom: 0.75rem; }
+    .project-card p {
+      color: var(--muted); font-size: 0.86rem; line-height: 1.62;
+      margin-bottom: 1.05rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .project-card .tags { margin-top: auto; margin-bottom: 0.85rem; }
+    .p-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.1rem; font-family: var(--mono); font-size: 0.73rem; }
     .p-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .p-links a::after { content: '↗'; margin-left: 0.25rem; font-size: 0.68rem; }
     .p-links a:hover { color: var(--accent); }
+
+    .project-modal {
+      position: fixed; inset: 0; z-index: 100;
+      display: none; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      background: rgba(3,7,18,0.68);
+      backdrop-filter: blur(14px);
+    }
+    .project-modal.open { display: flex; }
+    .project-dialog {
+      width: min(700px, 100%);
+      max-height: min(760px, 88vh);
+      overflow: auto;
+      background:
+        linear-gradient(180deg, rgba(248,113,113,0.07), transparent 34%),
+        rgba(13,21,38,0.97);
+      border: 1px solid rgba(248,113,113,0.35);
+      border-radius: 8px;
+      box-shadow: 0 32px 100px rgba(0,0,0,0.58), 0 0 56px rgba(248,113,113,0.1);
+      padding: 1.8rem;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 0.9rem; right: 0.9rem;
+      width: 2rem; height: 2rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(248,113,113,0.28); border-radius: 6px;
+      background: rgba(248,113,113,0.08); color: var(--accent2);
+      cursor: pointer; font-size: 1.1rem; line-height: 1;
+    }
+    .modal-close:hover {
+      color: var(--accent);
+      border-color: rgba(248,113,113,0.45);
+    }
+    .modal-date {
+      display: inline-flex; width: fit-content;
+      font-family: var(--mono); font-size: 0.72rem;
+      color: var(--accent); margin-bottom: 0.85rem;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.18);
+      border-radius: 999px; padding: 0.18rem 0.58rem;
+    }
+    .modal-title {
+      font-size: 1.28rem; line-height: 1.28;
+      margin: 0 2.4rem 1rem 0;
+    }
+    .modal-body p {
+      color: var(--muted); font-size: 0.94rem;
+      line-height: 1.78; margin-bottom: 1.25rem;
+    }
+    .modal-section { margin-top: 1.15rem; }
+    .modal-section-title {
+      font-family: var(--mono); font-size: 0.72rem;
+      color: var(--accent); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 0.55rem;
+    }
+    .modal-points {
+      list-style: none; display: grid; gap: 0.45rem;
+      color: var(--muted); font-size: 0.9rem; line-height: 1.65;
+    }
+    .modal-points li {
+      position: relative; padding-left: 1rem;
+    }
+    .modal-points li::before {
+      content: '▸'; position: absolute; left: 0;
+      color: var(--accent);
+    }
+    .modal-body .tags { margin-top: 0.25rem; margin-bottom: 1.15rem; }
+    .modal-body .p-links {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(248,113,113,0.16);
+    }
+    .modal-body .p-links a { color: var(--accent2); }
+    .modal-body .p-links a:hover { color: var(--accent); }
 
     /* ── SKILLS ──────────────────────────────────────── */
     .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.75rem; }
@@ -315,6 +422,7 @@
       .hero-fact { padding: 0.85rem; }
       .edu-card { padding: 1.35rem; }
       .edu-detail { grid-template-columns: 1fr; gap: 0.15rem; }
+      .project-dialog { padding: 1.25rem; }
     }
 
     /* ── SECTION ACCENT OVERRIDES ────────────────────── */
@@ -330,8 +438,12 @@
       --accent-dim: rgba(248,113,113,0.08);
       --accent2:    #fca5a5;
     }
-    #projects .project-card:hover { border-color: rgba(248,113,113,0.35); }
-    #projects .tag { border-color: rgba(248,113,113,0.2); }
+    #projects .project-card:hover { border-color: rgba(248,113,113,0.42); }
+    #projects .tag {
+      color: var(--accent2);
+      background: rgba(248,113,113,0.07);
+      border-color: rgba(248,113,113,0.18);
+    }
   </style>
 </head>
 <body>
@@ -362,16 +474,24 @@
             <span class="fact-icon" aria-hidden="true">▣</span>
             <div>
               <div class="fact-label">Work</div>
-              <div class="fact-title">Software Engineer @ <span>Applied Materials</span></div>
-              <div class="fact-subtitle">AIx · Santa Clara, CA</div>
+              <div class="fact-title">Software Engineer, <span>Applied Materials</span></div>
+              <div class="fact-subtitle">2024 - Present</div>
             </div>
           </div>
           <div class="hero-fact">
             <span class="fact-icon" aria-hidden="true">◈</span>
             <div>
               <div class="fact-label">School</div>
-              <div class="fact-title">M.S. Applied Data Science @ <span>University of Michigan</span></div>
-              <div class="fact-subtitle">Ann Arbor · Aug 2025 — Present</div>
+              <div class="fact-title">M.S. Applied Data Science, <span>University of Michigan</span></div>
+              <div class="fact-subtitle">2025 - Present</div>
+            </div>
+          </div>
+          <div class="hero-fact">
+            <span class="fact-icon" aria-hidden="true">◈</span>
+            <div>
+              <div class="fact-label"></div>
+              <div class="fact-title">B.S. Computer Engineering, <span>UC Santa Barbara</span></div>
+              <div class="fact-subtitle">2024</div>
             </div>
           </div>
         </div>
@@ -549,10 +669,10 @@
     </div>
     <div class="projects-grid">
 
-      <div class="project-card">
+      <div class="project-card" role="button" tabindex="0">
         <div class="p-date">Apr 2026</div>
         <h3>iso-code &mdash; Safe Worktree Management for AI Agents</h3>
-        <p>Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding agents (Claude Code, Cursor, Copilot). Prevents data loss from unmerged-commit deletion, orphaned worktrees, and git-crypt corruption with atomic state writes and cleanup-on-failure guarantees.</p>
+        <p data-detail="Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding agents (Claude Code, Cursor, Copilot). Enforces a 5-step unmerged-commit guard before deleting worktrees. Refuses nested worktree creation to prevent CWD-drift failures. Verifies git-crypt worktrees after creation and rolls back if encrypted blobs are still present. Uses atomic state writes with fsync and rename plus OS-level locking for crash-safe concurrency. Provides a port lease model with TTL cleanup and a circuit breaker after repeated git failures. Treats git worktree list --porcelain as the authoritative source and state.json as a cache.">Safe git worktree lifecycle management for AI coding agents.</p>
         <div class="tags">
           <span class="tag">Rust</span><span class="tag">CLI</span><span class="tag">MCP Server</span><span class="tag">Git</span>
         </div>
@@ -563,46 +683,52 @@
         </div>
       </div>
 
-      <a class="project-card" href="https://docs.google.com/presentation/d/1i2CXpXGompcRUWpghTWxZMa9jlVdfNEf/edit?usp=sharing&ouid=117853268674105555032&rtpof=true&sd=true" target="_blank">
+      <div class="project-card" role="button" tabindex="0">
         <div class="p-date">Nov 2023 — Jun 2024</div>
         <h3>Health Monitoring Wearable &mdash; Capstone</h3>
-        <p>Designed and manufactured a health monitoring wearable for nursing home residents: vital signs, activity tracking, temperature, ambient noise, and continuous heart rate/SpO₂. Built a 4-layer PCB in Altium and a data-efficient Android app for real-time visualization.</p>
+        <p data-detail="Designed and manufactured a health monitoring wearable for nursing home residents. Monitored vital signs, activity, temperature, ambient noise, and continuous heart rate/SpO₂. Built a 4-layer PCB in Altium and a data-efficient Android app for real-time visualization.">Remote health monitoring wearable for nursing home residents.</p>
         <div class="tags">
           <span class="tag">Python</span><span class="tag">C</span><span class="tag">Java</span><span class="tag">ASIC Design</span><span class="tag">Altium</span>
         </div>
-      </a>
+        <div class="p-links">
+          <a href="https://docs.google.com/presentation/d/1i2CXpXGompcRUWpghTWxZMa9jlVdfNEf/edit?usp=sharing&ouid=117853268674105555032&rtpof=true&sd=true" target="_blank" rel="noopener">slides</a>
+        </div>
+      </div>
 
-      <a class="project-card" href="https://github.com/snehith01001110/ChromaticTunerFPGADevelopment" target="_blank">
+      <div class="project-card" role="button" tabindex="0">
         <div class="p-date">Jan 2023</div>
         <h3>Chromatic Tuner FPGA Development</h3>
-        <p>Engineered a precise guitar tuner (65–4500 Hz) on FPGA. Enhanced FFT code for sub-30ms results using optimized lookup tables and hash-maps. Built an interactive GUI on a QP-nano Hierarchical State Machine with rotary encoders and onboard buttons.</p>
+        <p data-detail="Engineered a precise guitar tuner (65–4500 Hz) on FPGA. Enhanced FFT code for sub-30ms results using optimized lookup tables and hash-maps. Built an interactive GUI on a QP-nano Hierarchical State Machine with rotary encoders and onboard buttons.">FPGA-based chromatic tuner with fast FFT processing.</p>
         <div class="tags">
           <span class="tag">C</span><span class="tag">C++</span><span class="tag">FPGA</span><span class="tag">Embedded Systems</span>
         </div>
-      </a>
+        <div class="p-links">
+          <a href="https://github.com/snehith01001110/ChromaticTunerFPGADevelopment" target="_blank" rel="noopener">github</a>
+        </div>
+      </div>
 
-      <div class="project-card">
-        <div class="p-date">Personal Project</div>
+      <div class="project-card" role="button" tabindex="0">
+        <div class="p-date">Jan 2020</div>
         <h3>Stock Market Sentiment Analysis</h3>
-        <p>Developed a predictive model using NLP sentiment analysis on news articles, crawling APIs to surface positive/negative market signals. Built a GUI dashboard for real-time visualization of sentiment scores.</p>
+        <p data-detail="Developed a predictive model using NLP sentiment analysis on news articles, crawling APIs to surface positive/negative market signals. Built a GUI dashboard for real-time visualization of sentiment scores.">NLP sentiment model for surfacing market signals from news.</p>
         <div class="tags">
           <span class="tag">Python</span><span class="tag">NLP</span><span class="tag">ML</span>
         </div>
       </div>
 
-      <div class="project-card">
-        <div class="p-date">Competition</div>
+      <div class="project-card" role="button" tabindex="0">
+        <div class="p-date">Jan 2020</div>
         <h3>Supply Chain Optimization</h3>
-        <p>Ran regression analysis to optimize manufacturing output for a jeans company at a national competition. Modeled machine allocation, staffing, and throughput to maximize monthly revenue.</p>
+        <p data-detail="Ran regression analysis to optimize manufacturing output for a jeans company at a national competition. Modeled machine allocation, staffing, and throughput to maximize monthly revenue.">Regression-based manufacturing optimization for a competition case.</p>
         <div class="tags">
           <span class="tag">Python</span><span class="tag">Regression</span><span class="tag">Optimization</span>
         </div>
       </div>
 
-      <div class="project-card">
-        <div class="p-date">UCSB IEEE</div>
+      <div class="project-card" role="button" tabindex="0">
+        <div class="p-date">Apr 2022</div>
         <h3>Emotional Intelligence AI</h3>
-        <p>Collaborated with 15 engineers at UCSB IEEE to develop a deep learning model capable of detecting up to 7 basic emotions from real-time webcam input using computer vision.</p>
+        <p data-detail="Collaborated with 15 engineers at UCSB IEEE to develop a deep learning model capable of detecting up to 7 basic emotions from real-time webcam input using computer vision.">Computer vision model for real-time emotion detection.</p>
         <div class="tags">
           <span class="tag">Python</span><span class="tag">Deep Learning</span><span class="tag">Computer Vision</span>
         </div>
@@ -611,6 +737,15 @@
     </div>
   </div>
 </section>
+
+<div class="project-modal" id="project-modal" aria-hidden="true">
+  <div class="project-dialog" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+    <button class="modal-close" type="button" aria-label="Close project details">&times;</button>
+    <div class="modal-date"></div>
+    <h3 class="modal-title" id="project-modal-title"></h3>
+    <div class="modal-body"></div>
+  </div>
+</div>
 
 <!-- ── SKILLS ─────────────────────────────────────────── -->
 <section id="skills">
@@ -683,6 +818,100 @@
       const target = document.querySelector(a.getAttribute('href'));
       if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
     });
+  });
+
+  const projectModal = document.querySelector('#project-modal');
+  const projectDialog = projectModal?.querySelector('.project-dialog');
+  const modalClose = projectModal?.querySelector('.modal-close');
+  const modalDate = projectModal?.querySelector('.modal-date');
+  const modalTitle = projectModal?.querySelector('.modal-title');
+  const modalBody = projectModal?.querySelector('.modal-body');
+  let lastProjectTrigger = null;
+
+  function openProject(card) {
+    const date = card.querySelector('.p-date')?.textContent.trim() || '';
+    const title = card.querySelector('h3')?.textContent.trim() || '';
+    const cardParagraph = card.querySelector('p');
+    const detail = cardParagraph?.dataset.detail || cardParagraph?.textContent.trim() || '';
+    const tags = card.querySelector('.tags')?.cloneNode(true);
+    const links = card.querySelector('.p-links')?.cloneNode(true);
+
+    lastProjectTrigger = card;
+    modalDate.textContent = date;
+    modalDate.hidden = !date;
+    modalTitle.textContent = title;
+    modalBody.innerHTML = '';
+
+    if (detail) {
+      const sentences = detail.match(/[^.!?]+[.!?]+/g)?.map(s => s.trim()) || [detail];
+      const overview = document.createElement('p');
+      overview.textContent = sentences[0];
+      modalBody.appendChild(overview);
+
+      if (sentences.length > 1) {
+        const detailSection = document.createElement('div');
+        detailSection.className = 'modal-section';
+        detailSection.innerHTML = '<div class="modal-section-title">Details</div>';
+        const points = document.createElement('ul');
+        points.className = 'modal-points';
+        sentences.slice(1).forEach(sentence => {
+          const point = document.createElement('li');
+          point.textContent = sentence;
+          points.appendChild(point);
+        });
+        detailSection.appendChild(points);
+        modalBody.appendChild(detailSection);
+      }
+    }
+
+    if (tags) {
+      const stackSection = document.createElement('div');
+      stackSection.className = 'modal-section';
+      stackSection.innerHTML = '<div class="modal-section-title">Stack</div>';
+      stackSection.appendChild(tags);
+      modalBody.appendChild(stackSection);
+    }
+
+    if (links) {
+      const linksSection = document.createElement('div');
+      linksSection.className = 'modal-section';
+      linksSection.innerHTML = '<div class="modal-section-title">Links</div>';
+      linksSection.appendChild(links);
+      modalBody.appendChild(linksSection);
+    }
+
+    projectModal.classList.add('open');
+    projectModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    modalClose.focus();
+  }
+
+  function closeProject() {
+    projectModal.classList.remove('open');
+    projectModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    lastProjectTrigger?.focus();
+  }
+
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('a')) return;
+      openProject(card);
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openProject(card);
+      }
+    });
+  });
+
+  modalClose?.addEventListener('click', closeProject);
+  projectModal?.addEventListener('click', e => {
+    if (!projectDialog.contains(e.target)) closeProject();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && projectModal?.classList.contains('open')) closeProject();
   });
 </script>
 
