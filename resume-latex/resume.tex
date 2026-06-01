@@ -1,6 +1,6 @@
 \documentclass[11pt,letterpaper]{article}
 
-\usepackage[letterpaper,margin=0.55in,top=0.45in,bottom=0.42in]{geometry}
+\usepackage[letterpaper,margin=0.55in,top=0.40in,bottom=0.38in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{newtxtext}
 \usepackage{helvet}
@@ -23,7 +23,7 @@
 \setlength{\tabcolsep}{0pt}
 \setlength{\parskip}{0pt}
 \setlength{\emergencystretch}{1em}
-\linespread{1.01}
+\linespread{0.99}
 
 \newcommand{\namestyle}{\fontfamily{phv}\selectfont}
 \newcommand{\sectionstyle}{\fontfamily{phv}\bfseries\selectfont}
@@ -31,9 +31,9 @@
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 \newcommand{\resumesection}[1]{%
-  \vspace{5pt}%
+  \vspace{4pt}%
   {\centering{\sectionstyle\large #1}\par}%
-  \nointerlineskip\vspace{5pt}\hrule\vspace{6pt}%
+  \nointerlineskip\vspace{4pt}\hrule\vspace{5pt}%
 }
 
 \newcommand{\educationentry}[3]{%
@@ -54,14 +54,20 @@
   \end{tabularx}%
 }
 
+\newcommand{\projectentrynolink}[3]{%
+  \begin{tabularx}{\linewidth}{@{}Yr@{}}
+    {\sectionstyle #1} \textbar{} #2 & #3
+  \end{tabularx}%
+}
+
 \newenvironment{resumebullets}{%
   \RaggedRight
   \begin{itemize}[
     label=\raisebox{0.25ex}{\rule{3pt}{3pt}},
     leftmargin=0.32in,
     labelsep=0.12in,
-    itemsep=1.5pt,
-    topsep=1pt,
+    itemsep=1pt,
+    topsep=0pt,
     parsep=0pt,
     partopsep=0pt
   ]%
@@ -119,6 +125,14 @@
 
 \resumesection{PROJECT EXPERIENCE}
 
+\projectentrynolink{Pixel Pane -- AI Assistant}{SwiftUI, MLX, Cloudflare Workers, Anthropic API}{May 2026}
+\begin{resumebullets}
+  \item Built model-agnostic SwiftUI macOS AI assistant supporting any MLX-compatible backend, Anthropic Claude, and Apple Foundation Models — with per-provider health detection and lifecycle management.
+  \item Deployed Cloudflare Workers proxy normalizing Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing.
+  \item Engineered extensible action dispatch system with heuristic content classification, built-in handlers for translation and code debugging, and user-defined side effects.
+  \item Designed permission-gated security model with explicit file grants and scoped side-effect authorization before any system-level operation.
+\end{resumebullets}
+
 \projectentry{https://isocode.dev}{iso-code -- Safe Worktree Management for AI Agents}{Rust, CLI, MCP Server, Git}{Apr 2026}
 \begin{resumebullets}
   \item Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding
@@ -135,13 +149,6 @@
   ambient noise detection, and continuous heart rate and oxygen level measurement.
   \item Engineered a data-efficient Android app for real-time health data visualization and trend analysis.
   \item Designed and manufactured a 4-Layer PCB design in Altium.
-\end{resumebullets}
-
-\projectentry{https://snehithn.com/}{Chromatic Tuner FPGA Development}{C, C++, Embedded Systems, FPGA development}{Jan 2023}
-\begin{resumebullets}
-  \item Engineered a tuner for precise musical note identification for guitar tuning (65-4500 Hz).
-  \item Built a user-friendly GUI with interactive peripherals on a QP-nano State Machine.
-  \item Enhanced FFT code for sub-30ms results with optimized lookup tables and hash-maps.
 \end{resumebullets}
 
 \resumesection{SKILLS \& INTERESTS}
