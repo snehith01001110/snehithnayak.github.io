@@ -54,6 +54,12 @@
   \end{tabularx}%
 }
 
+\newcommand{\projectentrynolink}[3]{%
+  \begin{tabularx}{\linewidth}{@{}Yr@{}}
+    {\sectionstyle #1} \textbar{} #2 & #3
+  \end{tabularx}%
+}
+
 \newenvironment{resumebullets}{%
   \RaggedRight
   \begin{itemize}[
@@ -119,6 +125,14 @@
 
 \resumesection{PROJECT EXPERIENCE}
 
+\projectentrynolink{Pixel Pane -- AI Assistant}{SwiftUI, MLX, Cloudflare Workers, Anthropic API}{May 2026}
+\begin{resumebullets}
+  \item Built model-agnostic SwiftUI macOS AI assistant supporting any MLX-compatible backend, Anthropic Claude, and Apple Foundation Models — with per-provider health detection and lifecycle management.
+  \item Deployed Cloudflare Workers proxy normalizing Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing.
+  \item Engineered extensible action dispatch system with heuristic content classification, built-in handlers for translation and code debugging, and user-defined side effects.
+  \item Designed permission-gated security model with explicit file grants and scoped side-effect authorization before any system-level operation.
+\end{resumebullets}
+
 \projectentry{https://isocode.dev}{iso-code -- Safe Worktree Management for AI Agents}{Rust, CLI, MCP Server, Git}{Apr 2026}
 \begin{resumebullets}
   \item Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding
@@ -135,14 +149,6 @@
   ambient noise detection, and continuous heart rate and oxygen level measurement.
   \item Engineered a data-efficient Android app for real-time health data visualization and trend analysis.
   \item Designed and manufactured a 4-Layer PCB design in Altium.
-\end{resumebullets}
-
-\projectentry{https://snehithn.com/}{Pixel Pane -- AI Assistant}{SwiftUI, MLX, Cloudflare Workers, Anthropic API}{May 2026}
-\begin{resumebullets}
-  \item Built model-agnostic SwiftUI macOS AI assistant supporting any MLX-compatible backend, Anthropic Claude, and Apple Foundation Models — with per-provider health detection and lifecycle management.
-  \item Deployed Cloudflare Workers proxy normalizing Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing.
-  \item Engineered extensible action dispatch system with heuristic content classification, built-in handlers for translation and code debugging, and user-defined side effects.
-  \item Designed permission-gated security model with explicit file grants and scoped side-effect authorization before any system-level operation.
 \end{resumebullets}
 
 \resumesection{SKILLS \& INTERESTS}
