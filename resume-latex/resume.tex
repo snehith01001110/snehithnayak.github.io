@@ -1,6 +1,6 @@
 \documentclass[11pt,letterpaper]{article}
 
-\usepackage[letterpaper,margin=0.55in,top=0.45in,bottom=0.42in]{geometry}
+\usepackage[letterpaper,margin=0.55in,top=0.40in,bottom=0.38in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{newtxtext}
 \usepackage{helvet}
@@ -23,7 +23,7 @@
 \setlength{\tabcolsep}{0pt}
 \setlength{\parskip}{0pt}
 \setlength{\emergencystretch}{1em}
-\linespread{1.01}
+\linespread{0.99}
 
 \newcommand{\namestyle}{\fontfamily{phv}\selectfont}
 \newcommand{\sectionstyle}{\fontfamily{phv}\bfseries\selectfont}
@@ -31,9 +31,9 @@
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 \newcommand{\resumesection}[1]{%
-  \vspace{5pt}%
+  \vspace{4pt}%
   {\centering{\sectionstyle\large #1}\par}%
-  \nointerlineskip\vspace{5pt}\hrule\vspace{6pt}%
+  \nointerlineskip\vspace{4pt}\hrule\vspace{5pt}%
 }
 
 \newcommand{\educationentry}[3]{%
@@ -60,8 +60,8 @@
     label=\raisebox{0.25ex}{\rule{3pt}{3pt}},
     leftmargin=0.32in,
     labelsep=0.12in,
-    itemsep=1.5pt,
-    topsep=1pt,
+    itemsep=1pt,
+    topsep=0pt,
     parsep=0pt,
     partopsep=0pt
   ]%
@@ -137,7 +137,7 @@
   \item Designed and manufactured a 4-Layer PCB design in Altium.
 \end{resumebullets}
 
-\projectentry{#}{Pixel Pane -- AI Assistant}{SwiftUI, MLX, Cloudflare Workers, Anthropic API}{May 2026}
+\projectentry{https://snehithn.com/}{Pixel Pane -- AI Assistant}{SwiftUI, MLX, Cloudflare Workers, Anthropic API}{May 2026}
 \begin{resumebullets}
   \item Built model-agnostic SwiftUI macOS AI assistant supporting any MLX-compatible backend, Anthropic Claude, and Apple Foundation Models — with per-provider health detection and lifecycle management.
   \item Deployed Cloudflare Workers proxy normalizing Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing.
