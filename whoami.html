@@ -670,6 +670,18 @@
     <div class="projects-grid">
 
       <div class="project-card" role="button" tabindex="0">
+        <div class="p-date">May 2026 &mdash; Present</div>
+        <h3>Pixel Pane &mdash; Local-First macOS AI Assistant</h3>
+        <p data-detail="A model-agnostic, notch-native AI assistant for macOS, built in SwiftUI. Runs on-device MLX models by default and supports Anthropic Claude and Apple Foundation Models, with per-provider health detection and lifecycle management. Backed by a Cloudflare Workers proxy that normalizes Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing. Built on an extensible action-dispatch system with heuristic content classification and built-in handlers for translation and code debugging. Enforces a permission-gated security model with explicit file grants and scoped side-effect authorization before any system-level operation.">Notch-native macOS assistant that runs on-device by default, with permission-gated side effects.</p>
+        <div class="tags">
+          <span class="tag">SwiftUI</span><span class="tag">MLX</span><span class="tag">Cloudflare Workers</span><span class="tag">Anthropic API</span><span class="tag">macOS</span>
+        </div>
+        <div class="p-links">
+          <a href="https://pixelpane.app" target="_blank" rel="noopener">pixelpane.app</a>
+        </div>
+      </div>
+
+      <div class="project-card" role="button" tabindex="0">
         <div class="p-date">Apr 2026</div>
         <h3>iso-code &mdash; Safe Worktree Management for AI Agents</h3>
         <p data-detail="Built a Rust library, CLI, and MCP server providing safe git worktree lifecycle management for AI coding agents (Claude Code, Cursor, Copilot). Enforces a 5-step unmerged-commit guard before deleting worktrees. Refuses nested worktree creation to prevent CWD-drift failures. Verifies git-crypt worktrees after creation and rolls back if encrypted blobs are still present. Uses atomic state writes with fsync and rename plus OS-level locking for crash-safe concurrency. Provides a port lease model with TTL cleanup and a circuit breaker after repeated git failures. Treats git worktree list --porcelain as the authoritative source and state.json as a cache.">Safe git worktree lifecycle management for AI coding agents.</p>
