@@ -13,6 +13,10 @@
             animation: fadein 5s;
 
 }
+html {
+    color-scheme: dark;
+}
+
 body {
     background: #000000 !important;
   }
