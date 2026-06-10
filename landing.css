@@ -14,7 +14,7 @@
 
 }
 body {
-    background: #ffffff !important;
+    background: #000000 !important;
   }
 
 
@@ -45,8 +45,8 @@ body {
 .btn {
     display: inline-block;
     padding: 10px 20px;
-    background: #1d1d1d;
-    color: #ffffff;
+    background: #f5f5f5;
+    color: #0a0a0a;
     border: none;
     border-radius: 980px;
     font-size: 15px;
@@ -56,11 +56,21 @@ body {
 }
 
 .btn:hover {
-    background: #3a3a3a;
+    background: #d8d8d8;
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.12);
+    color: #f5f5f5;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.22);
 }
 
 a:focus-visible {
-    outline: 2px solid #1d1d1d;
+    outline: 2px solid #f5f5f5;
     outline-offset: 3px;
 }
 

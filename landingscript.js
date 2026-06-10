@@ -18,9 +18,9 @@ function init () {
 
 
   scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0xffffff, 0.001)
+  scene.fog = new THREE.FogExp2(0x000000, 0.001)
 
-  const color4 = new THREE.Color( 0xffffff );
+  const color4 = new THREE.Color( 0x000000 );
   scene.background = color4;
 
   const geometry = new THREE.BufferGeometry()
