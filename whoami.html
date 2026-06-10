@@ -26,6 +26,7 @@
     body {
       background: var(--bg);
       color: var(--text);
+      cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%3E%3Cpolygon%20points='5.5,3.2%205.5,21%2010.2,16.5%2013.2,23.2%2016.2,21.9%2013.2,15.3%2019.5,15.3'%20fill='white'%20stroke='black'%20stroke-width='1.2'/%3E%3C/svg%3E") 5 3, auto;
       font-family: var(--sans);
       font-size: 17px;
       line-height: 1.47059;
@@ -110,30 +111,6 @@
     }
     a, button { cursor: pointer; }
     .t-input { cursor: text; }
-
-    /* ── CUSTOM CURSOR ───────────────────────────────── */
-    html.custom-cursor, html.custom-cursor * { cursor: none !important; }
-    #cursor {
-      position: fixed; top: 0; left: 0;
-      z-index: 9999; pointer-events: none;
-    }
-    #cursor-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      background: #ffffff; border: 1.5px solid transparent;
-      box-shadow: 0 0 6px rgba(255,255,255,0.35);
-      transform: translate(-50%, -50%);
-      opacity: 0;
-      transition: width 0.18s ease, height 0.18s ease,
-                  background-color 0.18s ease, border-color 0.18s ease,
-                  transform 0.12s ease, opacity 0.15s ease;
-    }
-    #cursor-dot.is-visible { opacity: 1; }
-    #cursor-dot.is-link {
-      width: 34px; height: 34px;
-      background: rgba(240,240,240,0.08);
-      border-color: #f0f0f0;
-    }
-    #cursor-dot.is-down { transform: translate(-50%, -50%) scale(0.75); }
 
     /* ── TERMINAL BOX ────────────────────────────────── */
     .terminal-box {
@@ -777,8 +754,6 @@
   </div>
 </footer>
 
-<div id="cursor" aria-hidden="true"><div id="cursor-dot"></div></div>
-
 <script>
   const projectModal = document.querySelector('#project-modal');
   const projectDialog = projectModal?.querySelector('.project-dialog');
@@ -944,25 +919,6 @@
     });
   }
 
-  // Custom cursor — white dot that grows into a ring over interactive elements
-  (function () {
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const wrap = document.getElementById('cursor');
-    const dot = document.getElementById('cursor-dot');
-    if (!wrap || !dot) return;
-    document.documentElement.classList.add('custom-cursor');
-
-    const INTERACTIVE = 'a, button, [role="button"], .dot-red';
-    document.addEventListener('mousemove', e => {
-      wrap.style.transform = 'translate(' + e.clientX + 'px, ' + e.clientY + 'px)';
-      dot.classList.add('is-visible');
-      dot.classList.toggle('is-link', !!(e.target.closest && e.target.closest(INTERACTIVE)));
-    }, { passive: true });
-    document.addEventListener('mousedown', () => dot.classList.add('is-down'));
-    document.addEventListener('mouseup', () => dot.classList.remove('is-down'));
-    document.documentElement.addEventListener('mouseleave', () => dot.classList.remove('is-visible'));
-    document.documentElement.addEventListener('mouseenter', () => dot.classList.add('is-visible'));
-  })();
 </script>
 
 </body>
