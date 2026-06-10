@@ -18,9 +18,9 @@ function init () {
 
 
   scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0x080d1a, 0.001)
+  scene.fog = new THREE.FogExp2(0xffffff, 0.001)
 
-  const color4 = new THREE.Color( 0x080d1a );
+  const color4 = new THREE.Color( 0xffffff );
   scene.background = color4;
 
   const geometry = new THREE.BufferGeometry()
@@ -39,7 +39,9 @@ function init () {
 
   material = new THREE.PointsMaterial({
     size: 2,
-    color: 0xD68D4B,
+    color: 0xaeaeae,
+    transparent: true,
+    opacity: 0.8,
   })
 
   const particles = new THREE.Points(geometry, material)

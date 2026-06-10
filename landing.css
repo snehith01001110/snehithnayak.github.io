@@ -1,6 +1,8 @@
 #test p {
     margin-top: 25px;
-    font-size: 21px;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
     text-align: center;
 
 
@@ -12,25 +14,11 @@
 
 }
 body {
-    background: #080d1a !important;
+    background: #ffffff !important;
   }
 
 
 
-
-#test1 p1 {
-    margin-top:auto;
-    font-size: 21px;
-    text-align: center;
-
-
-    -webkit-animation: fadein 8s; 
-       -moz-animation: fadein 8s; 
-        -ms-animation: fadein 8s; 
-         -o-animation: fadein 8s; 
-            animation: fadein 8s;
-
-}
 
 @keyframes fadein {
     from { opacity: 0; }
@@ -54,72 +42,25 @@ body {
 
 
 
-@font-face {
-    font-family: 'pragmatapro';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapror_0824-webfont.svg#pragmataproregular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'pragmatapro_mono';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Regular0.824W/pragmatapro_mono_r_0824-webfont.svg#pragmatapro_monoregular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'pragmatapro';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmataproi_0824-webfont.svg#pragmataproitalic') format('svg');
-    font-weight: normal;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'pragmatapro_mono';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Italic0.824W/pragmatapro_mono_i_0824-webfont.svg#pragmatapro_monoitalic') format('svg');
-    font-weight: normal;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'pragmatapro';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmataproz_0824-webfont.svg#pragmataprobold_italic') format('svg');
-    font-weight: bold;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'pragmatapro_mono';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-BoldItalic0.824W/pragmatapro_mono_z_0824-webfont.svg#pragmatapro_monobold_italic') format('svg');
-    font-weight: bold;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'pragmatapro';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmataprob_0824-webfont.svg#pragmataprobold') format('svg');
-    font-weight: bold;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'pragmatapro_mono';
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.eot');
-    src: url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.eot?#iefix') format('embedded-opentype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.woff2') format('woff2'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.woff') format('woff'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.ttf') format('truetype'), url('https://s3.amazonaws.com/fonts-47/PragmataPro0.824W/PragmataPro-Bold0.824W/pragmatapro_mono_b_0824-webfont.svg#pragmatapro_monobold') format('svg');
-    font-weight: bold;
-    font-style: normal;
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #1d1d1d;
+    color: #ffffff;
+    border: none;
+    border-radius: 980px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
 }
 
 .btn:hover {
-    color: white !important;
-    border-color: white !important;
+    background: #3a3a3a;
+}
+
+a:focus-visible {
+    outline: 2px solid #1d1d1d;
+    outline-offset: 3px;
 }
 
