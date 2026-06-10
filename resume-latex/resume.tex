@@ -22,7 +22,9 @@
 \setlength{\parindent}{0pt}
 \setlength{\tabcolsep}{0pt}
 \setlength{\parskip}{0pt}
-\setlength{\emergencystretch}{1em}
+\setlength{\emergencystretch}{3em}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
 \linespread{0.99}
 
 \newcommand{\namestyle}{\fontfamily{phv}\selectfont}
@@ -31,9 +33,9 @@
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 \newcommand{\resumesection}[1]{%
-  \vspace{4pt}%
+  \vspace{2pt}%
   {\centering{\sectionstyle\large #1}\par}%
-  \nointerlineskip\vspace{4pt}\hrule\vspace{5pt}%
+  \nointerlineskip\vspace{2pt}\hrule\vspace{3pt}%
 }
 
 \newcommand{\educationentry}[3]{%
@@ -66,7 +68,7 @@
     label=\raisebox{0.25ex}{\rule{3pt}{3pt}},
     leftmargin=0.32in,
     labelsep=0.12in,
-    itemsep=1pt,
+    itemsep=0pt,
     topsep=0pt,
     parsep=0pt,
     partopsep=0pt
@@ -97,13 +99,17 @@
 
 \resumesection{WORK EXPERIENCE}
 
-\experienceentry{Applied Materials}{Software Engineer \link{https://www.appliedmaterials.com/us/en/semiconductor/solutions-and-software/ai-x.html}{AIx}}{Python, Machine Learning}{Santa Clara, CA}{July 2024 - Present}
+\experienceentry{Applied Materials}{Software Engineer \link{https://www.appliedmaterials.com/us/en/semiconductor/solutions-and-software/ai-x.html}{AIx}}{Distributed Systems, ML Infra}{Santa Clara, CA}{July 2024 - Present}
 \begin{resumebullets}
-  \item Creating a data search platform to accelerate time to market for semiconductor process development.
-  \item This platform aggregates sensor data, automatically links experiments done by process engineers to
-  metrology results, and allows for searching or generation of new processes to accelerate R\&D.
-  \item Serving as a core developer from initial proof-of-concept (Aug 2024) to production (Feb 2025), now
-  achieving 75\% adoption in Etch division (600+ monthly users).
+  \item Engineered a real-time data platform on Kubernetes, Apache Kafka (AWS MSK), and ClickHouse/DuckDB,
+  ingesting \textasciitilde35M rows/month of fab metrology and process data into a multi-billion-row store powering
+  search, analytics, and recommendations across process-development experiments.
+  \item Took the platform 0$\to$1 to production (Feb 2025) and scaled to 600+ monthly active users, hardening
+  the pipeline with priority-tiered Kafka topics, dead-letter queues, and circuit breakers for fault isolation.
+  \item Built a recommendation layer that analyzes linked experiment and metrology data to suggest which process
+  parameters engineers should tune, providing data-driven starting points for new semiconductor process recipes.
+  \item Designed an experiment-tracking and metadata-logging system that makes every fab process and metrology
+  run reproducible and directly comparable by configuration and result.
 \end{resumebullets}
 
 \experienceentry{KLA}{Machine Learning Engineer Intern - \link{https://snehithn.com/images/KLA-BBP.pdf}{BBP}}{Python, Image Classification}{Milpitas, CA}{June-Sept 2023}
@@ -117,8 +123,6 @@
 
 \experienceentry{Synopsys}{Application Development Intern}{Java, SQL, Data Processing}{Santa Clara, CA}{June-Sept 2022}
 \begin{resumebullets}
-  \item Conducted performance analysis and optimized algorithms for a branching process flow resulting in a
-  reduction of server load processing time from 10 minutes to 2.5 minutes.
   \item Automated contractor onboarding process saving 2,200 employee hours annually, improving system
   efficiency for over 2,000 users.
 \end{resumebullets}
@@ -157,8 +161,5 @@
 {\sectionstyle ML \& Data:} PyTorch, TensorFlow, ClickHouse, DuckDB\\
 {\sectionstyle Infrastructure:} Kubernetes, Kafka, AWS (MSK, S3, CloudWatch), Docker, FastAPI, Git\\
 {\sectionstyle AI tooling:} MCP, MLX\\
-\begin{tabularx}{\linewidth}{@{}Yr@{}}
-  {\sectionstyle Neural Networks and Deep Learning} \textbar{} \textit{deeplearning.ai} & Jan 2022
-\end{tabularx}
 
 \end{document}
