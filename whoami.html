@@ -352,18 +352,34 @@
     .modal-body .p-links a { color: var(--muted); }
     .modal-body .p-links a:hover { color: #f0f0f0; }
 
-    /* ── SKILLS ──────────────────────────────────────── */
-    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.75rem; }
-    .skill-cat h3 {
-      font-family: var(--mono); font-size: 0.8125rem; font-weight: 400;
-      color: var(--muted); margin-bottom: 0.85rem;
+    /* ── TINKERING LOG ───────────────────────────────── */
+    .log-feed { display: grid; }
+    .log-entry {
+      display: grid; grid-template-columns: 8.5rem minmax(0, 1fr);
+      gap: 1.75rem; align-items: start;
+      padding: 2rem 0; border-top: 1px solid var(--border);
     }
-    .skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .skill-tag {
-      background: #1a1a1a; color: #f0f0f0;
-      border: none;
-      padding: 6px 14px; border-radius: 980px;
-      font-size: 0.875rem; font-family: var(--sans);
+    .log-entry:first-child { border-top: none; padding-top: 0; }
+    .log-meta { display: flex; flex-direction: column; gap: 0.55rem; }
+    .log-date {
+      font-family: var(--sans); font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+    }
+    .log-type {
+      width: fit-content;
+      font-family: var(--mono); font-size: 0.75rem; color: var(--accent2);
+      background: var(--surface); border-radius: 6px; padding: 2px 9px;
+    }
+    .log-title { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.012em; margin-bottom: 0.4rem; }
+    .log-desc { color: var(--muted); font-size: 0.9375rem; line-height: 1.55; margin-bottom: 1.05rem; }
+    .swatches { display: flex; align-items: center; gap: 5px; margin-bottom: 1.05rem; }
+    .swatch {
+      width: 30px; height: 30px; border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .swatch-note {
+      font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
+      margin-left: 0.45rem;
     }
 
     /* ── FOOTER ──────────────────────────────────────── */
@@ -392,6 +408,8 @@
       .edu-grid   { grid-template-columns: 1fr; }
       section     { padding: 4.5rem 0; }
       .terminal-box { display: none; }
+      .log-entry { grid-template-columns: 1fr; gap: 0.85rem; padding: 1.6rem 0; }
+      .log-meta { flex-direction: row; align-items: center; gap: 0.75rem; }
     }
     @media (max-width: 500px) {
       .hero-text h1 { font-size: 2.75rem; }
@@ -693,55 +711,41 @@
   </div>
 </div>
 
-<!-- ── SKILLS ─────────────────────────────────────────── -->
-<section id="skills">
+<!-- ── TINKERING ──────────────────────────────────────── -->
+<section id="tinkering">
   <div class="container">
     <div class="section-header">
-      <p class="section-label">$ pip list &amp;&amp; cat skills.json</p>
-      <h2>Skills</h2>
+      <p class="section-label">$ tail -f ~/tinkering.log</p>
+      <h2>Tinkering</h2>
     </div>
-    <div class="skills-grid">
-      <div class="skill-cat">
-        <h3>// Languages</h3>
-        <div class="skill-tags">
-          <span class="skill-tag">Python</span>
-          <span class="skill-tag">C++</span>
-          <span class="skill-tag">C</span>
-          <span class="skill-tag">SQL</span>
-          <span class="skill-tag">Java</span>
-          <span class="skill-tag">HTML / CSS</span>
+    <div class="log-feed">
+
+      <div class="log-entry">
+        <div class="log-meta">
+          <span class="log-date">Jun 2026</span>
+          <span class="log-type">theme</span>
+        </div>
+        <div class="log-body">
+          <h3 class="log-title">noonlight &mdash; matching Terminal &amp; Zed themes</h3>
+          <p class="log-desc">Put macOS Terminal and Zed on one shared palette: a warm, low-glare dark scheme &mdash; espresso-black background, soft cream text, and a muted red&rarr;amber&rarr;green&rarr;aqua accent ramp. The shell and the editor render the same colors, so moving between them is seamless.</p>
+          <div class="swatches">
+            <span class="swatch" style="background:#0f0e0c" title="#0f0e0c &middot; background"></span>
+            <span class="swatch" style="background:#ea6962" title="#ea6962 &middot; red"></span>
+            <span class="swatch" style="background:#e78a4e" title="#e78a4e &middot; orange"></span>
+            <span class="swatch" style="background:#d8a657" title="#d8a657 &middot; yellow"></span>
+            <span class="swatch" style="background:#a9b665" title="#a9b665 &middot; green"></span>
+            <span class="swatch" style="background:#7daea3" title="#7daea3 &middot; blue"></span>
+            <span class="swatch" style="background:#d3869b" title="#d3869b &middot; magenta"></span>
+            <span class="swatch" style="background:#ebdbb2" title="#ebdbb2 &middot; foreground"></span>
+            <span class="swatch-note">shared palette</span>
+          </div>
+          <div class="p-links">
+            <a href="themes/noonlight.terminal" download>download .terminal</a>
+            <a href="themes/noonlight.json" download>download zed theme</a>
+          </div>
         </div>
       </div>
-      <div class="skill-cat">
-        <h3>// ML / AI</h3>
-        <div class="skill-tags">
-          <span class="skill-tag">PyTorch</span>
-          <span class="skill-tag">TensorFlow</span>
-          <span class="skill-tag">Deep Learning</span>
-          <span class="skill-tag">Computer Vision</span>
-          <span class="skill-tag">NLP</span>
-        </div>
-      </div>
-      <div class="skill-cat">
-        <h3>// Tools &amp; Platforms</h3>
-        <div class="skill-tags">
-          <span class="skill-tag">FastAPI</span>
-          <span class="skill-tag">ClickHouse</span>
-          <span class="skill-tag">AWS / S3</span>
-          <span class="skill-tag">Firebase</span>
-          <span class="skill-tag">Git</span>
-        </div>
-      </div>
-      <div class="skill-cat">
-        <h3>// Hardware</h3>
-        <div class="skill-tags">
-          <span class="skill-tag">FPGA</span>
-          <span class="skill-tag">ASIC Design</span>
-          <span class="skill-tag">PCB Design</span>
-          <span class="skill-tag">Embedded Systems</span>
-          <span class="skill-tag">Digital Logic</span>
-        </div>
-      </div>
+
     </div>
   </div>
 </section>
