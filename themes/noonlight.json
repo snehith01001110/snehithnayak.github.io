@@ -1,9 +1,9 @@
 {
-  "name": "Moonlander",
-  "author": "alexhird",
+  "name": "noonlight",
+  "author": "snehith nayak",
   "themes": [
     {
-      "name": "Moonlander",
+      "name": "noonlight",
       "appearance": "dark",
       "style": {
         "background": "#0f0e0c",
