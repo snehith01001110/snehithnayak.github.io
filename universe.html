@@ -8,6 +8,12 @@
   <meta name="theme-color" content="#000000">
   <title>Since the Big Bang</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="canonical" href="https://snehithn.com/universe.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Since the Big Bang">
+  <meta property="og:description" content="An interactive timeline of the universe — 13.8 billion years as a grid of blocks, from the Big Bang to today.">
+  <meta property="og:url" content="https://snehithn.com/universe.html">
+  <meta name="twitter:card" content="summary">
   <style>
     :root{
       color-scheme: dark;
@@ -139,13 +145,33 @@
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
+      background:none; border:none; padding:0; margin:0; cursor:pointer;
       font-family:var(--mono); font-size:0.6rem; color:var(--faint); white-space:nowrap;
     }
+    .tick::before{ content:""; position:absolute; inset:-9px -8px; }  /* enlarge tap target */
+    .tick:hover{ color:var(--text); }
+    .tick:hover i{ background:var(--text); }
+    .tick:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:3px; }
     .tick.l{ transform:none; left:0; }
     .tick.r{ transform:none; right:0; left:auto; }
     .tick i{ display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px; }
     .tick.l i, .tick.r i{ margin:0 0 2px; }
     @media (max-width:899px){ .tick.opt{ display:none; } }
+
+    /* keyboard focus for the scrollable timeline */
+    .scroller:focus-visible{ outline:2px solid var(--muted); outline-offset:-2px; }
+
+    /* one-time discoverability cue over the grid */
+    .cue{
+      position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
+      z-index:3; pointer-events:none;
+      font-family:var(--mono); font-size:0.68rem; color:var(--muted);
+      background:rgba(20,20,20,0.82); border:1px solid var(--border);
+      border-radius:999px; padding:6px 13px; white-space:nowrap;
+      -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+      animation: cue 5s ease forwards;
+    }
+    @keyframes cue{ 0%,58%{ opacity:1; } 100%{ opacity:0; } }
 
     /* ── overlay modal ── */
     .overlay{
@@ -181,7 +207,7 @@
     .modal-actions{ padding:2px 0 14px; }
     .modal-actions:empty{ display:none; }
     .modal-actions .ui{ padding:7px 12px; }
-    .modal-body{ overflow-y:auto; padding:6px 0 18px; }
+    .modal-body{ overflow-y:auto; overscroll-behavior:contain; padding:6px 0 18px; }
     .modal-body::-webkit-scrollbar{ width:8px; }
     .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
     .ev{ padding:14px 0; border-bottom:1px solid var(--border); }
@@ -192,9 +218,17 @@
     .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
     .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
 
+    /* grouped event list inside dense periods */
+    .grp-h{
+      font-family:var(--mono); font-size:0.66rem; color:var(--muted);
+      letter-spacing:0.02em; padding:13px 0 3px;
+    }
+    .grp .grp{ margin-left:9px; border-left:1px solid var(--border); padding-left:11px; }
+
     @media (prefers-reduced-motion: reduce){
       .modal{ animation:none; }
       .seg{ transition:none; }
+      .cue{ animation:none; }
     }
     @media (max-width:640px){
       .modal{ padding:22px 20px 6px; }
@@ -210,13 +244,15 @@
     </header>
 
     <div class="stage">
-      <div class="scroller" id="scroller">
+      <div class="scroller" id="scroller" tabindex="0" role="region"
+           aria-label="Timeline of the universe, from the Big Bang to today. Scroll to move through time.">
         <div class="spacer" id="spacer">
           <div class="win" id="win"></div>
         </div>
       </div>
       <div class="fade top"></div>
       <div class="fade bot"></div>
+      <div class="cue" id="cue">tap a block to explore</div>
     </div>
 
     <footer>
@@ -242,7 +278,7 @@
       <h2 class="modal-title" id="mTitle"></h2>
       <div class="modal-sub" id="mSub"></div>
       <div class="modal-actions" id="mActions"></div>
-      <div class="modal-body" id="mBody"></div>
+      <div class="modal-body" id="mBody" tabindex="0"></div>
     </div>
   </div>
 
@@ -1509,6 +1545,7 @@
     const commas = n => Math.round(n).toLocaleString('en-US');
     const trim = x => (Math.round(x*100)/100).toString();
     const calendar = yr => yr <= 0 ? (1 - yr) + " BCE" : yr + " CE";
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
     function fmtUnit(u){
       if (u >= 1e6) return (u/1e6) + "M yrs";
@@ -1666,9 +1703,15 @@
       ];
       ticksEl.innerHTML = marks.map(m => {
         const style = m.cls ? "" : `left:${(m.p*100).toFixed(2)}%`;
-        return `<span class="tick ${m.cls}${m.opt ? ' opt' : ''}" style="${style}"><i></i>${m.label}</span>`;
+        return `<button type="button" class="tick ${m.cls}${m.opt ? ' opt' : ''}" style="${style}" data-p="${m.p}" aria-label="Jump to ${m.label}"><i></i>${m.label}</button>`;
       }).join("");
     }
+    // tap an era marker → jump the scroll to that moment in time
+    ticksEl.addEventListener('click', (e) => {
+      const t = e.target.closest('.tick');
+      if (!t) return;
+      scroller.scrollTop = parseFloat(t.dataset.p) * Math.max(0, spacerH - scroller.clientHeight);
+    });
 
     // ── zoom (block size), keeping an anchor moment fixed on screen ──
     function zoomTo(newIdx, anchorT, anchorY){
@@ -1694,9 +1737,41 @@
     }
 
     // ── overlay ────────────────────────────────────────────────
-    let overlayOpenedAt = 0;
-    function openOverlay(){ overlay.hidden = false; overlayOpen = true; overlayOpenedAt = performance.now(); }
-    function closeOverlay(){ overlay.hidden = true; overlayOpen = false; }
+    let overlayOpenedAt = 0, lastFocus = null;
+    function openOverlay(){
+      lastFocus = document.activeElement;
+      overlay.hidden = false; overlayOpen = true; overlayOpenedAt = performance.now();
+      $('close').focus();
+    }
+    function closeOverlay(){
+      overlay.hidden = true; overlayOpen = false;
+      (lastFocus && lastFocus.focus ? lastFocus : scroller).focus();
+    }
+
+    // event list rendering — escape all data, and break a dense period into
+    // labelled sub-periods (recursively) so hundreds of events stay scannable
+    const evHtml = ev => `
+          <div class="ev">
+            <div class="ev-when">${esc(eventWhen(ev.t))}</div>
+            <p class="ev-title">${esc(ev.title)}</p>
+            <p class="ev-desc">${esc(ev.desc)}</p>
+          </div>`;
+    function groupLabel(a, b){
+      const s = ago(AGE - a), e = (AGE - b) <= 0 ? "today" : ago(AGE - b);
+      return s === e ? s : s + " → " + e;
+    }
+    function eventsHtml(list, tLo, tHi, depth){
+      if (list.length <= 18 || depth >= 3) return list.map(evHtml).join("");
+      const N = 10, step = (tHi - tLo) / N;
+      let html = "";
+      for (let i = 0; i < N; i++){
+        const a = tLo + i*step, b = (i === N - 1) ? tHi : tLo + (i + 1)*step;
+        const sub = list.filter(ev => ev.t >= a && ev.t < b);
+        if (!sub.length) continue;
+        html += `<div class="grp"><div class="grp-h">${esc(groupLabel(a, b))}  ·  ${sub.length}</div>${eventsHtml(sub, a, b, depth + 1)}</div>`;
+      }
+      return html;
+    }
 
     function select(gi){
       const u = unit();
@@ -1728,16 +1803,10 @@
 
       const list = EVENTS.filter(ev => ev.t >= t0 && ev.t < t1);
       if (list.length) $('mSub').textContent += "  ·  " + list.length + (list.length === 1 ? " event" : " events");
-      if (!list.length){
-        $('mBody').innerHTML = '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
-      } else {
-        $('mBody').innerHTML = list.map(ev => `
-          <div class="ev">
-            <div class="ev-when">${eventWhen(ev.t)}</div>
-            <p class="ev-title">${ev.title}</p>
-            <p class="ev-desc">${ev.desc}</p>
-          </div>`).join("");
-      }
+      $('mBody').innerHTML = list.length
+        ? eventsHtml(list, t0, t1, 0)
+        : '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
+      $('mBody').scrollTop = 0;
       openOverlay();
     }
 
@@ -1813,6 +1882,7 @@
     };
     barrow.addEventListener('pointerdown', (e) => {
       if (overlayOpen) return;
+      if (e.target.closest('.tick')) return;   // let era-marker taps jump instead of scrub
       const f = barFrac(e.clientX);
       const thumb0 = scroller.scrollTop / spacerH;
       const thumbW = Math.max(scroller.clientHeight / spacerH,
@@ -1846,7 +1916,19 @@
     });
 
     window.addEventListener('keydown', (e) => {
-      if (overlayOpen){ if (e.key === 'Escape') closeOverlay(); return; }
+      if (overlayOpen){
+        if (e.key === 'Escape'){ closeOverlay(); return; }
+        if (e.key === 'Tab'){
+          const f = [...overlay.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])')]
+            .filter(el => el.offsetParent !== null);
+          if (f.length){
+            const first = f[0], last = f[f.length - 1];
+            if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+          }
+        }
+        return;
+      }
       const vh = scroller.clientHeight;
       switch (e.key){
         case 'ArrowUp': case 'ArrowLeft':    e.preventDefault(); scroller.scrollTop -= rowH; break;
@@ -1860,11 +1942,16 @@
       }
     });
 
-    // resize / rotate: keep the era at the viewport center
-    let rz;
+    // resize / rotate: keep the era at the viewport center. A height-only
+    // change (mobile URL bar showing/hiding while you scroll) must NOT rebuild
+    // the grid — that would flicker — so only re-lay-out when the width changes.
+    let rz, lastW = 0;
     window.addEventListener('resize', () => {
       clearTimeout(rz);
       rz = setTimeout(() => {
+        const w = scroller.clientWidth;
+        if (w === lastW){ render(); return; }
+        lastW = w;
         const mid = scroller.clientHeight / 2;
         const anchorT = timeAtY(mid);
         setup(unitIdx);
@@ -1873,9 +1960,19 @@
       }, 120);
     });
 
+    // dismiss the one-time cue on first interaction or after its animation
+    const cue = $('cue');
+    if (cue){
+      const dropCue = () => cue.remove();
+      setTimeout(dropCue, 5200);
+      scroller.addEventListener('scroll', dropCue, { once: true, passive: true });
+      scroller.addEventListener('pointerdown', dropCue, { once: true });
+    }
+
     // ── go ─────────────────────────────────────────────────────
     buildTicks();
     setup(LAST);
+    lastW = scroller.clientWidth;
   })();
   </script>
 </body>
