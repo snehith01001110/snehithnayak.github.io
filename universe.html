@@ -104,17 +104,28 @@
     .readouts .showing{ color:var(--text); }
     .readouts .hint{ font-size:0.64rem; color:var(--faint); }
 
-    .barrow{ position:relative; }
+    .barrow{
+      position:relative;
+      padding:8px 0 2px;                 /* bigger touch/click target for scrubbing */
+      touch-action:none;
+      user-select:none; -webkit-user-select:none;
+      cursor:grab;
+    }
+    .barrow.full{ cursor:default; }      /* whole universe shown → nothing to scrub */
+    .barrow.grabbing{ cursor:grabbing; }
     .bar{
       position:relative; height:6px; border-radius:3px;
       background: rgba(240,240,240,0.08);
       overflow:visible;
     }
     .seg{
-      position:absolute; top:0; bottom:0;
+      position:absolute; top:-2px; bottom:-2px;   /* thumb sits proud of the track */
       background: var(--text); border-radius:3px;
-      min-width:2px;
+      min-width:10px;                              /* stays grabbable when zoomed in */
+      box-shadow: 0 0 6px rgba(240,240,240,0.35);
+      transition: box-shadow .15s ease;
     }
+    .barrow.grabbing .seg{ box-shadow: 0 0 11px rgba(240,240,240,0.65); }
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
@@ -204,9 +215,9 @@
       <div class="readouts">
         <span>view spans <b id="spanlabel"></b></span>
         <span class="showing" id="showing"></span>
-        <span class="hint">brighter blocks = more events · click any block</span>
+        <span class="hint">brighter blocks = more events · click a block · drag the bar to move</span>
       </div>
-      <div class="barrow">
+      <div class="barrow" id="barrow">
         <div class="bar"><div class="seg" id="seg"></div></div>
         <div class="ticks" id="ticks"></div>
       </div>
@@ -391,6 +402,7 @@
     const $ = id => document.getElementById(id);
     const grid = $('grid'), wrap = document.querySelector('.gridwrap');
     const seg = $('seg'), ticksEl = $('ticks');
+    const barrow = $('barrow'), bar = document.querySelector('.bar');
     const unitLabel = $('unitlabel'), spanLabel = $('spanlabel'), showing = $('showing');
     const overlay = $('overlay');
 
@@ -488,6 +500,7 @@
       seg.style.left = leftPct + "%";
       seg.style.width = wPct + "%";
       $('zoom').value = unitIdx;
+      barrow.classList.toggle('full', unitIdx === LAST);
     }
 
     function buildTicks(){
@@ -603,6 +616,49 @@
       const step = Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY)/40));
       pan(step * cols);
     }, { passive: false });
+
+    // ── scrub the bottom timeline bar to move the view window ──
+    // The bar is a minimap of all of time (Big Bang → now); the lit segment is
+    // the current view. Drag the segment, or tap anywhere, to focus that era.
+    const MIN_SEG_PX = 10;                       // matches .seg min-width (grab target)
+    let scrubbing = false, grabT = 0;            // grabT = years between pointer and winStart
+
+    const barFrac = clientX => {
+      const r = bar.getBoundingClientRect();
+      return (clientX - r.left) / Math.max(1, r.width);
+    };
+    function applyScrub(frac){
+      const before = winStart;
+      winStart = clampStart(frac * AGE - grabT);
+      if (winStart !== before){ paint(); updateScale(); }
+    }
+    function onBarMove(e){ if (scrubbing){ applyScrub(barFrac(e.clientX)); e.preventDefault(); } }
+    function onBarUp(){
+      if (!scrubbing) return;
+      scrubbing = false;
+      barrow.classList.remove('grabbing');
+      window.removeEventListener('pointermove', onBarMove);
+      window.removeEventListener('pointerup', onBarUp);
+    }
+    barrow.addEventListener('pointerdown', (e) => {
+      if (overlayOpen || unitIdx === LAST) return;   // whole universe: nothing to scrub
+      const r = bar.getBoundingClientRect();
+      const width = Math.max(1, r.width);
+      const span = cells * UNITS[unitIdx];
+      const t = ((e.clientX - r.left) / width) * AGE;
+      const thumbRightT = winStart + Math.max(span, (MIN_SEG_PX / width) * AGE);
+      if (t >= winStart && t <= thumbRightT){
+        grabT = t - winStart;              // grabbed the segment → drag without jumping
+      } else {
+        grabT = span / 2;                  // tapped the track → center the view here
+        applyScrub(t / AGE);
+      }
+      scrubbing = true;
+      barrow.classList.add('grabbing');
+      window.addEventListener('pointermove', onBarMove);
+      window.addEventListener('pointerup', onBarUp);
+      e.preventDefault();
+    });
 
     // keyboard
     window.addEventListener('keydown', (e) => {
