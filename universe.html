@@ -28,7 +28,8 @@
       color: var(--text);
       font-family: var(--sans);
       overflow: hidden;
-      overscroll-behavior: none;          /* no pull-to-refresh mid-drag */
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -38,86 +39,89 @@
       display:flex; flex-direction:column;
     }
 
-    /* ── top bar ── */
+    /* ── top bar: just the title ── */
     header{
       flex:0 0 auto;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:16px; flex-wrap:wrap;
-      padding:calc(12px + env(safe-area-inset-top)) 20px 10px;
+      display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+      padding:calc(12px + env(safe-area-inset-top)) 16px 8px;
     }
-    .title{ display:flex; align-items:baseline; gap:12px; min-width:0; }
-    .title h1{ font-size:0.98rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
-    .title a.home{ color:var(--muted); text-decoration:none; font-family:var(--mono); font-size:0.72rem; white-space:nowrap; }
-    .title a.home:hover{ color:var(--text); }
+    header h1{ font-size:0.95rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
+    header a.home{ color:var(--muted); text-decoration:none; font-family:var(--mono); font-size:0.72rem; white-space:nowrap; }
+    header a.home:hover{ color:var(--text); }
 
-    .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .scaleread{ font-family:var(--mono); font-size:0.74rem; color:var(--text); white-space:nowrap; }
-    .scaleread b{ font-weight:600; }
-    .zoom{ display:flex; align-items:center; gap:8px; }
-    .zoom .ends{ font-family:var(--mono); font-size:0.62rem; color:var(--faint); }
-    .zoom input[type=range]{
-      -webkit-appearance:none; appearance:none;
-      width:132px; height:2px; background:var(--border); border-radius:2px; outline:none;
+    /* ── the squares: a natively scrollable grid of all of time ── */
+    .stage{
+      flex:1 1 auto;
+      position:relative;
+      min-height:0; min-width:0;
+      margin:0 12px;
     }
-    .zoom input[type=range]::-webkit-slider-thumb{
-      -webkit-appearance:none; appearance:none; width:13px; height:13px; border-radius:50%;
-      background:var(--text); cursor:pointer; border:none;
+    .scroller{
+      position:absolute; inset:0;
+      overflow-y:auto; overflow-x:hidden;
+      overscroll-behavior:contain;
+      touch-action:pan-y;                    /* native scroll; pinch is ours */
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      outline:none;
     }
-    .zoom input[type=range]::-moz-range-thumb{ width:13px; height:13px; border-radius:50%; background:var(--text); cursor:pointer; border:none; }
+    .scroller::-webkit-scrollbar{ display:none; }
+    .spacer{ position:relative; }
+    .win{
+      position:absolute; top:0; left:0; right:0;
+      display:grid; justify-content:center;
+      will-change:transform;
+    }
+    .cell{
+      background: rgba(240,240,240,0.06);
+      border-radius: var(--r, 3px);
+    }
+    .cell.future{ background: rgba(240,240,240,0.015); }
+    .cell.now{ box-shadow: inset 0 0 0 1.5px var(--text); }
+    .cell.flash{ outline:1px solid rgba(240,240,240,0.55); outline-offset:-1px; }
+    @media (hover:hover){
+      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:pointer; }
+    }
+    .fade{ position:absolute; left:0; right:0; height:16px; pointer-events:none; z-index:2; }
+    .fade.top{ top:0;    background:linear-gradient(rgba(10,10,10,1), rgba(10,10,10,0)); }
+    .fade.bot{ bottom:0; background:linear-gradient(rgba(10,10,10,0), rgba(10,10,10,1)); }
+
+    /* ── bottom: position readout, block-size stepper, scrub bar ── */
+    footer{
+      flex:0 0 auto;
+      padding:8px 16px calc(12px + env(safe-area-inset-bottom));
+      display:flex; flex-direction:column; gap:9px;
+    }
+    .meta{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      font-family:var(--mono);
+    }
+    .pos{
+      font-size:0.76rem; color:var(--text);
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+    }
+    .zoom{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
       border:1px solid var(--border); border-radius:6px;
-      padding:5px 9px; cursor:pointer; line-height:1;
+      padding:5px 10px; cursor:pointer; line-height:1;
     }
     button.ui:hover{ background:var(--surface2); }
-
-    /* ── grid (the majority of the page) ── */
-    .gridwrap{
-      flex:1 1 auto;
-      position:relative;
-      margin:2px 16px 6px;
-      min-height:0; min-width:0;
-      touch-action:none;
-      user-select:none; -webkit-user-select:none;
+    button.ui:focus-visible, .unit:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
+    .unit b{ font-weight:600; }
+    @media (pointer:coarse){
+      button.ui{ padding:8px 12px; }
     }
-    #grid{
-      position:absolute; inset:0;
-      display:grid; gap:3px;
-      cursor:grab;
-    }
-    #grid.dragging{ cursor:grabbing; }
-    .cell{
-      background: rgba(240,240,240,0.06);
-      border-radius:2px;
-    }
-    .cell.future{ background: rgba(240,240,240,0.015); }
-    .cell.now{ box-shadow: inset 0 0 0 1.5px var(--text); }
-    @media (hover:hover){
-      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; }
-    }
-
-    /* ── bottom bar: readouts + scale bar ── */
-    footer{
-      flex:0 0 auto;
-      padding:6px 20px calc(14px + env(safe-area-inset-bottom));
-      display:flex; flex-direction:column; gap:8px;
-    }
-    .readouts{
-      display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
-      font-family:var(--mono); font-size:0.74rem; color:var(--muted);
-    }
-    .readouts .showing{ color:var(--text); }
-    .readouts .hint{ font-size:0.68rem; color:var(--faint); }
 
     .barrow{
       position:relative;
-      padding:8px 0 2px;                 /* bigger touch/click target for scrubbing */
+      padding:8px 0 2px;                    /* generous touch target */
       touch-action:none;
       user-select:none; -webkit-user-select:none;
       cursor:grab;
     }
-    .barrow.full{ cursor:default; }      /* whole universe shown → nothing to scrub */
     .barrow.grabbing{ cursor:grabbing; }
     .bar{
       position:relative; height:6px; border-radius:3px;
@@ -125,9 +129,9 @@
       overflow:visible;
     }
     .seg{
-      position:absolute; top:-2px; bottom:-2px;   /* thumb sits proud of the track */
+      position:absolute; top:-2px; bottom:-2px;
       background: var(--text); border-radius:3px;
-      min-width:10px;                              /* stays grabbable when zoomed in */
+      min-width:10px;
       box-shadow: 0 0 6px rgba(240,240,240,0.35);
       transition: box-shadow .15s ease;
     }
@@ -139,11 +143,9 @@
     }
     .tick.l{ transform:none; left:0; }
     .tick.r{ transform:none; right:0; left:auto; }
-    .tick i{
-      display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px;
-    }
+    .tick i{ display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px; }
     .tick.l i, .tick.r i{ margin:0 0 2px; }
-    @media (max-width:899px){ .tick.opt{ display:none; } }  /* narrow bars: drop optional ticks so labels never collide */
+    @media (max-width:899px){ .tick.opt{ display:none; } }
 
     /* ── overlay modal ── */
     .overlay{
@@ -164,7 +166,9 @@
       display:flex; flex-direction:column;
       padding:26px 26px 8px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      animation: modal-in .18s ease;
     }
+    @keyframes modal-in{ from{ opacity:0; transform: scale(0.97) translateY(6px); } }
     .modal .close{
       position:absolute; top:14px; right:14px;
       background:transparent; border:none; color:var(--muted);
@@ -174,6 +178,9 @@
     .modal-kicker{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
     .modal-title{ font-size:1.3rem; font-weight:600; margin:8px 0 3px; letter-spacing:-0.01em; line-height:1.2; }
     .modal-sub{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); margin-bottom:10px; }
+    .modal-actions{ padding:2px 0 14px; }
+    .modal-actions:empty{ display:none; }
+    .modal-actions .ui{ padding:7px 12px; }
     .modal-body{ overflow-y:auto; padding:6px 0 18px; }
     .modal-body::-webkit-scrollbar{ width:8px; }
     .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
@@ -185,27 +192,11 @@
     .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
     .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
 
-    /* ── polish: motion, focus, touch ergonomics ── */
-    .modal{ animation: modal-in .18s ease; }
-    @keyframes modal-in{ from{ opacity:0; transform: scale(0.97) translateY(6px); } }
-    .modal-actions{ padding:2px 0 14px; }
-    .modal-actions:empty{ display:none; }
-    .modal-actions .ui{ padding:7px 12px; }
-    button.ui:focus-visible, input[type=range]:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
-    @media (pointer:coarse){
-      button.ui{ padding:8px 12px; }
-      .zoom input[type=range]::-webkit-slider-thumb{ width:17px; height:17px; }
-      .zoom input[type=range]::-moz-range-thumb{ width:17px; height:17px; }
-    }
     @media (prefers-reduced-motion: reduce){
-      .modal{ animation: none; }
-      .seg{ transition: none; }
+      .modal{ animation:none; }
+      .seg{ transition:none; }
     }
-
     @media (max-width:640px){
-      .controls{ width:100%; justify-content:space-between; }
-      .zoom input[type=range]{ width:104px; }
-      .title h1{ font-size:0.92rem; }
       .modal{ padding:22px 20px 6px; }
       .modal-title{ font-size:1.15rem; }
     }
@@ -214,32 +205,28 @@
 <body>
   <div class="app">
     <header>
-      <div class="title">
-        <h1>Since the Big Bang</h1>
-        <a class="home" href="index.html">← home</a>
-      </div>
-      <div class="controls">
-        <span class="scaleread">each block = <b id="unitlabel">10M yrs</b></span>
-        <button class="ui" id="reset">whole universe</button>
-        <div class="zoom">
-          <button class="ui" id="zoomout" title="zoom out">−</button>
-          <span class="ends">10M</span>
-          <input type="range" id="zoom" min="0" max="7" step="1" value="0" aria-label="zoom level">
-          <span class="ends">1yr</span>
-          <button class="ui" id="zoomin" title="zoom in">+</button>
-        </div>
-      </div>
+      <h1>Since the Big Bang</h1>
+      <a class="home" href="index.html">← home</a>
     </header>
 
-    <div class="gridwrap">
-      <div id="grid"></div>
+    <div class="stage">
+      <div class="scroller" id="scroller">
+        <div class="spacer" id="spacer">
+          <div class="win" id="win"></div>
+        </div>
+      </div>
+      <div class="fade top"></div>
+      <div class="fade bot"></div>
     </div>
 
     <footer>
-      <div class="readouts">
-        <span>view spans <b id="spanlabel"></b></span>
-        <span class="showing" id="showing"></span>
-        <span class="hint">brighter blocks = more events · tap any block · drag the bar to jump</span>
+      <div class="meta">
+        <span class="pos" id="pos"></span>
+        <div class="zoom">
+          <button class="ui" id="zoomout" title="bigger blocks (zoom out)">−</button>
+          <button class="ui unit" id="unitbtn" title="zoom all the way out">block = <b id="unitlabel">10M yrs</b></button>
+          <button class="ui" id="zoomin" title="smaller blocks (zoom in)">+</button>
+        </div>
       </div>
       <div class="barrow" id="barrow">
         <div class="bar"><div class="seg" id="seg"></div></div>
@@ -266,11 +253,16 @@
     // ── constants ──────────────────────────────────────────────
     const AGE = 13_787_000_000;     // age of the universe, years
     const PRESENT_YEAR = 2026;      // "now"
-    const UNITS = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7]; // years per block; index 0 = finest
+    // years per block; index 0 = finest. The whole timeline is one scrollable
+    // grid at every level, so block size is honestly proportional to time:
+    // bigger blocks = more years each, and the page itself gets shorter.
+    const UNITS = [1e3, 1e4, 1e5, 1e6, 1e7];
+    const SIZES = [14, 20, 28, 40, 52];   // square px per level
+    const GAPS  = [2, 3, 3, 3, 3];
     const LAST = UNITS.length - 1;
-    const GAP = 3;
+    const OVERSCAN = 3;                   // extra rows rendered above/below view
 
-    // ── event data (years AFTER big bang, or ya = years ago, or ce = calendar year) ──
+    // ── event data (t = years after big bang, ya = years ago, ce = calendar year) ──
     const RAW = [
       {t:0,        title:"The Big Bang", desc:"Space, time, matter and energy begin. The universe is unimaginably hot and dense."},
       {t:1,        title:"Nucleosynthesis", desc:"In the first minutes, protons and neutrons fuse into the first hydrogen and helium nuclei."},
@@ -394,12 +386,6 @@
       if (u >= 1e3) return (u/1e3) + "k yrs";
       return u === 1 ? "1 yr" : u + " yrs";
     }
-    function fmtSpan(s){
-      if (s >= 1e9) return trim(s/1e9) + " billion yrs";
-      if (s >= 1e6) return trim(s/1e6) + " million yrs";
-      return commas(s) + " yrs";
-    }
-    // short "years ago", switching to calendar years for recent history
     function ago(ya){
       if (ya <= 0) return "today";
       if (ya >= 1e9) return trim(ya/1e9) + " billion yrs ago";
@@ -407,7 +393,6 @@
       if (ya >= 10000) return commas(ya) + " yrs ago";
       return calendar(Math.round(PRESENT_YEAR - ya));
     }
-    // precise date for a single event
     function eventWhen(t){
       const ya = AGE - t;
       if (ya <= 0) return "present day";
@@ -418,88 +403,72 @@
     }
 
     // ── state ──────────────────────────────────────────────────
-    let unitIdx = LAST;   // start fully zoomed out (whole universe)
-    let winStart = 0;     // years after big bang, top-left cell
-    let cols = 40, rows = 30, cells = 1200;
-    let cellEls = [];
+    let unitIdx = LAST;                 // start with the biggest blocks (10M yrs)
+    let cols = 1, cellPx = SIZES[LAST], gap = GAPS[LAST], rowH = 1;
+    let blocks = 0, totalRows = 0, nowBlock = 0, spacerH = 1;
+    let firstRow = -1, pool = [], blockCounts = new Map();
+    let flashT0 = 0, flashT1 = 0, flashUntil = 0;
     let overlayOpen = false;
 
     const $ = id => document.getElementById(id);
-    const grid = $('grid'), wrap = document.querySelector('.gridwrap');
-    const seg = $('seg'), ticksEl = $('ticks');
-    const barrow = $('barrow'), bar = document.querySelector('.bar');
-    const unitLabel = $('unitlabel'), spanLabel = $('spanlabel'), showing = $('showing');
+    const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
+    const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
+    const ticksEl = $('ticks'), pos = $('pos'), unitLabel = $('unitlabel');
     const overlay = $('overlay');
 
-    // ── layout: pick cols/rows so cells grow as each block spans more time ──
-    // coarsest zoom always shows the entire universe; finer zooms show a window
-    // with smaller cells, so block size visibly tracks the time each block covers.
-    function computeLayout(idx){
-      const r = wrap.getBoundingClientRect();
-      const W = Math.max(80, r.width), H = Math.max(80, r.height);
-      const unit = UNITS[idx];
+    const unit = () => UNITS[unitIdx];
 
-      if (idx === LAST){
-        const full = Math.ceil(AGE / unit);          // blocks to cover all of time
-        let px = Math.min(40, Math.sqrt((W*H)/full));
-        let c = Math.max(8, Math.floor((W+GAP)/(px+GAP)));
-        let rw = Math.max(8, Math.floor((H+GAP)/(px+GAP)));
-        while (c*rw < full && px > 4){                // shrink until everything fits (small phones need tiny cells)
-          px -= 1;
-          c  = Math.floor((W+GAP)/(px+GAP));
-          rw = Math.floor((H+GAP)/(px+GAP));
-        }
-        return { cols:c, rows:rw };
+    // ── layout: one grid for ALL of time at the current block size ──
+    function setup(idx){
+      unitIdx = idx;
+      cellPx = SIZES[idx]; gap = GAPS[idx];
+      rowH = cellPx + gap;
+      const W = scroller.clientWidth;
+      cols = Math.max(4, Math.floor((W + gap) / rowH));
+      blocks = Math.ceil(AGE / unit());
+      nowBlock = Math.min(blocks - 1, Math.floor(AGE / unit()));
+      totalRows = Math.ceil(blocks / cols);
+      spacerH = totalRows * rowH - gap;
+      spacer.style.height = spacerH + "px";
+      win.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+      win.style.gridAutoRows = cellPx + "px";
+      win.style.gap = gap + "px";
+      win.style.setProperty('--r', Math.max(2, Math.round(cellPx * 0.11)) + "px");
+
+      // events per block at this scale
+      blockCounts = new Map();
+      for (const ev of EVENTS){
+        const b = Math.min(blocks - 1, Math.floor(ev.t / unit()));
+        blockCounts.set(b, (blockCounts.get(b) || 0) + 1);
       }
-      // windowed: target cell size grows with zoom-out (18px → 25px)
-      const frac = idx / (LAST - 1);
-      const px = 18 + frac * (25 - 18);
-      const c  = Math.max(8, Math.floor((W+GAP)/(px+GAP)));
-      const rw = Math.max(8, Math.floor((H+GAP)/(px+GAP)));
-      return { cols:c, rows:rw };
-    }
 
-    function maxStart(){
-      const span = cells * UNITS[unitIdx];
-      return Math.max(0, AGE - span);
-    }
-    const clampStart = v => { const m = maxStart(); return m === 0 ? 0 : Math.min(m, Math.max(0, v)); };
-
-    // ── build grid DOM (on init, zoom, resize) ─────────────────
-    function rebuildGrid(){
-      const L = computeLayout(unitIdx);
-      cols = L.cols; rows = L.rows; cells = cols * rows;
-      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+      // pooled rows: only what fits on screen (plus overscan) ever exists in the DOM
+      const poolRows = Math.min(totalRows, Math.ceil(scroller.clientHeight / rowH) + OVERSCAN * 2);
+      win.innerHTML = "";
+      pool = new Array(poolRows * cols);
       const frag = document.createDocumentFragment();
-      cellEls = new Array(cells);
-      for (let i = 0; i < cells; i++){
+      for (let k = 0; k < pool.length; k++){
         const d = document.createElement('div');
         d.className = 'cell';
-        d.dataset.i = i;
-        cellEls[i] = d;
+        pool[k] = d;
         frag.appendChild(d);
       }
-      grid.innerHTML = "";
-      grid.appendChild(frag);
+      win.appendChild(frag);
+
+      unitLabel.textContent = fmtUnit(unit());
+      firstRow = -1;                    // force a repaint
+      render();
     }
 
-    // ── paint block brightness + markers ───────────────────────
-    function paint(){
-      const unit = UNITS[unitIdx];
-      const counts = new Int16Array(cells);
-      for (const ev of EVENTS){
-        if (ev.t < winStart) continue;
-        const idx = Math.floor((ev.t - winStart) / unit);
-        if (idx >= 0 && idx < cells) counts[idx]++;
-      }
-      const nowIdx = (AGE >= winStart && AGE <= winStart + cells*unit)
-        ? Math.min(cells - 1, Math.floor((AGE - winStart) / unit)) : -1;
-      for (let i = 0; i < cells; i++){
-        const el = cellEls[i];
-        const t0 = winStart + i*unit;
-        if (t0 >= AGE){ el.className = 'cell future'; el.style.background = ''; continue; }
-        const n = counts[i];
+    // ── paint the visible pool ─────────────────────────────────
+    function paintPool(){
+      const base = firstRow * cols;
+      const flashing = performance.now() < flashUntil;
+      for (let k = 0; k < pool.length; k++){
+        const gi = base + k, el = pool[k];
+        el.dataset.gi = gi;
+        if (gi >= blocks){ el.className = 'cell future'; el.style.background = ''; continue; }
+        const n = blockCounts.get(gi) || 0;
         let bg;
         if (n === 0)      bg = 0.06;
         else if (n === 1) bg = 0.20;
@@ -507,26 +476,54 @@
         else if (n <= 4)  bg = 0.52;
         else              bg = 0.74;
         el.style.background = `rgba(240,240,240,${bg})`;
-        el.className = (i === nowIdx) ? 'cell now' : 'cell';
+        let cls = 'cell';
+        if (gi === nowBlock) cls += ' now';
+        if (flashing){
+          const t = gi * unit();
+          if (t >= flashT0 && t < flashT1) cls += ' flash';
+        }
+        el.className = cls;
       }
     }
 
-    // ── scale readouts + bar ───────────────────────────────────
-    function updateScale(){
-      const unit = UNITS[unitIdx];
-      const span = cells * unit;
-      unitLabel.textContent = fmtUnit(unit);
-      spanLabel.textContent = fmtSpan(span);
-      const startYA = AGE - winStart;
-      const endYA = AGE - (winStart + span);
-      const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
-      showing.textContent = a === b ? "showing around " + a : "showing " + a + " → " + b;
-      const leftPct = Math.max(0, (winStart / AGE) * 100);
-      const wPct = Math.min(100 - leftPct, (span / AGE) * 100);
-      seg.style.left = leftPct + "%";
-      seg.style.width = wPct + "%";
-      $('zoom').value = LAST - unitIdx;   // slider: right = finer blocks = zoomed in
-      barrow.classList.toggle('full', unitIdx === LAST);
+    function render(){
+      const maxFirst = Math.max(0, totalRows - pool.length / cols);
+      const r0 = Math.min(maxFirst, Math.max(0, Math.floor(scroller.scrollTop / rowH) - OVERSCAN));
+      if (r0 !== firstRow){
+        firstRow = r0;
+        win.style.transform = `translateY(${r0 * rowH}px)`;
+        paintPool();
+      }
+      syncBar(); syncPos();
+    }
+
+    let rafPending = false;
+    scroller.addEventListener('scroll', () => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => { rafPending = false; render(); });
+    }, { passive: true });
+
+    // ── bottom bar = a scrollbar through time ──────────────────
+    function syncBar(){
+      seg.style.left = (scroller.scrollTop / spacerH * 100) + "%";
+      seg.style.width = Math.min(100, scroller.clientHeight / spacerH * 100) + "%";
+    }
+    function timeAtY(viewY){
+      return ((scroller.scrollTop + viewY) / rowH) * cols * unit();
+    }
+    // compact "years ago" for the always-visible readout
+    function agoShort(ya){
+      if (ya <= 0) return "today";
+      if (ya >= 1e9) return trim(ya/1e9) + "B yrs ago";
+      if (ya >= 1e6) return trim(ya/1e6) + "M yrs ago";
+      if (ya >= 10000) return commas(ya) + " yrs ago";
+      return calendar(Math.round(PRESENT_YEAR - ya));
+    }
+    function syncPos(){
+      const t = Math.min(AGE, Math.max(0, timeAtY(scroller.clientHeight / 2)));
+      const ya = AGE - t;
+      pos.textContent = ya <= 0 ? "today" : "≈ " + agoShort(ya);
     }
 
     function buildTicks(){
@@ -542,17 +539,40 @@
       }).join("");
     }
 
+    // ── zoom (block size), keeping an anchor moment fixed on screen ──
+    function zoomTo(newIdx, anchorT, anchorY){
+      newIdx = Math.max(0, Math.min(LAST, newIdx));
+      if (newIdx === unitIdx) return;
+      setup(newIdx);
+      scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - anchorY;
+      render();
+    }
+    const stepZoom = dir => {
+      const mid = scroller.clientHeight / 2;
+      zoomTo(unitIdx + dir, timeAtY(mid), mid);
+    };
+
+    // "zoom into this period": finer blocks, period parked near the top
+    function focusSpan(t0, t1){
+      const target = Math.max(0, unitIdx - 2);
+      if (target !== unitIdx) setup(target);
+      scroller.scrollTop = (t0 / (unit() * cols)) * rowH - rowH;
+      flashT0 = t0; flashT1 = t1; flashUntil = performance.now() + 1400;
+      firstRow = -1; render();
+      setTimeout(() => { firstRow = -1; render(); }, 1500);
+    }
+
     // ── overlay ────────────────────────────────────────────────
     let overlayOpenedAt = 0;
     function openOverlay(){ overlay.hidden = false; overlayOpen = true; overlayOpenedAt = performance.now(); }
     function closeOverlay(){ overlay.hidden = true; overlayOpen = false; }
 
-    function select(idx){
-      const unit = UNITS[unitIdx];
-      const t0 = winStart + idx*unit, t1 = t0 + unit;
+    function select(gi){
+      const u = unit();
+      const t0 = gi * u, t1 = t0 + u;
       const startYA = AGE - t0, endYA = AGE - t1;
 
-      $('mKicker').textContent = "each block = " + fmtUnit(unit);
+      $('mKicker').textContent = "each block = " + fmtUnit(u);
 
       if (t0 >= AGE){
         $('mTitle').textContent = "The future";
@@ -562,14 +582,12 @@
         openOverlay(); return;
       }
 
-      // headline for the block
-      $('mTitle').textContent = (unit <= 100)
+      $('mTitle').textContent = (u <= 100)
         ? calendar(Math.round(PRESENT_YEAR - startYA))
         : ago(startYA);
       const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
       $('mSub').textContent = a === b ? "this block covers about " + a : "this block spans " + a + " → " + b;
 
-      // drill in: re-scale so this block becomes (roughly) the whole screen
       if (unitIdx > 0){
         $('mActions').innerHTML = '<button class="ui" id="mZoom">zoom into this period</button>';
         $('mZoom').addEventListener('click', () => { closeOverlay(); focusSpan(t0, t1); });
@@ -591,259 +609,141 @@
       openOverlay();
     }
 
-    // ── zoom ───────────────────────────────────────────────────
-    function setZoom(newIdx){
-      newIdx = Math.max(0, Math.min(LAST, newIdx));
-      if (newIdx === unitIdx) return;
-      const centerT = winStart + (cells/2) * UNITS[unitIdx];
-      unitIdx = newIdx;
-      rebuildGrid();
-      const span = cells * UNITS[unitIdx];
-      winStart = (unitIdx === LAST) ? 0 : clampStart(centerT - span/2);
-      paint(); updateScale();
-    }
-
-    // zoom keeping the moment under (clientX, clientY) fixed on screen
-    function timeAtPoint(clientX, clientY){
-      const r = grid.getBoundingClientRect();
-      const col = Math.max(0, Math.min(cols - 1, Math.floor((clientX - r.left) / (r.width / cols))));
-      const row = Math.max(0, Math.min(rows - 1, Math.floor((clientY - r.top) / (r.height / rows))));
-      return winStart + (row * cols + col) * UNITS[unitIdx];
-    }
-    function zoomAtPoint(newIdx, clientX, clientY){
-      newIdx = Math.max(0, Math.min(LAST, newIdx));
-      if (newIdx === unitIdx) return;
-      const anchorT = timeAtPoint(clientX, clientY);
-      unitIdx = newIdx;
-      rebuildGrid();
-      if (unitIdx === LAST){
-        winStart = 0;
-      } else {
-        const r = grid.getBoundingClientRect();
-        const col = Math.max(0, Math.min(cols - 1, Math.floor((clientX - r.left) / (r.width / cols))));
-        const row = Math.max(0, Math.min(rows - 1, Math.floor((clientY - r.top) / (r.height / rows))));
-        winStart = clampStart(anchorT - (row * cols + col) * UNITS[unitIdx]);
-      }
-      paint(); updateScale();
-    }
-
-    // "zoom into this period": drop enough levels that the block fills the view
-    function focusSpan(t0, t1){
-      const target = Math.max(0, unitIdx - 3);      // ×1000 finer → one block ≈ one screen
-      if (target === unitIdx) return;
-      unitIdx = target;
-      rebuildGrid();
-      const span = cells * UNITS[unitIdx];
-      winStart = clampStart((t0 + t1) / 2 - span / 2);
-      paint(); updateScale();
-    }
-
-    // ── pan ────────────────────────────────────────────────────
-    function pan(dCells){
-      const before = winStart;
-      winStart = clampStart(winStart + dCells * UNITS[unitIdx]);
-      if (winStart !== before){ paint(); updateScale(); }
-    }
-
-    // ── grid gestures: 1 finger = pan / tap, 2 fingers = pinch zoom + pan ──
-    const pointers = new Map();          // pointerId → {x, y}
-    let tapOK = false, startX = 0, startY = 0, lastX = 0, lastY = 0, accX = 0, accY = 0;
-    let pinch0 = null;                   // {dist, idx, mx, my} at pinch start
-
-    const pinchDist = () => {
-      const [a, b] = [...pointers.values()];
-      return Math.max(20, Math.hypot(a.x - b.x, a.y - b.y));
-    };
-    const pinchMid = () => {
-      const [a, b] = [...pointers.values()];
-      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    };
-    const armPinch = () => {
-      const m = pinchMid();
-      pinch0 = { dist: pinchDist(), idx: unitIdx, mx: m.x, my: m.y };
-    };
-
-    grid.addEventListener('pointerdown', (e) => {
-      if (overlayOpen || e.button > 0) return;
-      try { grid.setPointerCapture(e.pointerId); } catch {}
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pointers.size === 1){
-        tapOK = true;
-        startX = lastX = e.clientX; startY = lastY = e.clientY;
-        accX = accY = 0;
-        grid.classList.add('dragging');
-      } else {
-        tapOK = false;
-        if (pointers.size === 2) armPinch();
-      }
+    // tap a block: plain click delegation — the browser only fires a click
+    // when the finger didn't scroll, so no gesture juggling is needed
+    win.addEventListener('click', (e) => {
+      const cell = e.target.closest('.cell');
+      if (cell && cell.dataset.gi !== undefined) select(+cell.dataset.gi);
     });
 
-    grid.addEventListener('pointermove', (e) => {
-      const p = pointers.get(e.pointerId);
-      if (!p) return;
-      p.x = e.clientX; p.y = e.clientY;
-
-      if (pointers.size === 2 && pinch0){
-        const m = pinchMid();
-        // two-finger drag pans…
-        const cw = grid.clientWidth / cols, ch = grid.clientHeight / rows;
-        accX += (m.x - pinch0.mx) / cw; accY += (m.y - pinch0.my) / ch;
-        pinch0.mx = m.x; pinch0.my = m.y;
-        const sc = Math.trunc(accX), sr = Math.trunc(accY);
-        accX -= sc; accY -= sr;
-        const dPan = -(sr * cols + sc);
-        if (dPan) pan(dPan);
-        // …and every ×2 of finger spread is one zoom level, anchored at the midpoint
-        const steps = Math.round(Math.log2(pinchDist() / pinch0.dist));
-        const target = Math.max(0, Math.min(LAST, pinch0.idx - steps));
-        if (target !== unitIdx) zoomAtPoint(target, m.x, m.y);
-        return;
-      }
-      if (pointers.size !== 1) return;
-      const dx = e.clientX - lastX, dy = e.clientY - lastY;
-      lastX = e.clientX; lastY = e.clientY;
-      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 6) tapOK = false;
-      const cw = grid.clientWidth / cols, ch = grid.clientHeight / rows;
-      accX += dx / cw; accY += dy / ch;
-      const sc = Math.trunc(accX), sr = Math.trunc(accY);
-      accX -= sc; accY -= sr;
-      const d = -(sr * cols + sc);     // drag down/right → earlier in time
-      if (d) pan(d);
-    });
-
-    function endPointer(e){
-      if (!pointers.has(e.pointerId)) return;
-      pointers.delete(e.pointerId);
-      if (pointers.size === 2){ armPinch(); return; }   // 3 fingers → 2: restart pinch
-      if (pointers.size === 1){
-        // hand the drag to the remaining finger without a jump
-        pinch0 = null;
-        const [q] = pointers.values();
-        lastX = q.x; lastY = q.y; accX = accY = 0;
-        tapOK = false;
-        return;
-      }
-      pinch0 = null;
-      grid.classList.remove('dragging');
-      if (tapOK && e.type === 'pointerup'){
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        const cell = el && el.closest ? el.closest('.cell') : null;
-        if (cell && cell.dataset.i !== undefined) select(+cell.dataset.i);
-      }
-      tapOK = false;
-    }
-    grid.addEventListener('pointerup', endPointer);
-    grid.addEventListener('pointercancel', endPointer);
-
-    // wheel = pan by rows · ctrl/cmd+wheel (incl. trackpad pinch) = zoom at cursor
-    let wheelZoomAcc = 0;
-    wrap.addEventListener('wheel', (e) => {
-      if (overlayOpen) return;
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey){
-        wheelZoomAcc += -e.deltaY;
-        if (Math.abs(wheelZoomAcc) >= 50){
-          const dir = Math.sign(wheelZoomAcc);
-          wheelZoomAcc = 0;
-          zoomAtPoint(unitIdx - dir, e.clientX, e.clientY);
-        }
-        return;
-      }
-      const step = Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY)/40));
-      pan(step * cols);
-    }, { passive: false });
-
-    // ── scrub the bottom timeline bar to move the view window ──
-    // The bar is a minimap of all of time (Big Bang → now); the lit segment is
-    // the current view. Drag the segment, or tap anywhere, to focus that era.
-    const MIN_SEG_PX = 10;                       // matches .seg min-width (grab target)
-    let scrubbing = false, grabT = 0;            // grabT = years between pointer and winStart
-
-    const barFrac = clientX => {
-      const r = bar.getBoundingClientRect();
-      return (clientX - r.left) / Math.max(1, r.width);
-    };
-    function applyScrub(frac){
-      const before = winStart;
-      winStart = clampStart(frac * AGE - grabT);
-      if (winStart !== before){ paint(); updateScale(); }
-    }
-    function onBarMove(e){ if (scrubbing){ applyScrub(barFrac(e.clientX)); e.preventDefault(); } }
-    function onBarUp(){
-      if (!scrubbing) return;
-      scrubbing = false;
-      barrow.classList.remove('grabbing');
-      window.removeEventListener('pointermove', onBarMove);
-      window.removeEventListener('pointerup', onBarUp);
-      window.removeEventListener('pointercancel', onBarUp);
-    }
-    barrow.addEventListener('pointerdown', (e) => {
-      if (overlayOpen || unitIdx === LAST) return;   // whole universe: nothing to scrub
-      const r = bar.getBoundingClientRect();
-      const width = Math.max(1, r.width);
-      const span = cells * UNITS[unitIdx];
-      const t = ((e.clientX - r.left) / width) * AGE;
-      const thumbRightT = winStart + Math.max(span, (MIN_SEG_PX / width) * AGE);
-      if (t >= winStart && t <= thumbRightT){
-        grabT = t - winStart;              // grabbed the segment → drag without jumping
-      } else {
-        grabT = span / 2;                  // tapped the track → center the view here
-        applyScrub(t / AGE);
-      }
-      scrubbing = true;
-      barrow.classList.add('grabbing');
-      window.addEventListener('pointermove', onBarMove);
-      window.addEventListener('pointerup', onBarUp);
-      window.addEventListener('pointercancel', onBarUp);
-      e.preventDefault();
-    });
-
-    // keyboard
-    window.addEventListener('keydown', (e) => {
-      if (overlayOpen){ if (e.key === 'Escape') closeOverlay(); return; }
-      switch (e.key){
-        case 'ArrowLeft':  e.preventDefault(); pan(-1); break;
-        case 'ArrowRight': e.preventDefault(); pan(1); break;
-        case 'ArrowUp':    e.preventDefault(); pan(-cols); break;
-        case 'ArrowDown':  e.preventDefault(); pan(cols); break;
-        case '+': case '=': setZoom(unitIdx - 1); break;
-        case '-': case '_': setZoom(unitIdx + 1); break;
-        case 'Home': e.preventDefault(); winStart = 0; paint(); updateScale(); break;
-        case 'End':  e.preventDefault(); winStart = maxStart(); paint(); updateScale(); break;
-      }
-    });
-
-    // controls
-    $('zoom').addEventListener('input', e => setZoom(LAST - +e.target.value));
-    $('zoomin').addEventListener('click', () => setZoom(unitIdx - 1));
-    $('zoomout').addEventListener('click', () => setZoom(unitIdx + 1));
-    $('reset').addEventListener('click', () => { unitIdx = LAST; winStart = 0; rebuildGrid(); paint(); updateScale(); });
-    $('close').addEventListener('click', closeOverlay);
-    // capture phase: swallow the ghost click a touch synthesizes right after
-    // the tap that opened the modal, else it instantly closes / mis-clicks it
+    // capture phase: swallow the ghost click a touch can synthesize right
+    // after the tap that opened the modal
     overlay.addEventListener('click', (e) => {
       if (performance.now() - overlayOpenedAt < 350){ e.stopPropagation(); e.preventDefault(); return; }
       if (e.target === overlay) closeOverlay();
     }, true);
+    $('close').addEventListener('click', closeOverlay);
 
-    // resize (debounced), keep view centered
+    // ── pinch zoom via touch events (robust on iOS Safari) ─────
+    let pinch = null;
+    scroller.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2){
+        const [a, b] = e.touches;
+        const rect = scroller.getBoundingClientRect();
+        const midY = (a.clientY + b.clientY) / 2 - rect.top;
+        pinch = {
+          d0: Math.max(30, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)),
+          idx: unitIdx,
+          anchorT: timeAtY(midY),
+          midY,
+        };
+      } else {
+        pinch = null;
+      }
+    }, { passive: true });
+    scroller.addEventListener('touchmove', (e) => {
+      if (e.touches.length >= 2){
+        e.preventDefault();               // stop Safari's page zoom / scroll
+        if (!pinch) return;
+        const [a, b] = e.touches;
+        const d = Math.max(30, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY));
+        const steps = Math.round(Math.log2(d / pinch.d0));   // ×2 spread = 1 level
+        const target = Math.max(0, Math.min(LAST, pinch.idx - steps));
+        if (target !== unitIdx) zoomTo(target, pinch.anchorT, pinch.midY);
+      }
+    }, { passive: false });
+    const endPinch = e => { if (e.touches.length < 2) pinch = null; };
+    scroller.addEventListener('touchend', endPinch);
+    scroller.addEventListener('touchcancel', endPinch);
+    // Safari-proprietary gesture events would still page-zoom; disarm them
+    for (const t of ['gesturestart', 'gesturechange', 'gestureend'])
+      document.addEventListener(t, e => e.preventDefault(), { passive: false });
+
+    // ctrl/cmd+wheel (trackpad pinch) = zoom at cursor; plain wheel scrolls natively
+    let wheelAcc = 0;
+    scroller.addEventListener('wheel', (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      wheelAcc += -e.deltaY;
+      if (Math.abs(wheelAcc) >= 50){
+        const dir = Math.sign(wheelAcc);
+        wheelAcc = 0;
+        const y = e.clientY - scroller.getBoundingClientRect().top;
+        zoomTo(unitIdx - dir, timeAtY(y), y);
+      }
+    }, { passive: false });
+
+    // ── scrub the bottom bar = drag the scroll position ────────
+    let scrubbing = false, grabFrac = 0;
+    const barFrac = x => {
+      const r = bar.getBoundingClientRect();
+      return (x - r.left) / Math.max(1, r.width);
+    };
+    barrow.addEventListener('pointerdown', (e) => {
+      if (overlayOpen) return;
+      const f = barFrac(e.clientX);
+      const thumb0 = scroller.scrollTop / spacerH;
+      const thumbW = Math.max(scroller.clientHeight / spacerH,
+                              10 / Math.max(1, bar.getBoundingClientRect().width));
+      if (f >= thumb0 && f <= thumb0 + thumbW){
+        grabFrac = f - thumb0;            // grabbed the thumb: no jump
+      } else {
+        grabFrac = thumbW / 2;            // tapped the track: center there
+        scroller.scrollTop = (f - grabFrac) * spacerH;
+      }
+      scrubbing = true;
+      barrow.classList.add('grabbing');
+      try { barrow.setPointerCapture(e.pointerId); } catch {}
+      e.preventDefault();
+    });
+    barrow.addEventListener('pointermove', (e) => {
+      if (!scrubbing) return;
+      scroller.scrollTop = (barFrac(e.clientX) - grabFrac) * spacerH;
+      e.preventDefault();
+    });
+    const endScrub = () => { scrubbing = false; barrow.classList.remove('grabbing'); };
+    barrow.addEventListener('pointerup', endScrub);
+    barrow.addEventListener('pointercancel', endScrub);
+
+    // ── controls & keyboard ────────────────────────────────────
+    $('zoomin').addEventListener('click', () => stepZoom(-1));
+    $('zoomout').addEventListener('click', () => stepZoom(1));
+    $('unitbtn').addEventListener('click', () => {
+      const mid = scroller.clientHeight / 2;
+      zoomTo(LAST, timeAtY(mid), mid);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (overlayOpen){ if (e.key === 'Escape') closeOverlay(); return; }
+      const vh = scroller.clientHeight;
+      switch (e.key){
+        case 'ArrowUp': case 'ArrowLeft':    e.preventDefault(); scroller.scrollTop -= rowH; break;
+        case 'ArrowDown': case 'ArrowRight': e.preventDefault(); scroller.scrollTop += rowH; break;
+        case 'PageUp':   e.preventDefault(); scroller.scrollTop -= vh * 0.9; break;
+        case 'PageDown': e.preventDefault(); scroller.scrollTop += vh * 0.9; break;
+        case 'Home': e.preventDefault(); scroller.scrollTop = 0; break;
+        case 'End':  e.preventDefault(); scroller.scrollTop = spacerH; break;
+        case '+': case '=': stepZoom(-1); break;
+        case '-': case '_': stepZoom(1); break;
+      }
+    });
+
+    // resize / rotate: keep the era at the viewport center
     let rz;
     window.addEventListener('resize', () => {
       clearTimeout(rz);
       rz = setTimeout(() => {
-        const centerT = winStart + (cells/2) * UNITS[unitIdx];
-        rebuildGrid();
-        const span = cells * UNITS[unitIdx];
-        winStart = (unitIdx === LAST) ? 0 : clampStart(centerT - span/2);
-        paint(); updateScale();
+        const mid = scroller.clientHeight / 2;
+        const anchorT = timeAtY(mid);
+        setup(unitIdx);
+        scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - mid;
+        render();
       }, 120);
     });
 
     // ── go ─────────────────────────────────────────────────────
     buildTicks();
-    rebuildGrid();
-    paint();
-    updateScale();
+    setup(LAST);
   })();
   </script>
 </body>
