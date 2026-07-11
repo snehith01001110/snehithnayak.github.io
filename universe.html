@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="An interactive timeline of the universe — 13.8 billion years as a grid of blocks, from the Big Bang to today.">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#000000">
   <title>Since the Big Bang</title>
@@ -16,7 +17,7 @@
       --border:    #2a2a2a;
       --text:      #f0f0f0;
       --muted:     #8a8a8a;
-      --faint:     #5a5a5a;
+      --faint:     #6f6f6f;
       --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
       --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
     }
@@ -27,6 +28,7 @@
       color: var(--text);
       font-family: var(--sans);
       overflow: hidden;
+      overscroll-behavior: none;          /* no pull-to-refresh mid-drag */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -41,7 +43,7 @@
       flex:0 0 auto;
       display:flex; align-items:center; justify-content:space-between;
       gap:16px; flex-wrap:wrap;
-      padding:12px 20px 10px;
+      padding:calc(12px + env(safe-area-inset-top)) 20px 10px;
     }
     .title{ display:flex; align-items:baseline; gap:12px; min-width:0; }
     .title h1{ font-size:0.98rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
@@ -77,6 +79,7 @@
       margin:2px 16px 6px;
       min-height:0; min-width:0;
       touch-action:none;
+      user-select:none; -webkit-user-select:none;
     }
     #grid{
       position:absolute; inset:0;
@@ -90,11 +93,14 @@
     }
     .cell.future{ background: rgba(240,240,240,0.015); }
     .cell.now{ box-shadow: inset 0 0 0 1.5px var(--text); }
+    @media (hover:hover){
+      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; }
+    }
 
     /* ── bottom bar: readouts + scale bar ── */
     footer{
       flex:0 0 auto;
-      padding:6px 20px 14px;
+      padding:6px 20px calc(14px + env(safe-area-inset-bottom));
       display:flex; flex-direction:column; gap:8px;
     }
     .readouts{
@@ -102,7 +108,7 @@
       font-family:var(--mono); font-size:0.74rem; color:var(--muted);
     }
     .readouts .showing{ color:var(--text); }
-    .readouts .hint{ font-size:0.64rem; color:var(--faint); }
+    .readouts .hint{ font-size:0.68rem; color:var(--faint); }
 
     .barrow{
       position:relative;
@@ -137,6 +143,7 @@
       display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px;
     }
     .tick.l i, .tick.r i{ margin:0 0 2px; }
+    @media (max-width:899px){ .tick.opt{ display:none; } }  /* narrow bars: drop optional ticks so labels never collide */
 
     /* ── overlay modal ── */
     .overlay{
@@ -153,7 +160,7 @@
       border:1px solid var(--border);
       border-radius:14px;
       width:min(560px, 100%);
-      max-height:82vh;
+      max-height:82vh; max-height:82dvh;
       display:flex; flex-direction:column;
       padding:26px 26px 8px;
       box-shadow: 0 24px 60px rgba(0,0,0,0.6);
@@ -178,6 +185,23 @@
     .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
     .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
 
+    /* ── polish: motion, focus, touch ergonomics ── */
+    .modal{ animation: modal-in .18s ease; }
+    @keyframes modal-in{ from{ opacity:0; transform: scale(0.97) translateY(6px); } }
+    .modal-actions{ padding:2px 0 14px; }
+    .modal-actions:empty{ display:none; }
+    .modal-actions .ui{ padding:7px 12px; }
+    button.ui:focus-visible, input[type=range]:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
+    @media (pointer:coarse){
+      button.ui{ padding:8px 12px; }
+      .zoom input[type=range]::-webkit-slider-thumb{ width:17px; height:17px; }
+      .zoom input[type=range]::-moz-range-thumb{ width:17px; height:17px; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .modal{ animation: none; }
+      .seg{ transition: none; }
+    }
+
     @media (max-width:640px){
       .controls{ width:100%; justify-content:space-between; }
       .zoom input[type=range]{ width:104px; }
@@ -199,9 +223,9 @@
         <button class="ui" id="reset">whole universe</button>
         <div class="zoom">
           <button class="ui" id="zoomout" title="zoom out">−</button>
-          <span class="ends">1yr</span>
-          <input type="range" id="zoom" min="0" max="7" step="1" value="7">
           <span class="ends">10M</span>
+          <input type="range" id="zoom" min="0" max="7" step="1" value="0" aria-label="zoom level">
+          <span class="ends">1yr</span>
           <button class="ui" id="zoomin" title="zoom in">+</button>
         </div>
       </div>
@@ -215,7 +239,7 @@
       <div class="readouts">
         <span>view spans <b id="spanlabel"></b></span>
         <span class="showing" id="showing"></span>
-        <span class="hint">brighter blocks = more events · click a block · drag the bar to move</span>
+        <span class="hint">brighter blocks = more events · tap any block · drag the bar to jump</span>
       </div>
       <div class="barrow" id="barrow">
         <div class="bar"><div class="seg" id="seg"></div></div>
@@ -230,6 +254,7 @@
       <div class="modal-kicker" id="mKicker"></div>
       <h2 class="modal-title" id="mTitle"></h2>
       <div class="modal-sub" id="mSub"></div>
+      <div class="modal-actions" id="mActions"></div>
       <div class="modal-body" id="mBody"></div>
     </div>
   </div>
@@ -253,7 +278,7 @@
       {ya:13.6e9,  title:"Cosmic dawn — first stars", desc:"Gravity pulls hydrogen into the first stars, which begin forging heavier elements."},
       {ya:13.4e9,  title:"First galaxies", desc:"Stars gather into the earliest galaxies; the cosmic web takes shape."},
       {ya:13.3e9,  title:"Reionization", desc:"Radiation from young stars and galaxies re-ionizes the hydrogen filling the universe."},
-      {ya:13.61e9, title:"The Milky Way forms", desc:"Our galaxy's oldest stars are born; the disk assembles over billions of years."},
+      {ya:13.2e9,  title:"The Milky Way forms", desc:"Our galaxy takes shape as early star clusters merge; its disk assembles over billions of years."},
       {ya:4.6e9,   title:"The Sun ignites", desc:"A collapsing cloud of gas and dust forms the Sun and the protoplanetary disk of the Solar System."},
       {ya:4.54e9,  title:"Earth forms", desc:"Rocky debris accretes into the young Earth — molten, airless, and battered."},
       {ya:4.51e9,  title:"The Moon forms", desc:"A Mars-sized body, Theia, strikes Earth; the debris coalesces into the Moon."},
@@ -419,7 +444,7 @@
         let px = Math.min(40, Math.sqrt((W*H)/full));
         let c = Math.max(8, Math.floor((W+GAP)/(px+GAP)));
         let rw = Math.max(8, Math.floor((H+GAP)/(px+GAP)));
-        while (c*rw < full && px > 8){                // shrink until everything fits
+        while (c*rw < full && px > 4){                // shrink until everything fits (small phones need tiny cells)
           px -= 1;
           c  = Math.floor((W+GAP)/(px+GAP));
           rw = Math.floor((H+GAP)/(px+GAP));
@@ -468,8 +493,8 @@
         const idx = Math.floor((ev.t - winStart) / unit);
         if (idx >= 0 && idx < cells) counts[idx]++;
       }
-      const nowIdx = (AGE >= winStart && AGE < winStart + cells*unit)
-        ? Math.floor((AGE - winStart) / unit) : -1;
+      const nowIdx = (AGE >= winStart && AGE <= winStart + cells*unit)
+        ? Math.min(cells - 1, Math.floor((AGE - winStart) / unit)) : -1;
       for (let i = 0; i < cells; i++){
         const el = cellEls[i];
         const t0 = winStart + i*unit;
@@ -494,12 +519,13 @@
       spanLabel.textContent = fmtSpan(span);
       const startYA = AGE - winStart;
       const endYA = AGE - (winStart + span);
-      showing.textContent = "showing " + ago(startYA) + " → " + (endYA <= 0 ? "today" : ago(endYA));
+      const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
+      showing.textContent = a === b ? "showing around " + a : "showing " + a + " → " + b;
       const leftPct = Math.max(0, (winStart / AGE) * 100);
       const wPct = Math.min(100 - leftPct, (span / AGE) * 100);
       seg.style.left = leftPct + "%";
       seg.style.width = wPct + "%";
-      $('zoom').value = unitIdx;
+      $('zoom').value = LAST - unitIdx;   // slider: right = finer blocks = zoomed in
       barrow.classList.toggle('full', unitIdx === LAST);
     }
 
@@ -507,17 +533,18 @@
       const marks = [
         { p: 0, label: "Big Bang", cls: "l" },
         { p: (AGE - 4.54e9) / AGE, label: "Earth forms", cls: "" },
-        { p: (AGE - 3.8e9) / AGE, label: "life", cls: "" },
+        { p: (AGE - 3.8e9) / AGE, label: "life", cls: "", opt: true },
         { p: 1, label: "now", cls: "r" },
       ];
       ticksEl.innerHTML = marks.map(m => {
         const style = m.cls ? "" : `left:${(m.p*100).toFixed(2)}%`;
-        return `<span class="tick ${m.cls}" style="${style}"><i></i>${m.label}</span>`;
+        return `<span class="tick ${m.cls}${m.opt ? ' opt' : ''}" style="${style}"><i></i>${m.label}</span>`;
       }).join("");
     }
 
     // ── overlay ────────────────────────────────────────────────
-    function openOverlay(){ overlay.hidden = false; overlayOpen = true; }
+    let overlayOpenedAt = 0;
+    function openOverlay(){ overlay.hidden = false; overlayOpen = true; overlayOpenedAt = performance.now(); }
     function closeOverlay(){ overlay.hidden = true; overlayOpen = false; }
 
     function select(idx){
@@ -530,6 +557,7 @@
       if (t0 >= AGE){
         $('mTitle').textContent = "The future";
         $('mSub').textContent = "";
+        $('mActions').innerHTML = "";
         $('mBody').innerHTML = '<p class="empty">Time hasn\'t reached here yet. The present is the last lit block on the grid.</p>';
         openOverlay(); return;
       }
@@ -538,7 +566,16 @@
       $('mTitle').textContent = (unit <= 100)
         ? calendar(Math.round(PRESENT_YEAR - startYA))
         : ago(startYA);
-      $('mSub').textContent = "this block spans " + ago(startYA) + " → " + (endYA <= 0 ? "today" : ago(endYA));
+      const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
+      $('mSub').textContent = a === b ? "this block covers about " + a : "this block spans " + a + " → " + b;
+
+      // drill in: re-scale so this block becomes (roughly) the whole screen
+      if (unitIdx > 0){
+        $('mActions').innerHTML = '<button class="ui" id="mZoom">zoom into this period</button>';
+        $('mZoom').addEventListener('click', () => { closeOverlay(); focusSpan(t0, t1); });
+      } else {
+        $('mActions').innerHTML = "";
+      }
 
       const list = EVENTS.filter(ev => ev.t >= t0 && ev.t < t1);
       if (!list.length){
@@ -566,6 +603,41 @@
       paint(); updateScale();
     }
 
+    // zoom keeping the moment under (clientX, clientY) fixed on screen
+    function timeAtPoint(clientX, clientY){
+      const r = grid.getBoundingClientRect();
+      const col = Math.max(0, Math.min(cols - 1, Math.floor((clientX - r.left) / (r.width / cols))));
+      const row = Math.max(0, Math.min(rows - 1, Math.floor((clientY - r.top) / (r.height / rows))));
+      return winStart + (row * cols + col) * UNITS[unitIdx];
+    }
+    function zoomAtPoint(newIdx, clientX, clientY){
+      newIdx = Math.max(0, Math.min(LAST, newIdx));
+      if (newIdx === unitIdx) return;
+      const anchorT = timeAtPoint(clientX, clientY);
+      unitIdx = newIdx;
+      rebuildGrid();
+      if (unitIdx === LAST){
+        winStart = 0;
+      } else {
+        const r = grid.getBoundingClientRect();
+        const col = Math.max(0, Math.min(cols - 1, Math.floor((clientX - r.left) / (r.width / cols))));
+        const row = Math.max(0, Math.min(rows - 1, Math.floor((clientY - r.top) / (r.height / rows))));
+        winStart = clampStart(anchorT - (row * cols + col) * UNITS[unitIdx]);
+      }
+      paint(); updateScale();
+    }
+
+    // "zoom into this period": drop enough levels that the block fills the view
+    function focusSpan(t0, t1){
+      const target = Math.max(0, unitIdx - 3);      // ×1000 finer → one block ≈ one screen
+      if (target === unitIdx) return;
+      unitIdx = target;
+      rebuildGrid();
+      const span = cells * UNITS[unitIdx];
+      winStart = clampStart((t0 + t1) / 2 - span / 2);
+      paint(); updateScale();
+    }
+
     // ── pan ────────────────────────────────────────────────────
     function pan(dCells){
       const before = winStart;
@@ -573,46 +645,110 @@
       if (winStart !== before){ paint(); updateScale(); }
     }
 
-    // ── pointer drag + tap-to-select (no pointer capture) ──────
-    let dragging = false, dragMoved = false;
-    let startX = 0, startY = 0, lastX = 0, lastY = 0, accX = 0, accY = 0;
+    // ── grid gestures: 1 finger = pan / tap, 2 fingers = pinch zoom + pan ──
+    const pointers = new Map();          // pointerId → {x, y}
+    let tapOK = false, startX = 0, startY = 0, lastX = 0, lastY = 0, accX = 0, accY = 0;
+    let pinch0 = null;                   // {dist, idx, mx, my} at pinch start
 
-    function onMove(e){
+    const pinchDist = () => {
+      const [a, b] = [...pointers.values()];
+      return Math.max(20, Math.hypot(a.x - b.x, a.y - b.y));
+    };
+    const pinchMid = () => {
+      const [a, b] = [...pointers.values()];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    };
+    const armPinch = () => {
+      const m = pinchMid();
+      pinch0 = { dist: pinchDist(), idx: unitIdx, mx: m.x, my: m.y };
+    };
+
+    grid.addEventListener('pointerdown', (e) => {
+      if (overlayOpen || e.button > 0) return;
+      try { grid.setPointerCapture(e.pointerId); } catch {}
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1){
+        tapOK = true;
+        startX = lastX = e.clientX; startY = lastY = e.clientY;
+        accX = accY = 0;
+        grid.classList.add('dragging');
+      } else {
+        tapOK = false;
+        if (pointers.size === 2) armPinch();
+      }
+    });
+
+    grid.addEventListener('pointermove', (e) => {
+      const p = pointers.get(e.pointerId);
+      if (!p) return;
+      p.x = e.clientX; p.y = e.clientY;
+
+      if (pointers.size === 2 && pinch0){
+        const m = pinchMid();
+        // two-finger drag pans…
+        const cw = grid.clientWidth / cols, ch = grid.clientHeight / rows;
+        accX += (m.x - pinch0.mx) / cw; accY += (m.y - pinch0.my) / ch;
+        pinch0.mx = m.x; pinch0.my = m.y;
+        const sc = Math.trunc(accX), sr = Math.trunc(accY);
+        accX -= sc; accY -= sr;
+        const dPan = -(sr * cols + sc);
+        if (dPan) pan(dPan);
+        // …and every ×2 of finger spread is one zoom level, anchored at the midpoint
+        const steps = Math.round(Math.log2(pinchDist() / pinch0.dist));
+        const target = Math.max(0, Math.min(LAST, pinch0.idx - steps));
+        if (target !== unitIdx) zoomAtPoint(target, m.x, m.y);
+        return;
+      }
+      if (pointers.size !== 1) return;
       const dx = e.clientX - lastX, dy = e.clientY - lastY;
       lastX = e.clientX; lastY = e.clientY;
-      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 4) dragMoved = true;
+      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 6) tapOK = false;
       const cw = grid.clientWidth / cols, ch = grid.clientHeight / rows;
       accX += dx / cw; accY += dy / ch;
       const sc = Math.trunc(accX), sr = Math.trunc(accY);
       accX -= sc; accY -= sr;
-      const d = -(sr * cols + sc);   // drag down/right → earlier in time
+      const d = -(sr * cols + sc);     // drag down/right → earlier in time
       if (d) pan(d);
-    }
-    function onUp(e){
-      if (!dragging) return;
-      dragging = false;
+    });
+
+    function endPointer(e){
+      if (!pointers.has(e.pointerId)) return;
+      pointers.delete(e.pointerId);
+      if (pointers.size === 2){ armPinch(); return; }   // 3 fingers → 2: restart pinch
+      if (pointers.size === 1){
+        // hand the drag to the remaining finger without a jump
+        pinch0 = null;
+        const [q] = pointers.values();
+        lastX = q.x; lastY = q.y; accX = accY = 0;
+        tapOK = false;
+        return;
+      }
+      pinch0 = null;
       grid.classList.remove('dragging');
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      if (!dragMoved){
+      if (tapOK && e.type === 'pointerup'){
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const cell = el && el.closest ? el.closest('.cell') : null;
         if (cell && cell.dataset.i !== undefined) select(+cell.dataset.i);
       }
+      tapOK = false;
     }
-    grid.addEventListener('pointerdown', (e) => {
-      if (overlayOpen) return;
-      dragging = true; dragMoved = false;
-      startX = lastX = e.clientX; startY = lastY = e.clientY; accX = accY = 0;
-      grid.classList.add('dragging');
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-    });
+    grid.addEventListener('pointerup', endPointer);
+    grid.addEventListener('pointercancel', endPointer);
 
-    // wheel = pan by rows
+    // wheel = pan by rows · ctrl/cmd+wheel (incl. trackpad pinch) = zoom at cursor
+    let wheelZoomAcc = 0;
     wrap.addEventListener('wheel', (e) => {
       if (overlayOpen) return;
       e.preventDefault();
+      if (e.ctrlKey || e.metaKey){
+        wheelZoomAcc += -e.deltaY;
+        if (Math.abs(wheelZoomAcc) >= 50){
+          const dir = Math.sign(wheelZoomAcc);
+          wheelZoomAcc = 0;
+          zoomAtPoint(unitIdx - dir, e.clientX, e.clientY);
+        }
+        return;
+      }
       const step = Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY)/40));
       pan(step * cols);
     }, { passive: false });
@@ -639,6 +775,7 @@
       barrow.classList.remove('grabbing');
       window.removeEventListener('pointermove', onBarMove);
       window.removeEventListener('pointerup', onBarUp);
+      window.removeEventListener('pointercancel', onBarUp);
     }
     barrow.addEventListener('pointerdown', (e) => {
       if (overlayOpen || unitIdx === LAST) return;   // whole universe: nothing to scrub
@@ -657,6 +794,7 @@
       barrow.classList.add('grabbing');
       window.addEventListener('pointermove', onBarMove);
       window.addEventListener('pointerup', onBarUp);
+      window.addEventListener('pointercancel', onBarUp);
       e.preventDefault();
     });
 
@@ -670,16 +808,23 @@
         case 'ArrowDown':  e.preventDefault(); pan(cols); break;
         case '+': case '=': setZoom(unitIdx - 1); break;
         case '-': case '_': setZoom(unitIdx + 1); break;
+        case 'Home': e.preventDefault(); winStart = 0; paint(); updateScale(); break;
+        case 'End':  e.preventDefault(); winStart = maxStart(); paint(); updateScale(); break;
       }
     });
 
     // controls
-    $('zoom').addEventListener('input', e => setZoom(+e.target.value));
+    $('zoom').addEventListener('input', e => setZoom(LAST - +e.target.value));
     $('zoomin').addEventListener('click', () => setZoom(unitIdx - 1));
     $('zoomout').addEventListener('click', () => setZoom(unitIdx + 1));
     $('reset').addEventListener('click', () => { unitIdx = LAST; winStart = 0; rebuildGrid(); paint(); updateScale(); });
     $('close').addEventListener('click', closeOverlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+    // capture phase: swallow the ghost click a touch synthesizes right after
+    // the tap that opened the modal, else it instantly closes / mis-clicks it
+    overlay.addEventListener('click', (e) => {
+      if (performance.now() - overlayOpenedAt < 350){ e.stopPropagation(); e.preventDefault(); return; }
+      if (e.target === overlay) closeOverlay();
+    }, true);
 
     // resize (debounced), keep view centered
     let rz;
