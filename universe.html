@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>Since the Big Bang</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root{
+      color-scheme: dark;
+      --bg:        #0a0a0a;
+      --surface:   #141414;
+      --surface2:  #1e1e1e;
+      --border:    #2a2a2a;
+      --text:      #f0f0f0;
+      --muted:     #8a8a8a;
+      --faint:     #5a5a5a;
+      --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+      --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
+    }
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .app{
+      height:100vh; height:100dvh;
+      display:flex; flex-direction:column;
+    }
+
+    /* ── top bar ── */
+    header{
+      flex:0 0 auto;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:16px; flex-wrap:wrap;
+      padding:12px 20px 10px;
+    }
+    .title{ display:flex; align-items:baseline; gap:12px; min-width:0; }
+    .title h1{ font-size:0.98rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
+    .title a.home{ color:var(--muted); text-decoration:none; font-family:var(--mono); font-size:0.72rem; white-space:nowrap; }
+    .title a.home:hover{ color:var(--text); }
+
+    .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .scaleread{ font-family:var(--mono); font-size:0.74rem; color:var(--text); white-space:nowrap; }
+    .scaleread b{ font-weight:600; }
+    .zoom{ display:flex; align-items:center; gap:8px; }
+    .zoom .ends{ font-family:var(--mono); font-size:0.62rem; color:var(--faint); }
+    .zoom input[type=range]{
+      -webkit-appearance:none; appearance:none;
+      width:132px; height:2px; background:var(--border); border-radius:2px; outline:none;
+    }
+    .zoom input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none; appearance:none; width:13px; height:13px; border-radius:50%;
+      background:var(--text); cursor:pointer; border:none;
+    }
+    .zoom input[type=range]::-moz-range-thumb{ width:13px; height:13px; border-radius:50%; background:var(--text); cursor:pointer; border:none; }
+    button.ui{
+      font-family:var(--mono); font-size:0.72rem;
+      background:var(--surface); color:var(--text);
+      border:1px solid var(--border); border-radius:6px;
+      padding:5px 9px; cursor:pointer; line-height:1;
+    }
+    button.ui:hover{ background:var(--surface2); }
+
+    /* ── grid (the majority of the page) ── */
+    .gridwrap{
+      flex:1 1 auto;
+      position:relative;
+      margin:2px 16px 6px;
+      min-height:0; min-width:0;
+      touch-action:none;
+    }
+    #grid{
+      position:absolute; inset:0;
+      display:grid; gap:3px;
+      cursor:grab;
+    }
+    #grid.dragging{ cursor:grabbing; }
+    .cell{
+      background: rgba(240,240,240,0.06);
+      border-radius:2px;
+    }
+    .cell.future{ background: rgba(240,240,240,0.015); }
+    .cell.now{ box-shadow: inset 0 0 0 1.5px var(--text); }
+
+    /* ── bottom bar: readouts + scale bar ── */
+    footer{
+      flex:0 0 auto;
+      padding:6px 20px 14px;
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .readouts{
+      display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
+      font-family:var(--mono); font-size:0.74rem; color:var(--muted);
+    }
+    .readouts .showing{ color:var(--text); }
+    .readouts .hint{ font-size:0.64rem; color:var(--faint); }
+
+    .barrow{ position:relative; }
+    .bar{
+      position:relative; height:6px; border-radius:3px;
+      background: rgba(240,240,240,0.08);
+      overflow:visible;
+    }
+    .seg{
+      position:absolute; top:0; bottom:0;
+      background: var(--text); border-radius:3px;
+      min-width:2px;
+    }
+    .ticks{ position:relative; height:14px; margin-top:4px; }
+    .tick{
+      position:absolute; top:0; transform:translateX(-50%);
+      font-family:var(--mono); font-size:0.6rem; color:var(--faint); white-space:nowrap;
+    }
+    .tick.l{ transform:none; left:0; }
+    .tick.r{ transform:none; right:0; left:auto; }
+    .tick i{
+      display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px;
+    }
+    .tick.l i, .tick.r i{ margin:0 0 2px; }
+
+    /* ── overlay modal ── */
+    .overlay{
+      position:fixed; inset:0; z-index:100;
+      background: rgba(6,6,6,0.72);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
+    }
+    .overlay[hidden]{ display:none; }
+    .modal{
+      position:relative;
+      background: var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      width:min(560px, 100%);
+      max-height:82vh;
+      display:flex; flex-direction:column;
+      padding:26px 26px 8px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+    .modal .close{
+      position:absolute; top:14px; right:14px;
+      background:transparent; border:none; color:var(--muted);
+      font-size:1rem; cursor:pointer; line-height:1; padding:6px;
+    }
+    .modal .close:hover{ color:var(--text); }
+    .modal-kicker{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
+    .modal-title{ font-size:1.3rem; font-weight:600; margin:8px 0 3px; letter-spacing:-0.01em; line-height:1.2; }
+    .modal-sub{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); margin-bottom:10px; }
+    .modal-body{ overflow-y:auto; padding:6px 0 18px; }
+    .modal-body::-webkit-scrollbar{ width:8px; }
+    .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+    .ev{ padding:14px 0; border-bottom:1px solid var(--border); }
+    .ev:first-child{ padding-top:6px; }
+    .ev:last-child{ border-bottom:none; }
+    .ev-when{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); margin-bottom:4px; }
+    .ev-title{ font-size:0.98rem; font-weight:600; margin:0 0 3px; }
+    .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
+    .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
+
+    @media (max-width:640px){
+      .controls{ width:100%; justify-content:space-between; }
+      .zoom input[type=range]{ width:104px; }
+      .title h1{ font-size:0.92rem; }
+      .modal{ padding:22px 20px 6px; }
+      .modal-title{ font-size:1.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1>Since the Big Bang</h1>
+        <a class="home" href="index.html">← home</a>
+      </div>
+      <div class="controls">
+        <span class="scaleread">each block = <b id="unitlabel">10M yrs</b></span>
+        <button class="ui" id="reset">whole universe</button>
+        <div class="zoom">
+          <button class="ui" id="zoomout" title="zoom out">−</button>
+          <span class="ends">1yr</span>
+          <input type="range" id="zoom" min="0" max="7" step="1" value="7">
+          <span class="ends">10M</span>
+          <button class="ui" id="zoomin" title="zoom in">+</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="gridwrap">
+      <div id="grid"></div>
+    </div>
+
+    <footer>
+      <div class="readouts">
+        <span>view spans <b id="spanlabel"></b></span>
+        <span class="showing" id="showing"></span>
+        <span class="hint">brighter blocks = more events · click any block</span>
+      </div>
+      <div class="barrow">
+        <div class="bar"><div class="seg" id="seg"></div></div>
+        <div class="ticks" id="ticks"></div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <button class="close" id="close" aria-label="Close">✕</button>
+      <div class="modal-kicker" id="mKicker"></div>
+      <h2 class="modal-title" id="mTitle"></h2>
+      <div class="modal-sub" id="mSub"></div>
+      <div class="modal-body" id="mBody"></div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    "use strict";
+
+    // ── constants ──────────────────────────────────────────────
+    const AGE = 13_787_000_000;     // age of the universe, years
+    const PRESENT_YEAR = 2026;      // "now"
+    const UNITS = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7]; // years per block; index 0 = finest
+    const LAST = UNITS.length - 1;
+    const GAP = 3;
+
+    // ── event data (years AFTER big bang, or ya = years ago, or ce = calendar year) ──
+    const RAW = [
+      {t:0,        title:"The Big Bang", desc:"Space, time, matter and energy begin. The universe is unimaginably hot and dense."},
+      {t:1,        title:"Nucleosynthesis", desc:"In the first minutes, protons and neutrons fuse into the first hydrogen and helium nuclei."},
+      {t:380000,   title:"First light (the CMB)", desc:"The universe cools enough for atoms to form and becomes transparent. That first glow still fills the sky today."},
+      {ya:13.6e9,  title:"Cosmic dawn — first stars", desc:"Gravity pulls hydrogen into the first stars, which begin forging heavier elements."},
+      {ya:13.4e9,  title:"First galaxies", desc:"Stars gather into the earliest galaxies; the cosmic web takes shape."},
+      {ya:13.3e9,  title:"Reionization", desc:"Radiation from young stars and galaxies re-ionizes the hydrogen filling the universe."},
+      {ya:13.61e9, title:"The Milky Way forms", desc:"Our galaxy's oldest stars are born; the disk assembles over billions of years."},
+      {ya:4.6e9,   title:"The Sun ignites", desc:"A collapsing cloud of gas and dust forms the Sun and the protoplanetary disk of the Solar System."},
+      {ya:4.54e9,  title:"Earth forms", desc:"Rocky debris accretes into the young Earth — molten, airless, and battered."},
+      {ya:4.51e9,  title:"The Moon forms", desc:"A Mars-sized body, Theia, strikes Earth; the debris coalesces into the Moon."},
+      {ya:4.4e9,   title:"Liquid water", desc:"Ancient zircon crystals suggest oceans and a solid crust existed surprisingly early."},
+      {ya:4.0e9,   title:"Late Heavy Bombardment", desc:"A storm of asteroids and comets pummels the inner planets."},
+      {ya:3.8e9,   title:"First life (LUCA)", desc:"The last universal common ancestor of all living things — simple single cells — takes hold."},
+      {ya:3.5e9,   title:"Oldest fossils", desc:"Stromatolites: layered mats built by colonies of microbes leave the earliest clear fossil record."},
+      {ya:2.7e9,   title:"Photosynthesis", desc:"Cyanobacteria learn to harvest sunlight, releasing oxygen as waste."},
+      {ya:2.4e9,   title:"The Great Oxidation", desc:"Oxygen floods the atmosphere, poisoning most existing life and rusting the oceans."},
+      {ya:2.0e9,   title:"Complex cells", desc:"Eukaryotes appear — cells with a nucleus and mitochondria, born from ancient mergers."},
+      {ya:1.2e9,   title:"Sexual reproduction", desc:"Life begins mixing genes, dramatically speeding up evolution."},
+      {ya:1.0e9,   title:"Multicellular life", desc:"Cells begin cooperating as bodies rather than living alone."},
+      {ya:720e6,   title:"Snowball Earth", desc:"Ice sheets may have reached the equator, freezing the planet nearly solid."},
+      {ya:600e6,   title:"Ediacaran biota", desc:"The first large, soft-bodied multicellular organisms spread across the seafloor."},
+      {ya:538e6,   title:"The Cambrian explosion", desc:"In a geological blink, most major animal body plans appear — eyes, shells, limbs, predators."},
+      {ya:525e6,   title:"First vertebrates", desc:"Early jawless fish — our distant ancestors — swim the Cambrian seas."},
+      {ya:470e6,   title:"Plants colonize land", desc:"The first simple plants creep out of the water onto bare rock."},
+      {ya:445e6,   title:"Ordovician extinction", desc:"A sudden ice age wipes out most marine life — the first of the 'big five' extinctions."},
+      {ya:430e6,   title:"Animals reach land", desc:"Arthropods — early relatives of insects and spiders — follow the plants ashore."},
+      {ya:385e6,   title:"First forests", desc:"Trees evolve, drawing down CO₂ and reshaping the climate and soil."},
+      {ya:375e6,   title:"Fish walk onto land", desc:"Tetrapods like Tiktaalik crawl from water, ancestors of all land vertebrates."},
+      {ya:359e6,   title:"Late Devonian extinction", desc:"Prolonged crises devastate reef and marine ecosystems."},
+      {ya:320e6,   title:"First reptiles", desc:"Amniotes lay shelled eggs, freeing vertebrates from water to reproduce."},
+      {ya:252e6,   title:"The Great Dying", desc:"The Permian–Triassic extinction kills ~90% of species — the worst in Earth's history."},
+      {ya:230e6,   title:"First dinosaurs", desc:"Small, agile dinosaurs emerge in the aftermath of the Great Dying."},
+      {ya:225e6,   title:"First mammals", desc:"Tiny, shrew-like mammals appear alongside the early dinosaurs."},
+      {ya:201e6,   title:"Triassic–Jurassic extinction", desc:"A mass extinction clears the way for dinosaurs to dominate."},
+      {ya:150e6,   title:"First birds", desc:"Feathered dinosaurs like Archaeopteryx take to the air."},
+      {ya:130e6,   title:"Flowering plants", desc:"Flowers evolve, striking a deal with insects that transforms life on land."},
+      {ya:66e6,    title:"The dinosaurs die", desc:"A city-sized asteroid strikes Chicxulub; the K–Pg extinction ends the age of dinosaurs."},
+      {ya:60e6,    title:"Primates emerge", desc:"With dinosaurs gone, early primates diversify in the treetops."},
+      {ya:34e6,    title:"Grasslands spread", desc:"Cooling climates open vast grasslands, reshaping mammal evolution."},
+      {ya:25e6,    title:"First apes", desc:"Apes split from monkeys in the forests of Africa."},
+      {ya:7e6,     title:"Human line splits off", desc:"Our lineage diverges from the ancestors of chimpanzees."},
+      {ya:4.4e6,   title:"Ardipithecus", desc:"Early hominins that could walk upright yet still climb trees."},
+      {ya:3.3e6,   title:"First stone tools", desc:"Hominins begin knapping stone into cutting edges."},
+      {ya:3.2e6,   title:"Lucy (Australopithecus)", desc:"A famous fossil showing our ancestors walked fully upright."},
+      {ya:2.8e6,   title:"The genus Homo", desc:"Homo habilis — 'handy man' — with a larger brain and reliance on tools."},
+      {ya:1.9e6,   title:"Homo erectus", desc:"Tall, long-legged humans who spread out of Africa across Asia."},
+      {ya:1.0e6,   title:"Fire", desc:"Hominins learn to control fire — for warmth, safety, and cooking."},
+      {ya:400e3,   title:"Neanderthals", desc:"A robust human species adapted to Ice Age Europe and the Near East."},
+      {ya:300e3,   title:"Homo sapiens", desc:"Our own species appears in Africa (Jebel Irhoud, Morocco)."},
+      {ya:100e3,   title:"Symbolic thought", desc:"The earliest jewelry and ochre pigments hint at art and abstract minds."},
+      {ya:70e3,    title:"Out of Africa", desc:"Modern humans expand across the globe, meeting and mixing with other human species."},
+      {ya:65e3,    title:"People reach Australia", desc:"Seafaring humans cross open water to the far side of the world."},
+      {ya:40e3,    title:"Neanderthals vanish", desc:"The last Neanderthals disappear; Homo sapiens is left the only human."},
+      {ya:36e3,    title:"Cave paintings", desc:"Chauvet and later Lascaux — vivid animal art on cave walls."},
+      {ya:20e3,    title:"Peak of the Ice Age", desc:"The Last Glacial Maximum; humans reach the Americas across Beringia."},
+      {ya:11700,   title:"The Ice Age ends", desc:"A warming, stable climate (the Holocene) begins — the world we know."},
+      {ya:11600,   title:"Göbekli Tepe", desc:"Hunter-gatherers raise monumental stone temples before farming even begins."},
+      {ya:12000,   title:"Agriculture", desc:"Humans begin farming in the Fertile Crescent — the Neolithic Revolution."},
+      {ya:10000,   title:"Animal domestication", desc:"Sheep, goats, and cattle are tamed; permanent settlements grow."},
+      {ya:9000,    title:"First towns", desc:"Jericho and Çatalhöyük — some of the earliest dense human settlements."},
+      {ya:5500,    title:"The wheel", desc:"Wheels for pottery and then transport transform craft and trade."},
+      {ce:-3300,   title:"Bronze Age begins", desc:"Alloying copper with tin yields harder tools and weapons."},
+      {ce:-3200,   title:"Writing invented", desc:"Sumerian cuneiform and Egyptian hieroglyphs record language for the first time."},
+      {ce:-2560,   title:"The Great Pyramid", desc:"Egyptians build the Pyramid of Giza — a wonder still standing today."},
+      {ce:-2000,   title:"Stonehenge completed", desc:"Britain's great stone circle reaches its final form."},
+      {ce:-1754,   title:"Code of Hammurabi", desc:"Babylon inscribes one of the earliest written legal codes."},
+      {ce:-1200,   title:"Bronze Age collapse", desc:"Mediterranean civilizations fall in a wave of upheaval; the Iron Age follows."},
+      {ce:-753,    title:"Rome founded", desc:"Traditional date for the founding of the city of Rome."},
+      {ce:-508,    title:"Athenian democracy", desc:"Athens establishes the first known democracy."},
+      {ce:-500,    title:"Buddha & Confucius", desc:"An axial age of thought: the Buddha in India, Confucius in China."},
+      {ce:-336,    title:"Alexander the Great", desc:"Alexander forges an empire from Greece to India, spreading Hellenistic culture."},
+      {ce:-221,    title:"China unified", desc:"The Qin dynasty unites China; work on the Great Wall begins."},
+      {ce:-27,     title:"The Roman Empire", desc:"Augustus becomes the first emperor; Rome enters its imperial peak."},
+      {ce:1,       title:"The Common Era", desc:"The conventional start of the modern calendar."},
+      {ce:476,     title:"Fall of Rome", desc:"The Western Roman Empire collapses; Europe enters the early Middle Ages."},
+      {ce:610,     title:"Islam", desc:"Muhammad begins preaching; a new faith and empire spread rapidly."},
+      {ce:1088,    title:"First universities", desc:"Bologna and others formalize higher learning in Europe."},
+      {ce:1440,    title:"The printing press", desc:"Gutenberg's movable type makes books cheap and ideas contagious."},
+      {ce:1492,    title:"Columbus reaches America", desc:"Contact between the hemispheres reshapes the entire world."},
+      {ce:1543,    title:"Heliocentrism", desc:"Copernicus places the Sun, not Earth, at the center — the Scientific Revolution begins."},
+      {ce:1687,    title:"Newton's Principia", desc:"Universal laws of motion and gravity unify heaven and Earth."},
+      {ce:1760,    title:"Industrial Revolution", desc:"Steam power and factories transform how humans make everything."},
+      {ce:1776,    title:"American independence", desc:"A new republic founded on Enlightenment ideals."},
+      {ce:1789,    title:"French Revolution", desc:"Revolution topples monarchy and spreads ideas of rights and citizenship."},
+      {ce:1859,    title:"Darwin's evolution", desc:"'On the Origin of Species' explains the diversity of all life."},
+      {ce:1876,    title:"The telephone", desc:"Voice travels instantly across distance for the first time."},
+      {ce:1879,    title:"Electric light", desc:"Practical light bulbs begin electrifying the world."},
+      {ce:1903,    title:"First powered flight", desc:"The Wright brothers fly at Kitty Hawk."},
+      {ce:1905,    title:"Relativity", desc:"Einstein rewrites our understanding of space, time, and energy."},
+      {ce:1914,    title:"World War I", desc:"Industrialized warfare engulfs the globe."},
+      {ce:1928,    title:"Antibiotics", desc:"Fleming discovers penicillin; infectious disease loses its grip."},
+      {ce:1939,    title:"World War II", desc:"The deadliest conflict in human history."},
+      {ce:1945,    title:"The nuclear age", desc:"The first atomic bombs are built and used; humanity can now end itself."},
+      {ce:1953,    title:"The structure of DNA", desc:"The double helix reveals the code of life."},
+      {ce:1957,    title:"The space age", desc:"Sputnik becomes the first artificial satellite."},
+      {ce:1969,    title:"The Moon landing", desc:"Apollo 11 lands humans on another world — and ARPANET, the internet's ancestor, goes live."},
+      {ce:1991,    title:"The World Wide Web", desc:"The web opens to the public and begins connecting everyone."},
+      {ce:2003,    title:"The human genome", desc:"Our full genetic blueprint is sequenced."},
+      {ce:2007,    title:"The smartphone", desc:"The iPhone puts a networked computer in every pocket."},
+      {ce:2012,    title:"CRISPR gene editing", desc:"A precise, cheap tool to rewrite DNA."},
+      {ce:2020,    title:"COVID-19 pandemic", desc:"A global pandemic reshapes society almost overnight."},
+      {ce:2022,    title:"Large language models", desc:"AI systems that converse in natural language reach the public."},
+    ];
+
+    const EVENTS = RAW.map(e => {
+      let t;
+      if (e.t !== undefined) t = e.t;
+      else if (e.ya !== undefined) t = AGE - e.ya;
+      else t = AGE - (PRESENT_YEAR - e.ce);
+      return { t, title: e.title, desc: e.desc };
+    }).sort((a,b) => a.t - b.t);
+
+    // ── formatting ─────────────────────────────────────────────
+    const commas = n => Math.round(n).toLocaleString('en-US');
+    const trim = x => (Math.round(x*100)/100).toString();
+    const calendar = yr => yr <= 0 ? (1 - yr) + " BCE" : yr + " CE";
+
+    function fmtUnit(u){
+      if (u >= 1e6) return (u/1e6) + "M yrs";
+      if (u >= 1e3) return (u/1e3) + "k yrs";
+      return u === 1 ? "1 yr" : u + " yrs";
+    }
+    function fmtSpan(s){
+      if (s >= 1e9) return trim(s/1e9) + " billion yrs";
+      if (s >= 1e6) return trim(s/1e6) + " million yrs";
+      return commas(s) + " yrs";
+    }
+    // short "years ago", switching to calendar years for recent history
+    function ago(ya){
+      if (ya <= 0) return "today";
+      if (ya >= 1e9) return trim(ya/1e9) + " billion yrs ago";
+      if (ya >= 1e6) return trim(ya/1e6) + " million yrs ago";
+      if (ya >= 10000) return commas(ya) + " yrs ago";
+      return calendar(Math.round(PRESENT_YEAR - ya));
+    }
+    // precise date for a single event
+    function eventWhen(t){
+      const ya = AGE - t;
+      if (ya <= 0) return "present day";
+      if (ya >= 1e9) return trim(ya/1e9) + " billion yrs ago";
+      if (ya >= 1e6) return trim(ya/1e6) + " million yrs ago";
+      if (ya >= 10000) return commas(ya) + " yrs ago";
+      return calendar(Math.round(PRESENT_YEAR - ya)) + " · " + commas(ya) + " yrs ago";
+    }
+
+    // ── state ──────────────────────────────────────────────────
+    let unitIdx = LAST;   // start fully zoomed out (whole universe)
+    let winStart = 0;     // years after big bang, top-left cell
+    let cols = 40, rows = 30, cells = 1200;
+    let cellEls = [];
+    let overlayOpen = false;
+
+    const $ = id => document.getElementById(id);
+    const grid = $('grid'), wrap = document.querySelector('.gridwrap');
+    const seg = $('seg'), ticksEl = $('ticks');
+    const unitLabel = $('unitlabel'), spanLabel = $('spanlabel'), showing = $('showing');
+    const overlay = $('overlay');
+
+    // ── layout: pick cols/rows so cells grow as each block spans more time ──
+    // coarsest zoom always shows the entire universe; finer zooms show a window
+    // with smaller cells, so block size visibly tracks the time each block covers.
+    function computeLayout(idx){
+      const r = wrap.getBoundingClientRect();
+      const W = Math.max(80, r.width), H = Math.max(80, r.height);
+      const unit = UNITS[idx];
+
+      if (idx === LAST){
+        const full = Math.ceil(AGE / unit);          // blocks to cover all of time
+        let px = Math.min(40, Math.sqrt((W*H)/full));
+        let c = Math.max(8, Math.floor((W+GAP)/(px+GAP)));
+        let rw = Math.max(8, Math.floor((H+GAP)/(px+GAP)));
+        while (c*rw < full && px > 8){                // shrink until everything fits
+          px -= 1;
+          c  = Math.floor((W+GAP)/(px+GAP));
+          rw = Math.floor((H+GAP)/(px+GAP));
+        }
+        return { cols:c, rows:rw };
+      }
+      // windowed: target cell size grows with zoom-out (18px → 25px)
+      const frac = idx / (LAST - 1);
+      const px = 18 + frac * (25 - 18);
+      const c  = Math.max(8, Math.floor((W+GAP)/(px+GAP)));
+      const rw = Math.max(8, Math.floor((H+GAP)/(px+GAP)));
+      return { cols:c, rows:rw };
+    }
+
+    function maxStart(){
+      const span = cells * UNITS[unitIdx];
+      return Math.max(0, AGE - span);
+    }
+    const clampStart = v => { const m = maxStart(); return m === 0 ? 0 : Math.min(m, Math.max(0, v)); };
+
+    // ── build grid DOM (on init, zoom, resize) ─────────────────
+    function rebuildGrid(){
+      const L = computeLayout(unitIdx);
+      cols = L.cols; rows = L.rows; cells = cols * rows;
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+      const frag = document.createDocumentFragment();
+      cellEls = new Array(cells);
+      for (let i = 0; i < cells; i++){
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.dataset.i = i;
+        cellEls[i] = d;
+        frag.appendChild(d);
+      }
+      grid.innerHTML = "";
+      grid.appendChild(frag);
+    }
+
+    // ── paint block brightness + markers ───────────────────────
+    function paint(){
+      const unit = UNITS[unitIdx];
+      const counts = new Int16Array(cells);
+      for (const ev of EVENTS){
+        if (ev.t < winStart) continue;
+        const idx = Math.floor((ev.t - winStart) / unit);
+        if (idx >= 0 && idx < cells) counts[idx]++;
+      }
+      const nowIdx = (AGE >= winStart && AGE < winStart + cells*unit)
+        ? Math.floor((AGE - winStart) / unit) : -1;
+      for (let i = 0; i < cells; i++){
+        const el = cellEls[i];
+        const t0 = winStart + i*unit;
+        if (t0 >= AGE){ el.className = 'cell future'; el.style.background = ''; continue; }
+        const n = counts[i];
+        let bg;
+        if (n === 0)      bg = 0.06;
+        else if (n === 1) bg = 0.20;
+        else if (n === 2) bg = 0.34;
+        else if (n <= 4)  bg = 0.52;
+        else              bg = 0.74;
+        el.style.background = `rgba(240,240,240,${bg})`;
+        el.className = (i === nowIdx) ? 'cell now' : 'cell';
+      }
+    }
+
+    // ── scale readouts + bar ───────────────────────────────────
+    function updateScale(){
+      const unit = UNITS[unitIdx];
+      const span = cells * unit;
+      unitLabel.textContent = fmtUnit(unit);
+      spanLabel.textContent = fmtSpan(span);
+      const startYA = AGE - winStart;
+      const endYA = AGE - (winStart + span);
+      showing.textContent = "showing " + ago(startYA) + " → " + (endYA <= 0 ? "today" : ago(endYA));
+      const leftPct = Math.max(0, (winStart / AGE) * 100);
+      const wPct = Math.min(100 - leftPct, (span / AGE) * 100);
+      seg.style.left = leftPct + "%";
+      seg.style.width = wPct + "%";
+      $('zoom').value = unitIdx;
+    }
+
+    function buildTicks(){
+      const marks = [
+        { p: 0, label: "Big Bang", cls: "l" },
+        { p: (AGE - 4.54e9) / AGE, label: "Earth forms", cls: "" },
+        { p: (AGE - 3.8e9) / AGE, label: "life", cls: "" },
+        { p: 1, label: "now", cls: "r" },
+      ];
+      ticksEl.innerHTML = marks.map(m => {
+        const style = m.cls ? "" : `left:${(m.p*100).toFixed(2)}%`;
+        return `<span class="tick ${m.cls}" style="${style}"><i></i>${m.label}</span>`;
+      }).join("");
+    }
+
+    // ── overlay ────────────────────────────────────────────────
+    function openOverlay(){ overlay.hidden = false; overlayOpen = true; }
+    function closeOverlay(){ overlay.hidden = true; overlayOpen = false; }
+
+    function select(idx){
+      const unit = UNITS[unitIdx];
+      const t0 = winStart + idx*unit, t1 = t0 + unit;
+      const startYA = AGE - t0, endYA = AGE - t1;
+
+      $('mKicker').textContent = "each block = " + fmtUnit(unit);
+
+      if (t0 >= AGE){
+        $('mTitle').textContent = "The future";
+        $('mSub').textContent = "";
+        $('mBody').innerHTML = '<p class="empty">Time hasn\'t reached here yet. The present is the last lit block on the grid.</p>';
+        openOverlay(); return;
+      }
+
+      // headline for the block
+      $('mTitle').textContent = (unit <= 100)
+        ? calendar(Math.round(PRESENT_YEAR - startYA))
+        : ago(startYA);
+      $('mSub').textContent = "this block spans " + ago(startYA) + " → " + (endYA <= 0 ? "today" : ago(endYA));
+
+      const list = EVENTS.filter(ev => ev.t >= t0 && ev.t < t1);
+      if (!list.length){
+        $('mBody').innerHTML = '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
+      } else {
+        $('mBody').innerHTML = list.map(ev => `
+          <div class="ev">
+            <div class="ev-when">${eventWhen(ev.t)}</div>
+            <p class="ev-title">${ev.title}</p>
+            <p class="ev-desc">${ev.desc}</p>
+          </div>`).join("");
+      }
+      openOverlay();
+    }
+
+    // ── zoom ───────────────────────────────────────────────────
+    function setZoom(newIdx){
+      newIdx = Math.max(0, Math.min(LAST, newIdx));
+      if (newIdx === unitIdx) return;
+      const centerT = winStart + (cells/2) * UNITS[unitIdx];
+      unitIdx = newIdx;
+      rebuildGrid();
+      const span = cells * UNITS[unitIdx];
+      winStart = (unitIdx === LAST) ? 0 : clampStart(centerT - span/2);
+      paint(); updateScale();
+    }
+
+    // ── pan ────────────────────────────────────────────────────
+    function pan(dCells){
+      const before = winStart;
+      winStart = clampStart(winStart + dCells * UNITS[unitIdx]);
+      if (winStart !== before){ paint(); updateScale(); }
+    }
+
+    // ── pointer drag + tap-to-select (no pointer capture) ──────
+    let dragging = false, dragMoved = false;
+    let startX = 0, startY = 0, lastX = 0, lastY = 0, accX = 0, accY = 0;
+
+    function onMove(e){
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 4) dragMoved = true;
+      const cw = grid.clientWidth / cols, ch = grid.clientHeight / rows;
+      accX += dx / cw; accY += dy / ch;
+      const sc = Math.trunc(accX), sr = Math.trunc(accY);
+      accX -= sc; accY -= sr;
+      const d = -(sr * cols + sc);   // drag down/right → earlier in time
+      if (d) pan(d);
+    }
+    function onUp(e){
+      if (!dragging) return;
+      dragging = false;
+      grid.classList.remove('dragging');
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      if (!dragMoved){
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el && el.closest ? el.closest('.cell') : null;
+        if (cell && cell.dataset.i !== undefined) select(+cell.dataset.i);
+      }
+    }
+    grid.addEventListener('pointerdown', (e) => {
+      if (overlayOpen) return;
+      dragging = true; dragMoved = false;
+      startX = lastX = e.clientX; startY = lastY = e.clientY; accX = accY = 0;
+      grid.classList.add('dragging');
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+
+    // wheel = pan by rows
+    wrap.addEventListener('wheel', (e) => {
+      if (overlayOpen) return;
+      e.preventDefault();
+      const step = Math.sign(e.deltaY) * Math.max(1, Math.round(Math.abs(e.deltaY)/40));
+      pan(step * cols);
+    }, { passive: false });
+
+    // keyboard
+    window.addEventListener('keydown', (e) => {
+      if (overlayOpen){ if (e.key === 'Escape') closeOverlay(); return; }
+      switch (e.key){
+        case 'ArrowLeft':  e.preventDefault(); pan(-1); break;
+        case 'ArrowRight': e.preventDefault(); pan(1); break;
+        case 'ArrowUp':    e.preventDefault(); pan(-cols); break;
+        case 'ArrowDown':  e.preventDefault(); pan(cols); break;
+        case '+': case '=': setZoom(unitIdx - 1); break;
+        case '-': case '_': setZoom(unitIdx + 1); break;
+      }
+    });
+
+    // controls
+    $('zoom').addEventListener('input', e => setZoom(+e.target.value));
+    $('zoomin').addEventListener('click', () => setZoom(unitIdx - 1));
+    $('zoomout').addEventListener('click', () => setZoom(unitIdx + 1));
+    $('reset').addEventListener('click', () => { unitIdx = LAST; winStart = 0; rebuildGrid(); paint(); updateScale(); });
+    $('close').addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+
+    // resize (debounced), keep view centered
+    let rz;
+    window.addEventListener('resize', () => {
+      clearTimeout(rz);
+      rz = setTimeout(() => {
+        const centerT = winStart + (cells/2) * UNITS[unitIdx];
+        rebuildGrid();
+        const span = cells * UNITS[unitIdx];
+        winStart = (unitIdx === LAST) ? 0 : clampStart(centerT - span/2);
+        paint(); updateScale();
+      }, 120);
+    });
+
+    // ── go ─────────────────────────────────────────────────────
+    buildTicks();
+    rebuildGrid();
+    paint();
+    updateScale();
+  })();
+  </script>
+</body>
+</html>
