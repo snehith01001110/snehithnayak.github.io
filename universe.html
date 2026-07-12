@@ -138,24 +138,21 @@
     /* hover overlay: how much time one square actually holds */
     #unitLab{ position:relative; cursor:help; outline:none; }
     #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
-    /* full-screen hover reveal: one grid square packed with tiny year-squares */
+    /* full-screen hover reveal: one grid square shown as its actual years */
     .unittip{
       position:fixed; inset:0; display:none; z-index:120; pointer-events:none;
       align-items:center; justify-content:center;
-      background:var(--scrim); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
-      white-space:normal;
+      background:rgba(6,6,6,0.95); white-space:normal;
     }
     #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:flex; }
     .utt-panel{
-      background:var(--pill); border:1px solid var(--border); border-radius:14px;
-      padding:18px 18px 16px; text-align:center;
-      font-family:var(--mono); color:var(--muted); line-height:1.4;
-      box-shadow: 0 24px 70px rgba(0,0,0,0.7);
+      display:flex; flex-direction:column; align-items:center;
+      text-align:center; font-family:var(--mono); color:var(--muted); line-height:1.4;
     }
-    #uttCanvas{ display:block; margin:0 auto 13px; border-radius:4px; }
+    #uttCanvas{ display:block; margin:0 auto 14px; }
     .utt-cap{ display:block; color:var(--text); font-size:0.95rem; }
     .utt-cap b{ color:var(--text); font-weight:600; font-size:1.2rem; }
-    .utt-sub{ display:block; margin-top:6px; color:var(--faint); font-size:0.72rem; }
+    .utt-sub{ display:block; margin-top:6px; color:var(--muted); font-size:0.74rem; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -1837,38 +1834,95 @@
       return 39;
     }
 
-    // hover viz: pack one grid square with tiny 1-year squares — a big square
-    // (most of the screen) packed as densely as still reads as a grid, so the
-    // scale is felt. A literal million can't render distinctly at any size, so
-    // we draw as many as fit and spell out what fraction of one square that is.
-    function unitVizDims(){
-      const size = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - 150, 760));
-      const pitch = 1.3, cell = 1.0;
-      const side = Math.floor(size / pitch);
-      return { size, pitch, cell, side };
-    }
+    // hover viz: show ONE grid square as the literal number of years it holds —
+    // one tiny square per year, at device-pixel resolution across the whole
+    // screen. A retina screen has ~4–5M device pixels, so a 1M-yr square fits
+    // every single year at a 2-device-px pitch. When a square holds more years
+    // than the screen has pixels (10M), we fill the screen completely and say
+    // how many whole screens one square is.
     function updateUnitLabel(){
-      const { side } = unitVizDims();
-      const total = unit(), drawn = Math.min(total, side * side);
-      uttNum.textContent = commas(total);
-      uttSub.textContent = drawn < total
-        ? 'each tiny square = 1 year · showing ' + commas(drawn) + ' — only ' +
-          (drawn / total * 100).toFixed(drawn / total < 0.1 ? 1 : 0) + '% of one square'
-        : 'each tiny square here is a single year';
+      uttNum.textContent = commas(unit());
     }
     function drawUnitViz(){
-      const { size, pitch, cell, side } = unitVizDims();
       const dpr = window.devicePixelRatio || 1;
-      uttCanvas.style.width = size + 'px'; uttCanvas.style.height = size + 'px';
-      uttCanvas.width = Math.round(size * dpr); uttCanvas.height = Math.round(size * dpr);
+      const Wd = Math.floor((window.innerWidth - 32) * dpr);
+      const Hd = Math.floor((window.innerHeight - 120) * dpr);   // room for caption
+      const total = unit();
+      // largest integer device-px pitch that still fits every year on screen
+      let p = Math.max(1, Math.floor(Math.sqrt((Wd * Hd) / total)));
+      while (p > 1 && Math.floor(Wd / p) * Math.floor(Hd / p) < total) p--;
+      const cols = Math.floor(Wd / p);
+      const capacity = cols * Math.floor(Hd / p);
+      const drawn = Math.min(total, capacity);
+      const rowsUsed = Math.ceil(drawn / cols);
+      uttCanvas.width = cols * p; uttCanvas.height = rowsUsed * p;
+      uttCanvas.style.width = (cols * p / dpr) + 'px';
+      uttCanvas.style.height = (rowsUsed * p / dpr) + 'px';
       const ctx = uttCanvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, size, size);
-      const total = unit(), drawn = Math.min(total, side * side);
-      ctx.fillStyle = 'rgba(240,240,240,0.5)';
-      for (let i = 0; i < drawn; i++)
-        ctx.fillRect((i % side) * pitch, Math.floor(i / side) * pitch, cell, cell);
+      ctx.clearRect(0, 0, uttCanvas.width, uttCanvas.height);
+      // one p×p tile holding a single year-square, repeated as a pattern —
+      // exact-count rendering with three fills instead of a million rects
+      const tile = document.createElement('canvas');
+      tile.width = p; tile.height = p;
+      const tctx = tile.getContext('2d');
+      tctx.fillStyle = 'rgba(240,240,240,0.8)';
+      tctx.fillRect(0, 0, p === 1 ? 1 : p - 1, p === 1 ? 1 : p - 1);
+      ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+      const fullRows = Math.floor(drawn / cols);
+      ctx.fillRect(0, 0, cols * p, fullRows * p);
+      const rem = drawn - fullRows * cols;
+      if (rem) ctx.fillRect(0, fullRows * p, rem * p, p);
+
+      // when the year-squares are too small to see individually, outline a
+      // small patch of the field and magnify it in a corner panel, so it is
+      // unmistakable that the whole field is made of single-year squares
+      if (p < 4 * dpr && uttCanvas.width > 560 * dpr && uttCanvas.height > 300 * dpr){
+        const IP = Math.round(11 * dpr);                 // magnified cell pitch
+        const IC = 18, IR = 11;                          // cells shown
+        const pad = Math.round(10 * dpr);
+        const capH = Math.round(18 * dpr);               // label strip
+        const panelW = IC * IP + pad * 2, panelH = IR * IP + pad * 2 + capH;
+        const px0 = uttCanvas.width - panelW - Math.round(14 * dpr);
+        const py0 = Math.round(14 * dpr);
+        // source patch: same cell count, on the left third of the field
+        const sc = Math.floor(cols * 0.3), sr = Math.floor((fullRows || 1) * 0.35);
+        ctx.strokeStyle = 'rgba(240,240,240,0.95)';
+        ctx.lineWidth = Math.max(1, dpr);
+        ctx.strokeRect(sc * p - 1, sr * p - 1, IC * p + 2, IR * p + 2);
+        // connector from the patch to the panel
+        ctx.strokeStyle = 'rgba(240,240,240,0.28)';
+        ctx.beginPath();
+        ctx.moveTo(sc * p + IC * p + 2, sr * p + IR * p / 2);
+        ctx.lineTo(px0, py0 + panelH / 2);
+        ctx.stroke();
+        // panel
+        ctx.fillStyle = 'rgba(8,8,8,0.96)';
+        ctx.fillRect(px0, py0, panelW, panelH);
+        ctx.strokeStyle = 'rgba(240,240,240,0.5)';
+        ctx.lineWidth = Math.max(1, dpr);
+        ctx.strokeRect(px0 + 0.5, py0 + 0.5, panelW - 1, panelH - 1);
+        // the same squares, magnified: gap now clearly visible
+        ctx.fillStyle = 'rgba(240,240,240,0.85)';
+        const cell = IP - Math.max(2, Math.round(2 * dpr));
+        for (let r = 0; r < IR; r++)
+          for (let c = 0; c < IC; c++)
+            ctx.fillRect(px0 + pad + c * IP, py0 + pad + r * IP, cell, cell);
+        ctx.fillStyle = '#9a9a9a';
+        ctx.font = Math.round(9.5 * dpr) + 'px ui-monospace, Menlo, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('the outlined patch — 1 square = 1 year',
+                     px0 + panelW / 2, py0 + panelH - Math.round(8 * dpr));
+      }
+      // caption
       updateUnitLabel();
+      const word = (p >= 2 * dpr) ? 'tiny square' : (p >= 2 ? 'tiny square' : 'pixel');
+      if (drawn === total){
+        uttSub.textContent = 'all ' + commas(total) + ' of them are on this screen — each ' + word + ' is one year';
+      } else {
+        const k = total / capacity;
+        uttSub.textContent = 'each ' + word + ' = 1 year · this entire screen only fits ' + commas(drawn) +
+          ' — one square is ' + (k >= 10 ? Math.round(k) : k.toFixed(1)) + '× this whole screen';
+      }
     }
 
     // ── tally events per block, plus each block's dominant category,
