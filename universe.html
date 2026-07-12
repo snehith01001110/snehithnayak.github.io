@@ -48,7 +48,7 @@
     /* ── top bar: just the title ── */
     header{
       flex:0 0 auto;
-      display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px 12px; flex-wrap:wrap;
       padding:calc(12px + env(safe-area-inset-top)) 16px 8px;
     }
     header h1{ font-size:0.95rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
@@ -88,9 +88,6 @@
     @media (hover:hover){
       .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:pointer; }
     }
-    .fade{ position:absolute; left:0; right:0; height:16px; pointer-events:none; z-index:2; }
-    .fade.top{ top:0;    background:linear-gradient(rgba(10,10,10,1), rgba(10,10,10,0)); }
-    .fade.bot{ bottom:0; background:linear-gradient(rgba(10,10,10,0), rgba(10,10,10,1)); }
 
     /* ── bottom: position readout, block-size stepper, scrub bar ── */
     footer{
@@ -121,6 +118,31 @@
       button.ui{ padding:8px 12px; }
     }
 
+    /* ── header right group + category filter ── */
+    .hgroup{ display:flex; align-items:center; gap:12px; }
+    .filter{ position:relative; }
+    #filterBtn b{ color:var(--text); font-weight:600; }
+    .menu{
+      position:absolute; top:calc(100% + 6px); right:0; z-index:80;
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:6px; min-width:196px;
+      box-shadow: 0 16px 38px rgba(0,0,0,0.6);
+    }
+    .menu[hidden]{ display:none; }
+    .mrow{
+      display:flex; align-items:center; gap:9px;
+      padding:7px 9px; border-radius:7px; cursor:pointer;
+      font-family:var(--mono); font-size:0.74rem; color:var(--muted); user-select:none;
+    }
+    .mrow:hover{ background:var(--surface2); }
+    .mrow .sw{ width:11px; height:11px; border-radius:3px; flex:0 0 auto; opacity:0.32; }
+    .mrow.on{ color:var(--text); }
+    .mrow.on .sw{ opacity:1; }
+    .mrow .ck{ margin-left:auto; width:12px; text-align:center; color:var(--text); opacity:0; }
+    .mrow.on .ck{ opacity:1; }
+    .menu .sep{ height:1px; background:var(--border); margin:5px 4px; }
+    .mrow.allrow .sw{ background:var(--text); }
+
     .barrow{
       position:relative;
       padding:8px 0 2px;                    /* generous touch target */
@@ -142,6 +164,9 @@
       transition: box-shadow .15s ease;
     }
     .barrow.grabbing .seg{ box-shadow: 0 0 11px rgba(240,240,240,0.65); }
+    /* event annotation lane (VS Code overview-ruler style), coloured by category */
+    .evstrip{ position:relative; height:7px; margin-top:4px; }
+    .evmark{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px; }
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
@@ -213,7 +238,8 @@
     .ev{ padding:14px 0; border-bottom:1px solid var(--border); }
     .ev:first-child{ padding-top:6px; }
     .ev:last-child{ border-bottom:none; }
-    .ev-when{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); margin-bottom:4px; }
+    .ev-when{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .ev-cat{ font-size:0.6rem; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border-radius:4px; font-weight:600; }
     .ev-title{ font-size:0.98rem; font-weight:600; margin:0 0 3px; }
     .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
     .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
@@ -240,7 +266,13 @@
   <div class="app">
     <header>
       <h1>Since the Big Bang</h1>
-      <a class="home" href="index.html">← home</a>
+      <div class="hgroup">
+        <div class="filter" id="filter">
+          <button class="ui" id="filterBtn" aria-haspopup="true" aria-expanded="false">categories: <b id="filterCount">all</b> ▾</button>
+          <div class="menu" id="menu" hidden></div>
+        </div>
+        <a class="home" href="index.html">← home</a>
+      </div>
     </header>
 
     <div class="stage">
@@ -250,8 +282,6 @@
           <div class="win" id="win"></div>
         </div>
       </div>
-      <div class="fade top"></div>
-      <div class="fade bot"></div>
       <div class="cue" id="cue">tap a block to explore</div>
     </div>
 
@@ -259,13 +289,14 @@
       <div class="meta">
         <span class="pos" id="pos"></span>
         <div class="zoom">
-          <button class="ui" id="zoomout" title="bigger blocks (zoom out)">−</button>
+          <button class="ui" id="zoomsmaller" title="smaller blocks (less time each)">−</button>
           <button class="ui unit" id="unitbtn" title="zoom all the way out">block = <b id="unitlabel">10M yrs</b></button>
-          <button class="ui" id="zoomin" title="smaller blocks (zoom in)">+</button>
+          <button class="ui" id="zoombigger" title="bigger blocks (more time each)">+</button>
         </div>
       </div>
       <div class="barrow" id="barrow">
         <div class="bar"><div class="seg" id="seg"></div></div>
+        <div class="evstrip" id="evstrip" aria-hidden="true"></div>
         <div class="ticks" id="ticks"></div>
       </div>
     </footer>
@@ -1531,12 +1562,70 @@
       {ce:2025, title:"The Gaza ceasefire", desc:"A ceasefire halts the devastating Gaza war as Hamas frees the last living hostages and Israel releases prisoners."},
     ];
 
+    // ── categories (accent colors) ─────────────────────────────
+    const CATS = {
+      cosmos: { label: "Cosmos",           rgb: [110, 168, 255] }, // blue
+      planet: { label: "Earth & planets",  rgb: [224, 163,  78] }, // amber
+      life:   { label: "Life & evolution", rgb: [ 95, 214, 138] }, // green
+      human:  { label: "Human origins",    rgb: [201, 139, 255] }, // violet
+      civ:    { label: "Civilization",     rgb: [255, 123, 107] }, // coral
+      tech:   { label: "Science & tech",   rgb: [ 79, 216, 208] }, // teal
+    };
+    const CAT_ORDER = Object.keys(CATS);
+
+    // Each event is auto-assigned a category from keyword signals anchored by
+    // era (the timeline is chronological, so time carries most of the weight),
+    // with an explicit override table for the handful of keyword misfires.
+    const KW = {
+      cosmos: ['big bang','inflation','antimatter','antiproton','quark','nucleosynthesis','cosmic microwave','cmb','first light','dark ages','cosmic dawn','cosmic noon','supernova','quasar','galaxy','galaxies','galactic','milky way','globular','nebula','reionization','dark energy','dark matter','black hole','neutron star','pulsar','cosmic web','the universe','expansion of the universe','interstellar medium','star cluster','starburst','gamma-ray burst','white dwarf','red giant','magellanic','andromeda','local group','helium','hydrogen fuse'],
+      planet: ['sun ignites','protoplanetary','solar nebula','solar system','jupiter','saturn','planetesimal','asteroid','comet','bombardment','meteor','iron core','mantle','first atmosphere','crust','zircon','rock','gneiss','oldest crystal','sedimentary','plate tectonic','continent','supercontinent','rodinia','nuna','columbia','pangaea','pannotia','gondwana','laurasia','glaciation','snowball earth','sturtian','marinoan','gaskiers','huronian','glacier','ozone layer','banded iron','impact crater','crater','volcan','magnetic field','magnetic shield','archean','proterozoic','hadean','phanerozoic','oxygen floods','great oxidation','oceans gain oxygen','glacial','ice age','ice sheet','isthmus','land bridge','salinity','sea dries','poles reverse','magnetic flip','tectonic'],
+      life: ['luca','last universal','stromatolite','cyanobacteria','photosynthesis','eukaryot','prokaryot','mitochondria','multicellular','sexual reproduction','fungi','biota','ediacaran','avalon','dickinsonia','kimberella','bilaterian','skeleton','cambrian','trilobite','vertebrate','jawless','fish','ostracoderm','placoderm','plants colonize','land plant','moss','forest','tree','tetrapod','amphibian','reptile','amniote','synapsid','dinosaur','archosaur','pterosaur','mammal','marsupial','placental','bird','archaeopteryx','feather','flowering plant','angiosperm','insect','arthropod','crinoid','coral','reef','ammonite','mollusk','mass extinction','extinction','great dying','permian','triassic','jurassic','cretaceous','devonian','ordovician','silurian','carboniferous','k-pg','k–pg','chicxulub','primate','monkey','ape','hominoid','whale','cetacean','grass','savanna','photosynth','oxygenic','biosphere','evolv','species','genus','fossil','microbe','bacteria','algae','megafauna','ground sloth','megatherium','cave bear','megaloceros','giant deer','glyptodont','mammoth','mastodon','woolly','diprotodon','marsupial lion','giant marsupial','flightless bird','moa','smilodon','sabertooth','saber-tooth'],
+      human: ['hominin','hominid','australopith','ardipithecus','sahelanthropus','orrorin','paranthropus','lucy','homo habilis','homo erectus','homo ergaster','homo sapiens','neanderthal','denisovan','floresiensis','naledi','genus homo','human line','human lineage','stone tool','oldowan','acheulean','handaxe','control of fire','learn to control fire','hearth','cooking','symbolic thought','ochre','beads','jewelry','cave paint','chauvet','lascaux','rock art','venus figurine','out of africa','beringia','peopling','first americans','clovis','last glacial maximum','ice age ends','holocene begins','holocene','hunter-gather','foraging','bipedal','brain size'],
+      civ: ['göbekli','gobekli','agriculture','farming','neolithic','domesticat','first town','first city','cities','jericho','çatalhöyük','catalhoyuk','the wheel','pottery','bronze age','iron age','copper','writing','cuneiform','hieroglyph','pyramid','stonehenge','ziggurat','hammurabi','code of','law code','empire','dynasty','pharaoh','mesopotamia','sumer','babylon','assyria','egypt','indus','shang','zhou','qin','han dynasty','maya','aztec','inca','rome','roman','greek','athens','sparta','democracy','republic','caesar','augustus','alexander','persia','carthage','buddha','confucius','christianity','jesus','islam','muhammad','caliphate','crusade','feudal','middle ages','black death','plague','mongol','genghis','ottoman','renaissance','reformation','colon','slave trade','revolution','independence','constitution','napoleon','war','battle','treaty','empire falls','fall of','united nations','cold war','genocide','pandemic','covid','ceasefire','election','president','monarch','king','queen','trade route','silk road','city-state','civil war','world war'],
+      tech: ['printing press','gutenberg','movable type','telescope','microscope','heliocentr','copernicus','galileo','kepler','newton','principia','calculus','scientific method','steam engine','industrial revolution','spinning','factory','electricity','telegraph','telephone','radio','light bulb','electric light','photograph','powered flight','wright brothers','wright flyer','aviation','aircraft','automobile','internal combustion','assembly line','relativity','einstein','quantum','periodic table','x-ray','radioactiv','natural selection','darwin','origin of species','genetics','mendel','dna','double helix','genome','crispr','gene edit','clon','vaccine','vaccination','penicillin','antibiotic','anesthesia','germ theory','pasteur','polio','smallpox','ebola','mrna','heart transplant','surgery','medicine','nuclear','atomic bomb','fission','nuclear fusion','transistor','microprocessor','microchip','integrated circuit','semiconductor','computer','computing','turing','universal machine','algorithm','software','internet','world wide web','arpanet','www','google','wikipedia','facebook','bitcoin','satellite','sputnik','space age','rocket','apollo','moon landing','lands on the moon','lunar','space station','space shuttle','voyager','space probe','mars rover','curiosity rover','hubble','webb telescope','james webb','starship','crew dragon','spacecraft','reaches orbit','smartphone','iphone','mobile phone','personal computer','eniac','artificial intelligence','machine learning','large language model','neural network','alphago','deep blue','laser','superconduct','higgs','boson','gravitational wave','plate tectonics','big bang confirmed','black hole image','sound barrier','test-tube baby','in vitro','cloned','cloning','golden gate bridge','genome sequenc','dna sequenc','pluto is demoted','discover','steam','railway','railroad','engine','electric','electromag','magnet','battery','balloon','observatory','oxygen','chemical revolution','dynamite','phonograph','bessemer','cotton gin','electron','neutron','radium','nucleus','induction','periodic','anatomy','blood circulation','vaccin','locomotive','steamboat','optics','experiment'],
+    };
+    const OVERRIDES = {
+      "Napoleon invades Egypt":"civ", "Rosetta Stone discovered":"civ", "California Gold Rush":"civ",
+      "Tutankhamun's tomb discovered":"civ", "Collapse of the Soviet Union":"civ", "Assyria's war machine":"civ",
+      "Writing invented":"civ", "Farming in New Guinea":"civ", "The Montreal Protocol":"civ", "The Appian Way begun":"civ",
+      "Linnaeus classifies life":"tech", "Maori reach New Zealand":"civ",
+      "Mediterranean nearly dries up":"planet", "The Mediterranean refills":"planet",
+      "Polynesians settle Hawaii":"civ", "Gunpowder formulas recorded":"tech",
+      "Al-Khwarizmi's algebra":"tech", "Omar Khayyam's mathematics":"tech", "Euclid's Elements":"tech",
+      "Aryabhata's astronomy":"tech", "Babylonian mathematics":"tech",
+    };
+    const kwHas = (s, arr) => arr.some(w => s.includes(w));
+    function classify(ev){
+      if (OVERRIDES[ev.title]) return OVERRIDES[ev.title];
+      const s = (ev.title + ' ' + ev.desc).toLowerCase();
+      const ya = AGE - ev.t;
+      if (ya > 4.6e9) return 'cosmos';               // before the Sun: cosmology
+      if (ya <= 12000){                              // farming onward: civ, tech on a clear signal
+        if (kwHas(s, KW.tech)) return 'tech';
+        return 'civ';
+      }
+      if (ya <= 7.2e6){                              // human prehistory
+        if (kwHas(s, KW.human)) return 'human';
+        if (kwHas(s, KW.life)) return 'life';
+        if (kwHas(s, KW.planet)) return 'planet';
+        return 'human';
+      }
+      // deep time: geology vs biology (the &&!life guard keeps biology out of planet)
+      if (kwHas(s, KW.planet) && !kwHas(s, KW.life)) return 'planet';
+      if (kwHas(s, KW.life)) return 'life';
+      if (kwHas(s, KW.cosmos)) return 'cosmos';
+      if (kwHas(s, KW.planet)) return 'planet';
+      return 'life';
+    }
+
     const EVENTS = RAW.map(e => {
       let t;
       if (e.t !== undefined) t = e.t;
       else if (e.ya !== undefined) t = AGE - e.ya;
       else t = AGE - (PRESENT_YEAR - e.ce);
-      return { t, title: e.title, desc: e.desc };
+      const ev = { t, title: e.title, desc: e.desc };
+      ev.c = classify(ev);
+      return ev;
     }).sort((a,b) => a.t - b.t);
 
     // ── formatting ─────────────────────────────────────────────
@@ -1570,17 +1659,58 @@
     let unitIdx = LAST;                 // start with the coarsest granularity (10M yrs/block)
     let cols = 1, cellPx = 32, gap = CELL_GAP, rowH = 1;
     let blocks = 0, totalRows = 0, nowBlock = 0, spacerH = 1, maxBlockCount = 1;
-    let firstRow = -1, pool = [], blockCounts = new Map();
+    let firstRow = -1, pool = [], blockCounts = new Map(), blockMix = new Map();
     let flashT0 = 0, flashT1 = 0, flashUntil = 0;
     let overlayOpen = false;
+    const active = new Set(CAT_ORDER);   // categories currently shown; all on by default
+
+    const rgba = (c, a) => `rgba(${CATS[c].rgb[0]},${CATS[c].rgb[1]},${CATS[c].rgb[2]},${a})`;
 
     const $ = id => document.getElementById(id);
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
     const ticksEl = $('ticks'), pos = $('pos'), unitLabel = $('unitlabel');
     const overlay = $('overlay');
+    const menu = $('menu'), filterBtn = $('filterBtn'), filterCount = $('filterCount');
 
     const unit = () => UNITS[unitIdx];
+
+    // ── tally events per block, plus each block's dominant category,
+    //    counting only categories the filter currently shows ──
+    function recount(){
+      blockCounts = new Map();
+      blockMix = new Map();
+      const per = new Map();                        // block → {cat: count}
+      for (const ev of EVENTS){
+        if (!active.has(ev.c)) continue;
+        const b = Math.min(blocks - 1, Math.floor(ev.t / unit()));
+        blockCounts.set(b, (blockCounts.get(b) || 0) + 1);
+        let m = per.get(b); if (!m){ m = {}; per.set(b, m); }
+        m[ev.c] = (m[ev.c] || 0) + 1;
+      }
+      for (const [b, m] of per){                    // ordered list of [cat, count] for gradients
+        blockMix.set(b, CAT_ORDER.filter(k => m[k]).map(k => [k, m[k]]));
+      }
+      maxBlockCount = 1;
+      for (const v of blockCounts.values()) if (v > maxBlockCount) maxBlockCount = v;
+    }
+
+    // a block's fill: one solid accent, or — when it holds several categories —
+    // a smooth gradient blending each category's colour, weighted by its share
+    // (like the Apple Card's multi-hue sheen). Alpha carries the density.
+    function blockBg(b, a){
+      const mix = blockMix.get(b);
+      if (!mix) return `rgba(240,240,240,${a})`;
+      if (mix.length === 1) return rgba(mix[0][0], a);
+      const total = mix.reduce((s, [, n]) => s + n, 0);
+      let acc = 0; const stops = [];
+      for (const [c, n] of mix){
+        const frac = n / total;
+        stops.push(rgba(c, a) + " " + ((acc + frac / 2) * 100).toFixed(1) + "%");
+        acc += frac;
+      }
+      return `linear-gradient(135deg, ${stops.join(", ")})`;
+    }
 
     // ── layout: one grid for ALL of time at the current block size ──
     function setup(idx){
@@ -1602,14 +1732,8 @@
       win.style.gap = gap + "px";
       win.style.setProperty('--r', Math.max(2, Math.round(cellPx * 0.11)) + "px");
 
-      // events per block at this scale
-      blockCounts = new Map();
-      for (const ev of EVENTS){
-        const b = Math.min(blocks - 1, Math.floor(ev.t / unit()));
-        blockCounts.set(b, (blockCounts.get(b) || 0) + 1);
-      }
-      maxBlockCount = 1;
-      for (const v of blockCounts.values()) if (v > maxBlockCount) maxBlockCount = v;
+      // events per block at this scale (respecting the category filter)
+      recount();
 
       // pooled rows: only what fits on screen (plus overscan) ever exists in the DOM
       const poolRows = Math.min(totalRows, Math.ceil(scroller.clientHeight / rowH) + OVERSCAN * 2);
@@ -1630,18 +1754,24 @@
     }
 
     // ── paint the visible pool ─────────────────────────────────
+    // each block is tinted with its dominant category's accent colour;
+    // brightness scales with event density (log) so it never blows out.
     function paintPool(){
       const base = firstRow * cols;
       const flashing = performance.now() < flashUntil;
+      const filtered = active.size < CAT_ORDER.length;   // a real subset is selected
       for (let k = 0; k < pool.length; k++){
         const gi = base + k, el = pool[k];
         el.dataset.gi = gi;
         if (gi >= blocks){ el.className = 'cell future'; el.style.background = ''; continue; }
         const n = blockCounts.get(gi) || 0;
-        // brightness scales with event density (log) relative to the densest
-        // block at this zoom, so it never blows out no matter how dense the data
-        const bg = n === 0 ? 0.06 : 0.16 + 0.62 * (Math.log1p(n) / Math.log1p(maxBlockCount));
-        el.style.background = `rgba(240,240,240,${bg})`;
+        if (n === 0){
+          // no matching events: fainter when a filter is narrowing the view
+          el.style.background = `rgba(240,240,240,${filtered ? 0.03 : 0.06})`;
+        } else {
+          const a = 0.22 + 0.60 * (Math.log1p(n) / Math.log1p(maxBlockCount));
+          el.style.background = blockBg(gi, a);
+        }
         let cls = 'cell';
         if (gi === nowBlock) cls += ' now';
         if (flashing){
@@ -1704,6 +1834,23 @@
         return `<button type="button" class="tick ${m.cls}${m.opt ? ' opt' : ''}" style="${style}" data-p="${m.p}" aria-label="Jump to ${m.label}"><i></i>${m.label}</button>`;
       }).join("");
     }
+    // colour-coded event markers along the timeline, placed by when they
+    // happened (linear in time, so recent history clusters near "now").
+    // Only shown categories are drawn; near-coincident same-colour marks merge.
+    const evstrip = $('evstrip');
+    function buildMarks(){
+      const seen = new Set(), html = [];
+      for (const ev of EVENTS){
+        if (!active.has(ev.c)) continue;
+        const pct = (ev.t / AGE) * 100;
+        const key = Math.round(pct * 5) + ":" + ev.c;   // ~0.2% resolution per colour
+        if (seen.has(key)) continue;
+        seen.add(key);
+        html.push(`<span class="evmark" style="left:${pct.toFixed(3)}%;background:${rgba(ev.c,0.9)}"></span>`);
+      }
+      evstrip.innerHTML = html.join("");
+    }
+
     // tap an era marker → jump the scroll to that moment in time
     ticksEl.addEventListener('click', (e) => {
       const t = e.target.closest('.tick');
@@ -1750,7 +1897,7 @@
     // labelled sub-periods (recursively) so hundreds of events stay scannable
     const evHtml = ev => `
           <div class="ev">
-            <div class="ev-when">${esc(eventWhen(ev.t))}</div>
+            <div class="ev-when">${esc(eventWhen(ev.t))}<span class="ev-cat" style="color:${rgba(ev.c,1)};background:${rgba(ev.c,0.14)}">${esc(CATS[ev.c].label)}</span></div>
             <p class="ev-title">${esc(ev.title)}</p>
             <p class="ev-desc">${esc(ev.desc)}</p>
           </div>`;
@@ -1906,11 +2053,54 @@
     barrow.addEventListener('pointercancel', endScrub);
 
     // ── controls & keyboard ────────────────────────────────────
-    $('zoomin').addEventListener('click', () => stepZoom(-1));
-    $('zoomout').addEventListener('click', () => stepZoom(1));
+    // "+" grows the block (more time per block); "−" shrinks it.
+    $('zoombigger').addEventListener('click', () => stepZoom(1));
+    $('zoomsmaller').addEventListener('click', () => stepZoom(-1));
     $('unitbtn').addEventListener('click', () => {
       const mid = scroller.clientHeight / 2;
       zoomTo(LAST, timeAtY(mid), mid);
+    });
+
+    // ── category filter dropdown ───────────────────────────────
+    function buildMenu(){
+      menu.innerHTML = [
+        `<div class="mrow allrow" data-cat="__all"><span class="sw"></span>All categories<span class="ck">✓</span></div>`,
+        `<div class="sep"></div>`,
+        ...CAT_ORDER.map(k =>
+          `<div class="mrow" data-cat="${k}"><span class="sw" style="background:${rgba(k,1)}"></span>${CATS[k].label}<span class="ck">✓</span></div>`)
+      ].join("");
+      menu.querySelectorAll('.mrow').forEach(row => {
+        row.addEventListener('click', () => {
+          const cat = row.dataset.cat;
+          if (cat === '__all'){
+            if (active.size === CAT_ORDER.length) active.clear();
+            else CAT_ORDER.forEach(k => active.add(k));
+          } else if (active.has(cat)){ active.delete(cat); }
+          else { active.add(cat); }
+          syncMenu();
+          recount();
+          paintPool();       // repaint the visible blocks with the new filter
+          buildMarks();      // and the timeline annotation lane
+        });
+      });
+    }
+    function syncMenu(){
+      const all = active.size === CAT_ORDER.length;
+      filterCount.textContent = all ? "all" : (active.size === 0 ? "none" : String(active.size));
+      menu.querySelectorAll('.mrow').forEach(row => {
+        const cat = row.dataset.cat;
+        row.classList.toggle('on', cat === '__all' ? all : active.has(cat));
+      });
+    }
+    filterBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menu.hidden;
+      menu.hidden = !open;
+      filterBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    menu.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', () => {
+      if (!menu.hidden){ menu.hidden = true; filterBtn.setAttribute('aria-expanded', 'false'); }
     });
 
     window.addEventListener('keydown', (e) => {
@@ -1935,8 +2125,8 @@
         case 'PageDown': e.preventDefault(); scroller.scrollTop += vh * 0.9; break;
         case 'Home': e.preventDefault(); scroller.scrollTop = 0; break;
         case 'End':  e.preventDefault(); scroller.scrollTop = spacerH; break;
-        case '+': case '=': stepZoom(-1); break;
-        case '-': case '_': stepZoom(1); break;
+        case '+': case '=': stepZoom(1); break;    // bigger blocks (more time each)
+        case '-': case '_': stepZoom(-1); break;   // smaller blocks
       }
     });
 
@@ -1968,7 +2158,10 @@
     }
 
     // ── go ─────────────────────────────────────────────────────
+    buildMenu();
+    syncMenu();
     buildTicks();
+    buildMarks();
     setup(LAST);
     lastW = scroller.clientWidth;
   })();
