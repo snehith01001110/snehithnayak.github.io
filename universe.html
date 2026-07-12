@@ -135,24 +135,39 @@
     .zoom{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
     .lab{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); white-space:nowrap; }
     .lab b{ color:var(--text); font-weight:600; }
-    /* hover overlay: how much time one square actually holds */
-    #unitLab{ position:relative; cursor:help; outline:none; }
+    /* the square= label opens the "how long is one square" panel */
+    #unitLab{ cursor:pointer; }
     #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
-    /* full-screen hover reveal: one grid square shown as its actual years */
+    #unitLab:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:4px; }
+    /* full-screen "how long is one square" panel: click the square= label,
+       then scroll through every single year the square holds */
     .unittip{
-      position:fixed; inset:0; display:none; z-index:120; pointer-events:none;
-      align-items:center; justify-content:center;
-      background:rgba(6,6,6,0.95); white-space:normal;
+      position:fixed; inset:0; z-index:120;
+      display:flex; flex-direction:column;
+      background:rgba(6,6,6,0.97); white-space:normal;
     }
-    #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:flex; }
-    .utt-panel{
-      display:flex; flex-direction:column; align-items:center;
-      text-align:center; font-family:var(--mono); color:var(--muted); line-height:1.4;
+    .unittip[hidden]{ display:none; }
+    .utt-head{
+      flex:0 0 auto;
+      display:flex; align-items:center; gap:8px 18px; flex-wrap:wrap;
+      padding:calc(12px + env(safe-area-inset-top)) 18px 12px;
+      border-bottom:1px solid var(--border);
+      font-family:var(--mono); line-height:1.4;
     }
-    #uttCanvas{ display:block; margin:0 auto 14px; }
-    .utt-cap{ display:block; color:var(--text); font-size:0.95rem; }
-    .utt-cap b{ color:var(--text); font-weight:600; font-size:1.2rem; }
-    .utt-sub{ display:block; margin-top:6px; color:var(--muted); font-size:0.74rem; }
+    .utt-titles{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .utt-cap{ color:var(--text); font-size:0.95rem; }
+    .utt-cap b{ font-weight:600; font-size:1.15rem; }
+    .utt-sub{ color:var(--muted); font-size:0.72rem; }
+    .utt-count{
+      margin-left:auto; color:var(--muted); font-size:0.74rem;
+      font-variant-numeric:tabular-nums; white-space:nowrap;
+    }
+    .utt-close{ flex:0 0 auto; }
+    .utt-scroll{
+      flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain;
+      padding:16px 18px calc(20px + env(safe-area-inset-bottom));
+    }
+    #uttFull, #uttRem{ image-rendering:pixelated; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -363,15 +378,8 @@
         <div class="zoomcluster">
           <div class="zoom">
             <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
-            <span class="lab" id="unitLab" tabindex="0">square = <b id="unitlabel">10M yrs</b>
-              <span class="unittip" id="unittip" role="tooltip">
-                <span class="utt-panel">
-                  <canvas id="uttCanvas"></canvas>
-                  <span class="utt-cap">one square = <b id="uttNum"></b> years</span>
-                  <span class="utt-sub">each tiny square here is a single year</span>
-                </span>
-              </span>
-            </span>
+            <span class="lab" id="unitLab" tabindex="0" role="button" aria-haspopup="dialog"
+                  title="how much time is one square? click to see">square = <b id="unitlabel">10M yrs</b></span>
             <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
           </div>
           <div class="zoom">
@@ -392,6 +400,22 @@
   </div>
 
   <div id="tip" aria-hidden="true"></div>
+
+  <div class="unittip" id="unittip" role="dialog" aria-modal="true"
+       aria-label="How much time one square holds" hidden>
+    <div class="utt-head">
+      <div class="utt-titles">
+        <span class="utt-cap">one square = <b id="uttNum"></b> years</span>
+        <span class="utt-sub">every tiny square below is a single year — keep scrolling</span>
+      </div>
+      <span class="utt-count" id="uttCount"></span>
+      <button class="ui utt-close" id="uttClose" aria-label="Close">✕</button>
+    </div>
+    <div class="utt-scroll" id="uttScroll">
+      <div id="uttFull"></div>
+      <div id="uttRem"></div>
+    </div>
+  </div>
 
   <div class="overlay" id="overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -1805,7 +1829,8 @@
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
     const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit');
-    const uttCanvas = $('uttCanvas'), uttNum = $('uttNum'), uttSub = document.querySelector('.utt-sub');
+    const unittip = $('unittip'), uttNum = $('uttNum'), uttSub = document.querySelector('.utt-sub');
+    const uttScroll = $('uttScroll'), uttFull = $('uttFull'), uttRem = $('uttRem'), uttCount = $('uttCount');
     const posEra = $('posEra'), posTime = $('posTime');
     const overlay = $('overlay'), legend = $('legend'), mosaic = $('mosaic');
     const zoomsmaller = $('zoomsmaller'), zoombigger = $('zoombigger');
@@ -1834,95 +1859,56 @@
       return 39;
     }
 
-    // hover viz: show ONE grid square as the literal number of years it holds —
-    // one tiny square per year, at device-pixel resolution across the whole
-    // screen. A retina screen has ~4–5M device pixels, so a 1M-yr square fits
-    // every single year at a 2-device-px pitch. When a square holds more years
-    // than the screen has pixels (10M), we fill the screen completely and say
-    // how many whole screens one square is.
+    // "how long is one square" panel: click the square= label and scroll
+    // through the square's years, ONE tiny square PER YEAR, exact count.
+    // The field is two divs with a repeating tile background, so a 10M-year
+    // square (a ~100k-px-tall scroll) costs nothing to render.
     function updateUnitLabel(){
       uttNum.textContent = commas(unit());
     }
-    function drawUnitViz(){
+    let uvCols = 1, uvPitch = 1, uvTotal = 1;
+    function buildUnitViz(){
       const dpr = window.devicePixelRatio || 1;
-      const Wd = Math.floor((window.innerWidth - 32) * dpr);
-      const Hd = Math.floor((window.innerHeight - 120) * dpr);   // room for caption
       const total = unit();
-      // largest integer device-px pitch that still fits every year on screen
-      let p = Math.max(1, Math.floor(Math.sqrt((Wd * Hd) / total)));
-      while (p > 1 && Math.floor(Wd / p) * Math.floor(Hd / p) < total) p--;
-      const cols = Math.floor(Wd / p);
-      const capacity = cols * Math.floor(Hd / p);
-      const drawn = Math.min(total, capacity);
-      const rowsUsed = Math.ceil(drawn / cols);
-      uttCanvas.width = cols * p; uttCanvas.height = rowsUsed * p;
-      uttCanvas.style.width = (cols * p / dpr) + 'px';
-      uttCanvas.style.height = (rowsUsed * p / dpr) + 'px';
-      const ctx = uttCanvas.getContext('2d');
-      ctx.clearRect(0, 0, uttCanvas.width, uttCanvas.height);
-      // one p×p tile holding a single year-square, repeated as a pattern —
-      // exact-count rendering with three fills instead of a million rects
+      // comfortable cell pitch per zoom: coarser squares hold more years, so
+      // their cells shrink a little — but never below clearly-visible
+      const pitch = total >= 1e7 ? 4 : total >= 1e6 ? 5 : total >= 1e5 ? 8 : 14;
+      const p = Math.max(2, Math.round(pitch * dpr));       // device-px tile
+      const g = Math.max(1, Math.round(p * 0.18));
       const tile = document.createElement('canvas');
       tile.width = p; tile.height = p;
       const tctx = tile.getContext('2d');
-      tctx.fillStyle = 'rgba(240,240,240,0.8)';
-      tctx.fillRect(0, 0, p === 1 ? 1 : p - 1, p === 1 ? 1 : p - 1);
-      ctx.fillStyle = ctx.createPattern(tile, 'repeat');
-      const fullRows = Math.floor(drawn / cols);
-      ctx.fillRect(0, 0, cols * p, fullRows * p);
-      const rem = drawn - fullRows * cols;
-      if (rem) ctx.fillRect(0, fullRows * p, rem * p, p);
-
-      // when the year-squares are too small to see individually, outline a
-      // small patch of the field and magnify it in a corner panel, so it is
-      // unmistakable that the whole field is made of single-year squares
-      if (p < 4 * dpr && uttCanvas.width > 560 * dpr && uttCanvas.height > 300 * dpr){
-        const IP = Math.round(11 * dpr);                 // magnified cell pitch
-        const IC = 18, IR = 11;                          // cells shown
-        const pad = Math.round(10 * dpr);
-        const capH = Math.round(18 * dpr);               // label strip
-        const panelW = IC * IP + pad * 2, panelH = IR * IP + pad * 2 + capH;
-        const px0 = uttCanvas.width - panelW - Math.round(14 * dpr);
-        const py0 = Math.round(14 * dpr);
-        // source patch: same cell count, on the left third of the field
-        const sc = Math.floor(cols * 0.3), sr = Math.floor((fullRows || 1) * 0.35);
-        ctx.strokeStyle = 'rgba(240,240,240,0.95)';
-        ctx.lineWidth = Math.max(1, dpr);
-        ctx.strokeRect(sc * p - 1, sr * p - 1, IC * p + 2, IR * p + 2);
-        // connector from the patch to the panel
-        ctx.strokeStyle = 'rgba(240,240,240,0.28)';
-        ctx.beginPath();
-        ctx.moveTo(sc * p + IC * p + 2, sr * p + IR * p / 2);
-        ctx.lineTo(px0, py0 + panelH / 2);
-        ctx.stroke();
-        // panel
-        ctx.fillStyle = 'rgba(8,8,8,0.96)';
-        ctx.fillRect(px0, py0, panelW, panelH);
-        ctx.strokeStyle = 'rgba(240,240,240,0.5)';
-        ctx.lineWidth = Math.max(1, dpr);
-        ctx.strokeRect(px0 + 0.5, py0 + 0.5, panelW - 1, panelH - 1);
-        // the same squares, magnified: gap now clearly visible
-        ctx.fillStyle = 'rgba(240,240,240,0.85)';
-        const cell = IP - Math.max(2, Math.round(2 * dpr));
-        for (let r = 0; r < IR; r++)
-          for (let c = 0; c < IC; c++)
-            ctx.fillRect(px0 + pad + c * IP, py0 + pad + r * IP, cell, cell);
-        ctx.fillStyle = '#9a9a9a';
-        ctx.font = Math.round(9.5 * dpr) + 'px ui-monospace, Menlo, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('the outlined patch — 1 square = 1 year',
-                     px0 + panelW / 2, py0 + panelH - Math.round(8 * dpr));
+      tctx.fillStyle = 'rgba(240,240,240,0.5)';
+      tctx.fillRect(0, 0, p - g, p - g);
+      const url = 'url(' + tile.toDataURL() + ')';
+      const availW = Math.max(240, window.innerWidth - 36);
+      const cols = Math.max(10, Math.floor(availW / pitch));
+      const fullRows = Math.floor(total / cols);
+      const rem = total - fullRows * cols;
+      for (const [el, w, h] of [[uttFull, cols, fullRows], [uttRem, rem, rem ? 1 : 0]]){
+        el.style.width = (w * pitch) + 'px';
+        el.style.height = (h * pitch) + 'px';
+        el.style.backgroundImage = url;
+        el.style.backgroundSize = pitch + 'px ' + pitch + 'px';
       }
-      // caption
+      uvCols = cols; uvPitch = pitch; uvTotal = total;
       updateUnitLabel();
-      const word = (p >= 2 * dpr) ? 'tiny square' : (p >= 2 ? 'tiny square' : 'pixel');
-      if (drawn === total){
-        uttSub.textContent = 'all ' + commas(total) + ' of them are on this screen — each ' + word + ' is one year';
-      } else {
-        const k = total / capacity;
-        uttSub.textContent = 'each ' + word + ' = 1 year · this entire screen only fits ' + commas(drawn) +
-          ' — one square is ' + (k >= 10 ? Math.round(k) : k.toFixed(1)) + '× this whole screen';
-      }
+    }
+    function syncUnitCount(){
+      const rows = Math.max(0, Math.floor((uttScroll.scrollTop + uttScroll.clientHeight - 16) / uvPitch));
+      const seen = Math.max(0, Math.min(uvTotal, rows * uvCols));
+      uttCount.textContent = '≈ year ' + commas(seen) + ' of ' + commas(uvTotal);
+    }
+    function openUnitViz(){
+      buildUnitViz();
+      unittip.hidden = false;
+      uttScroll.scrollTop = 0;
+      syncUnitCount();
+      $('uttClose').focus();
+    }
+    function closeUnitViz(){
+      unittip.hidden = true;
+      $('unitLab').focus();
     }
 
     // ── tally events per block, plus each block's dominant category,
@@ -2605,10 +2591,14 @@
     zoombigger.addEventListener('click', () => stepZoom(-1));
     zoomsmaller.addEventListener('click', () => stepZoom(1));
 
-    // render the (expensive) scale overlay only when it's actually revealed
+    // the square= label opens the scrollable "how long is one square" panel
     const unitLab = $('unitLab');
-    unitLab.addEventListener('mouseenter', drawUnitViz);
-    unitLab.addEventListener('focus', drawUnitViz);
+    unitLab.addEventListener('click', () => { if (unittip.hidden) openUnitViz(); else closeUnitViz(); });
+    unitLab.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openUnitViz(); }
+    });
+    $('uttClose').addEventListener('click', closeUnitViz);
+    uttScroll.addEventListener('scroll', syncUnitCount, { passive: true });
 
     // ── category legend that doubles as the filter ─────────────
     const LEG = { cosmos:'cosmos', planet:'earth', life:'life', human:'humans', civ:'civilization', tech:'tech' };
@@ -2662,6 +2652,10 @@
     }
 
     window.addEventListener('keydown', (e) => {
+      if (!unittip.hidden){
+        if (e.key === 'Escape') closeUnitViz();
+        return;
+      }
       if (overlayOpen){
         if (e.key === 'Escape'){ closeOverlay(); return; }
         if (e.key === 'ArrowLeft'){ const b = $('mPrev'); if (b){ e.preventDefault(); b.click(); } return; }
