@@ -135,6 +135,19 @@
     .zoom{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
     .lab{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); white-space:nowrap; }
     .lab b{ color:var(--text); font-weight:600; }
+    /* hover overlay: how much time one square actually holds */
+    #unitLab{ position:relative; cursor:help; outline:none; }
+    #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
+    .unittip{
+      position:absolute; bottom:calc(100% + 9px); right:0;
+      display:none; z-index:8;
+      background:var(--pill); border:1px solid var(--border); border-radius:8px;
+      padding:8px 11px; white-space:nowrap; text-align:right;
+      font-family:var(--mono); font-size:0.66rem; color:var(--muted); line-height:1.45;
+    }
+    #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:block; }
+    .unittip b{ color:var(--text); font-weight:600; font-size:0.82rem; }
+    .unittip .lede{ color:var(--text); }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -345,7 +358,9 @@
         <div class="zoomcluster">
           <div class="zoom">
             <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
-            <span class="lab">square = <b id="unitlabel">10M yrs</b></span>
+            <span class="lab" id="unitLab" tabindex="0">square = <b id="unitlabel">10M yrs</b>
+              <span class="unittip" id="unittip" role="tooltip"></span>
+            </span>
             <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
           </div>
           <div class="zoom">
@@ -1778,7 +1793,7 @@
     const $ = id => document.getElementById(id);
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
-    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit');
+    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit'), unittip = $('unittip');
     const posEra = $('posEra'), posTime = $('posTime');
     const overlay = $('overlay'), legend = $('legend'), mosaic = $('mosaic');
     const zoomsmaller = $('zoomsmaller'), zoombigger = $('zoombigger');
@@ -1899,6 +1914,7 @@
 
       unitLabel.textContent = fmtUnit(unit());
       scaleUnit.textContent = fmtUnit(unit());
+      unittip.innerHTML = 'every square holds<br><b>' + commas(unit()) + '</b> years';
       buildEraLabels();
       syncControls();
       firstRow = -1;                    // force a repaint
@@ -2603,16 +2619,16 @@
     syncLegend();
     buildTicks();
     buildMarks();
-    // landing view = the whole 13.787-billion-year universe on one screen,
-    // squares kept ≥8px so they stay tappable (small phones may take ~1 screen)
+    // landing view = the whole timeline at 1M yrs/square, sized so it all fits
+    // on one screen (a legible ~8–15px square on desktop). 1M is granular
+    // enough that recent history already spreads across many squares.
+    const LAND_UNIT = UNITS.indexOf(1e6);   // 1M yrs per square
     {
       const W0 = scroller.clientWidth, H0 = scroller.clientHeight;
-      const nb = Math.ceil(AGE / UNITS[LAST]);
-      let k = fitLevelFor(W0, H0, nb);
-      while (k > 0 && sizeAt(k, W0).px < 8) k--;
-      sizeLevel = k;
+      const nb = Math.ceil(AGE / UNITS[LAND_UNIT]);
+      sizeLevel = fitLevelFor(W0, H0, nb);
     }
-    setup(LAST);
+    setup(LAND_UNIT);
     lastW = scroller.clientWidth;
   })();
   </script>
