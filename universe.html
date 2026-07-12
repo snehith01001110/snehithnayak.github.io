@@ -22,8 +22,11 @@
       --surface2:  #1e1e1e;
       --border:    #2a2a2a;
       --text:      #f0f0f0;
+      --text2:     #c6c6c6;
       --muted:     #8a8a8a;
       --faint:     #6f6f6f;
+      --scrim:     rgba(6,6,6,0.72);
+      --pill:      rgba(20,20,20,0.92);
       --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
       --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
     }
@@ -45,22 +48,34 @@
       display:flex; flex-direction:column;
     }
 
-    /* ── top bar: just the title ── */
+    /* ── top bar: identity (left) + colour legend/filter (right) ── */
     header{
       flex:0 0 auto;
-      display:flex; align-items:baseline; justify-content:space-between; gap:10px 12px; flex-wrap:wrap;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px 20px; flex-wrap:wrap;
       padding:calc(12px + env(safe-area-inset-top)) 16px 8px;
     }
-    header h1{ font-size:0.95rem; font-weight:600; margin:0; letter-spacing:-0.01em; white-space:nowrap; }
-    header a.home{ color:var(--muted); text-decoration:none; font-family:var(--mono); font-size:0.72rem; white-space:nowrap; }
-    header a.home:hover{ color:var(--text); }
+    .brand h1{ margin:0; font:600 0.9rem/1.2 var(--sans); letter-spacing:-0.01em; color:var(--text); }
+    .brand .scale{ margin:2px 0 0; font-family:var(--mono); font-size:0.64rem; color:var(--muted); white-space:nowrap; }
+    .scale b{ color:var(--text); font-weight:600; }
+    .legend{ display:flex; flex-wrap:wrap; gap:5px 14px; justify-content:flex-end; align-items:center; }
+    .lchip{
+      display:inline-flex; align-items:center; gap:6px;
+      background:none; border:none; padding:2px 0; cursor:pointer;
+      font-family:var(--mono); font-size:0.66rem; color:var(--muted); line-height:1;
+    }
+    .lchip i{ width:8px; height:8px; border-radius:2px; flex:0 0 auto; }
+    .lchip.off{ opacity:0.34; }
+    .lchip.off i{ box-shadow: inset 0 0 0 1px var(--border); background:transparent !important; }
+    @media (hover:hover){ .lchip:hover{ color:var(--text); } }
+    .lchip:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:4px; }
+    @media (max-width:480px){ .lchip{ font-size:0.62rem; } .brand h1{ font-size:0.82rem; } }
 
     /* ── the squares: a natively scrollable grid of all of time ── */
     .stage{
       flex:1 1 auto;
       position:relative;
       min-height:0; min-width:0;
-      margin:0 12px;
+      margin:0 16px;
     }
     .scroller{
       position:absolute; inset:0;
@@ -72,6 +87,8 @@
       outline:none;
     }
     .scroller::-webkit-scrollbar{ display:none; }
+    /* when the whole grid fits, centre it vertically (the landing money shot) */
+    .scroller.fits{ display:flex; flex-direction:column; justify-content:center; }
     .spacer{ position:relative; }
     .win{
       position:absolute; top:0; left:0; right:0;
@@ -79,15 +96,23 @@
       will-change:transform;
     }
     .cell{
-      background: rgba(240,240,240,0.06);
+      background: rgba(240,240,240,0.04);
       border-radius: var(--r, 3px);
     }
-    .cell.future{ background: rgba(240,240,240,0.015); }
-    .cell.now{ box-shadow: inset 0 0 0 1.5px var(--text); }
+    .cell.future{ background: rgba(240,240,240,0.01); }
+    /* the present-day square gently breathes so "you are here" is findable */
+    @keyframes breathe{
+      0%,100%{ box-shadow: inset 0 0 0 1.5px rgba(240,240,240,0.95); }
+      50%    { box-shadow: inset 0 0 0 1.5px rgba(240,240,240,0.40); }
+    }
+    .cell.now{ animation: breathe 2.8s ease-in-out infinite; }
+    .cell.cursor{ box-shadow: inset 0 0 0 1.5px var(--muted); }
     .cell.flash{ outline:1px solid rgba(240,240,240,0.55); outline-offset:-1px; }
     @media (hover:hover){
       .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:pointer; }
     }
+    /* gated crossfade only when toggling categories, never during scroll */
+    .win.tween .cell{ transition: background .22s ease; }
 
     /* ── bottom: position readout, block-size stepper, scrub bar ── */
     footer{
@@ -96,15 +121,20 @@
       display:flex; flex-direction:column; gap:9px;
     }
     .meta{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      font-family:var(--mono);
+      display:flex; align-items:center; justify-content:space-between; gap:10px 16px;
+      flex-wrap:wrap; font-family:var(--mono);
     }
     .pos{
-      font-size:0.76rem; color:var(--text);
+      font-size:0.8rem; color:var(--text);
       font-variant-numeric:tabular-nums;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
     }
+    .pos b{ font-weight:600; color:var(--text); }
+    .pos span{ color:var(--muted); }
+    .zoomcluster{ display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
     .zoom{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+    .lab{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); white-space:nowrap; }
+    .lab b{ color:var(--text); font-weight:600; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -112,36 +142,14 @@
       padding:5px 10px; cursor:pointer; line-height:1;
     }
     button.ui:hover{ background:var(--surface2); }
-    button.ui:focus-visible, .unit:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
-    .unit b{ font-weight:600; }
+    button.ui:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
+    button.ui:disabled{ opacity:.32; cursor:default; background:var(--surface); }
     @media (pointer:coarse){
       button.ui{ padding:8px 12px; }
     }
 
-    /* ── header right group + category filter ── */
-    .hgroup{ display:flex; align-items:center; gap:12px; }
-    .filter{ position:relative; }
-    #filterBtn b{ color:var(--text); font-weight:600; }
-    .menu{
-      position:absolute; top:calc(100% + 6px); right:0; z-index:80;
-      background:var(--surface); border:1px solid var(--border); border-radius:10px;
-      padding:6px; min-width:196px;
-      box-shadow: 0 16px 38px rgba(0,0,0,0.6);
-    }
-    .menu[hidden]{ display:none; }
-    .mrow{
-      display:flex; align-items:center; gap:9px;
-      padding:7px 9px; border-radius:7px; cursor:pointer;
-      font-family:var(--mono); font-size:0.74rem; color:var(--muted); user-select:none;
-    }
-    .mrow:hover{ background:var(--surface2); }
-    .mrow .sw{ width:11px; height:11px; border-radius:3px; flex:0 0 auto; opacity:0.32; }
-    .mrow.on{ color:var(--text); }
-    .mrow.on .sw{ opacity:1; }
-    .mrow .ck{ margin-left:auto; width:12px; text-align:center; color:var(--text); opacity:0; }
-    .mrow.on .ck{ opacity:1; }
-    .menu .sep{ height:1px; background:var(--border); margin:5px 4px; }
-    .mrow.allrow .sw{ background:var(--text); }
+    /* tiny-square mode: the whole grid drawn on one canvas */
+    #mosaic{ display:none; margin:0 auto; cursor:pointer; }
 
     .barrow{
       position:relative;
@@ -157,13 +165,23 @@
       overflow:visible;
     }
     .seg{
-      position:absolute; top:-2px; bottom:-2px;
+      position:absolute; top:-3px; bottom:-3px;
       background: var(--text); border-radius:3px;
       min-width:10px;
-      box-shadow: 0 0 6px rgba(240,240,240,0.35);
       transition: box-shadow .15s ease;
     }
+    @media (hover:hover){ .barrow:hover .seg{ box-shadow: 0 0 6px rgba(240,240,240,0.35); } }
     .barrow.grabbing .seg{ box-shadow: 0 0 11px rgba(240,240,240,0.65); }
+    /* time bubble that follows the finger/cursor while scrubbing */
+    .scrubtip{
+      position:absolute; bottom:calc(100% + 8px); transform:translateX(-50%);
+      font-family:var(--mono); font-size:0.66rem; color:var(--text);
+      background:var(--pill); border:1px solid var(--border); border-radius:6px;
+      padding:3px 8px; white-space:nowrap; pointer-events:none; z-index:6;
+    }
+    .scrubtip[hidden]{ display:none; }
+    .scrubtip b{ font-weight:600; }
+    .scrubtip span{ color:var(--muted); }
     /* event annotation lane (VS Code overview-ruler style), coloured by category */
     .evstrip{ position:relative; height:7px; margin-top:4px; }
     .evmark{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px; }
@@ -172,19 +190,46 @@
       position:absolute; top:0; transform:translateX(-50%);
       background:none; border:none; padding:0; margin:0; cursor:pointer;
       font-family:var(--mono); font-size:0.6rem; color:var(--faint); white-space:nowrap;
+      text-decoration:underline; text-decoration-color:rgba(240,240,240,0.20); text-underline-offset:3px;
     }
     .tick::before{ content:""; position:absolute; inset:-9px -8px; }  /* enlarge tap target */
-    .tick:hover{ color:var(--text); }
+    .tick:hover{ color:var(--text); text-decoration-color:rgba(240,240,240,0.5); }
     .tick:hover i{ background:var(--text); }
     .tick:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:3px; }
     .tick.l{ transform:none; left:0; }
     .tick.r{ transform:none; right:0; left:auto; }
-    .tick i{ display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px; }
+    .tick i{ display:block; width:1px; height:4px; background:var(--faint); margin:0 auto 2px; text-decoration:none; }
     .tick.l i, .tick.r i{ margin:0 0 2px; }
     @media (max-width:899px){ .tick.opt{ display:none; } }
 
+    /* era boundary labels drawn down the grid (live in .spacer, scroll natively) */
+    .era{
+      position:absolute; left:0; right:0; z-index:2; pointer-events:none;
+      border-top:1px solid rgba(240,240,240,0.10);
+    }
+    .era.first{ border-top:none; }
+    .era span{
+      position:relative; top:2px;
+      font-family:var(--mono); font-size:0.62rem; color:var(--faint);
+      background:var(--bg); padding:0 6px 1px 2px;
+    }
+
+    /* desktop hover tooltip: peek inside a square without opening it */
+    #tip{
+      position:fixed; z-index:90; pointer-events:none; display:none;
+      font-family:var(--mono); font-size:0.68rem; color:var(--text);
+      background:var(--pill); border:1px solid var(--border); border-radius:8px;
+      padding:7px 9px; max-width:260px;
+    }
+    #tip .tip-when{ color:var(--muted); margin-bottom:5px; }
+    #tip .tip-when.solo{ margin-bottom:0; opacity:0.7; }
+    #tip .tip-ev{ display:flex; align-items:baseline; gap:6px; padding:1px 0; }
+    #tip .tip-ev i{ width:6px; height:6px; border-radius:2px; flex:0 0 auto; position:relative; top:1px; }
+    #tip .tip-more{ color:var(--muted); padding-top:2px; }
+
     /* keyboard focus for the scrollable timeline */
     .scroller:focus-visible{ outline:2px solid var(--muted); outline-offset:-2px; }
+    .sr-live{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
     /* one-time discoverability cue over the grid */
     .cue{
@@ -201,7 +246,7 @@
     /* ── overlay modal ── */
     .overlay{
       position:fixed; inset:0; z-index:100;
-      background: rgba(6,6,6,0.72);
+      background: var(--scrim);
       -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
       display:flex; align-items:center; justify-content:center;
       padding:24px;
@@ -228,20 +273,27 @@
     .modal .close:hover{ color:var(--text); }
     .modal-kicker{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
     .modal-title{ font-size:1.3rem; font-weight:600; margin:8px 0 3px; letter-spacing:-0.01em; line-height:1.2; }
-    .modal-sub{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); margin-bottom:10px; }
-    .modal-actions{ padding:2px 0 14px; }
+    .modal-sub{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); margin-bottom:2px; }
+    /* mini position bar: big bang ▸ • ▸ now */
+    .mini{ margin:12px 0 4px; }
+    .mini[hidden]{ display:none; }
+    .mini-bar{ position:relative; height:3px; border-radius:2px; background:rgba(240,240,240,0.10); }
+    .mini-dot{ position:absolute; top:-2.5px; width:8px; height:8px; border-radius:50%; background:var(--text); transform:translateX(-50%); }
+    .mini-cap{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:0.6rem; color:var(--faint); margin-top:4px; }
+    .modal-actions{ display:flex; gap:8px; flex-wrap:wrap; padding:12px 0 14px; }
     .modal-actions:empty{ display:none; }
     .modal-actions .ui{ padding:7px 12px; }
-    .modal-body{ overflow-y:auto; overscroll-behavior:contain; padding:6px 0 18px; }
+    .modal-body{ overflow-y:auto; overscroll-behavior:contain; padding:6px 0 18px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
     .modal-body::-webkit-scrollbar{ width:8px; }
     .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+    .lead{ font-size:0.9rem; color:var(--text2); line-height:1.55; padding:2px 0 14px; margin:0 0 4px; border-bottom:1px solid var(--border); }
     .ev{ padding:14px 0; border-bottom:1px solid var(--border); }
     .ev:first-child{ padding-top:6px; }
     .ev:last-child{ border-bottom:none; }
     .ev-when{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .ev-cat{ font-size:0.6rem; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border-radius:4px; font-weight:600; }
     .ev-title{ font-size:0.98rem; font-weight:600; margin:0 0 3px; }
-    .ev-desc{ font-size:0.86rem; color:#c6c6c6; margin:0; line-height:1.5; }
+    .ev-desc{ font-size:0.86rem; color:var(--text2); margin:0; line-height:1.5; }
     .empty{ color:var(--faint); font-size:0.9rem; padding:10px 0 20px; font-style:italic; line-height:1.5; }
 
     /* grouped event list inside dense periods */
@@ -255,8 +307,11 @@
       .modal{ animation:none; }
       .seg{ transition:none; }
       .cue{ animation:none; }
+      .cell.now{ animation:none; box-shadow: inset 0 0 0 1.5px var(--text); }
+      .win.tween .cell{ transition:none; }
     }
     @media (max-width:640px){
+      .overlay{ padding:16px; }
       .modal{ padding:22px 20px 6px; }
       .modal-title{ font-size:1.15rem; }
     }
@@ -265,14 +320,11 @@
 <body>
   <div class="app">
     <header>
-      <h1>Since the Big Bang</h1>
-      <div class="hgroup">
-        <div class="filter" id="filter">
-          <button class="ui" id="filterBtn" aria-haspopup="true" aria-expanded="false">categories: <b id="filterCount">all</b> ▾</button>
-          <div class="menu" id="menu" hidden></div>
-        </div>
-        <a class="home" href="index.html">← home</a>
+      <div class="brand">
+        <h1>Since the Big Bang</h1>
+        <p class="scale">13.787 billion years · each square = <b id="scaleUnit">10M yrs</b></p>
       </div>
+      <div class="legend" id="legend" role="group" aria-label="Categories — tap to filter"></div>
     </header>
 
     <div class="stage">
@@ -280,21 +332,32 @@
            aria-label="Timeline of the universe, from the Big Bang to today. Scroll to move through time.">
         <div class="spacer" id="spacer">
           <div class="win" id="win"></div>
+          <canvas id="mosaic"></canvas>
         </div>
       </div>
-      <div class="cue" id="cue">tap a block to explore</div>
+      <div class="cue" id="cue">the whole history of the universe — tap a square to explore</div>
+      <span class="sr-live" id="srLive" aria-live="polite"></span>
     </div>
 
     <footer>
       <div class="meta">
-        <span class="pos" id="pos"></span>
-        <div class="zoom">
-          <button class="ui" id="zoomsmaller" title="smaller blocks (less time each)">−</button>
-          <button class="ui unit" id="unitbtn" title="zoom all the way out">block = <b id="unitlabel">10M yrs</b></button>
-          <button class="ui" id="zoombigger" title="bigger blocks (more time each)">+</button>
+        <span class="pos" id="pos"><b id="posEra"></b><span id="posTime"></span></span>
+        <div class="zoomcluster">
+          <div class="zoom">
+            <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
+            <span class="lab">square = <b id="unitlabel">10M yrs</b></span>
+            <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
+          </div>
+          <div class="zoom">
+            <button class="ui" id="cellminus" title="smaller squares">−</button>
+            <span class="lab">size</span>
+            <button class="ui" id="cellplus" title="bigger squares">+</button>
+            <button class="ui" id="fit" title="fit all of time on one screen">fit</button>
+          </div>
         </div>
       </div>
       <div class="barrow" id="barrow">
+        <div class="scrubtip" id="scrubtip" hidden></div>
         <div class="bar"><div class="seg" id="seg"></div></div>
         <div class="evstrip" id="evstrip" aria-hidden="true"></div>
         <div class="ticks" id="ticks"></div>
@@ -302,12 +365,18 @@
     </footer>
   </div>
 
+  <div id="tip" aria-hidden="true"></div>
+
   <div class="overlay" id="overlay" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
       <button class="close" id="close" aria-label="Close">✕</button>
       <div class="modal-kicker" id="mKicker"></div>
       <h2 class="modal-title" id="mTitle"></h2>
       <div class="modal-sub" id="mSub"></div>
+      <div class="mini" id="mMini" hidden>
+        <div class="mini-bar"><span class="mini-dot" id="mDot"></span></div>
+        <div class="mini-cap"><span>big bang</span><span>now</span></div>
+      </div>
       <div class="modal-actions" id="mActions"></div>
       <div class="modal-body" id="mBody" tabindex="0"></div>
     </div>
@@ -326,7 +395,6 @@
     // Finest is 10k yrs/block: any finer would push the scroll height past
     // mobile Safari's element-height limit at this block size.
     const UNITS = [1e4, 1e5, 1e6, 1e7];
-    const CELL_GAP = 4;
     const LAST = UNITS.length - 1;
     const OVERSCAN = 3;                   // extra rows rendered above/below view
 
@@ -1578,7 +1646,7 @@
     // with an explicit override table for the handful of keyword misfires.
     const KW = {
       cosmos: ['big bang','inflation','antimatter','antiproton','quark','nucleosynthesis','cosmic microwave','cmb','first light','dark ages','cosmic dawn','cosmic noon','supernova','quasar','galaxy','galaxies','galactic','milky way','globular','nebula','reionization','dark energy','dark matter','black hole','neutron star','pulsar','cosmic web','the universe','expansion of the universe','interstellar medium','star cluster','starburst','gamma-ray burst','white dwarf','red giant','magellanic','andromeda','local group','helium','hydrogen fuse'],
-      planet: ['sun ignites','protoplanetary','solar nebula','solar system','jupiter','saturn','planetesimal','asteroid','comet','bombardment','meteor','iron core','mantle','first atmosphere','crust','zircon','rock','gneiss','oldest crystal','sedimentary','plate tectonic','continent','supercontinent','rodinia','nuna','columbia','pangaea','pannotia','gondwana','laurasia','glaciation','snowball earth','sturtian','marinoan','gaskiers','huronian','glacier','ozone layer','banded iron','impact crater','crater','volcan','magnetic field','magnetic shield','archean','proterozoic','hadean','phanerozoic','oxygen floods','great oxidation','oceans gain oxygen','glacial','ice age','ice sheet','isthmus','land bridge','salinity','sea dries','poles reverse','magnetic flip','tectonic'],
+      planet: ['sun ignites','protoplanetary','solar nebula','solar system','jupiter','saturn','planetesimal','asteroid','comet','bombardment','meteor','iron core','mantle','first atmosphere','crust','zircon','rock','gneiss','oldest crystal','sedimentary','plate tectonic','continent','supercontinent','rodinia','nuna','columbia','pangaea','pannotia','gondwana','laurasia','glaciation','snowball earth','sturtian','marinoan','gaskiers','huronian','glacier','ozone layer','banded iron','impact crater','crater','volcan','magnetic field','magnetic shield','archean','proterozoic','hadean','phanerozoic','oxygen floods','great oxidation','oceans gain oxygen','glacial','ice age','ice sheet','isthmus','land bridge','salinity','sea dries','poles reverse','magnetic flip','tectonic','moon forms','theia','atlantic opens','ocean opens','rift','heat spike','hyperthermal','boring billion','methane','carbon cycle'],
       life: ['luca','last universal','stromatolite','cyanobacteria','photosynthesis','eukaryot','prokaryot','mitochondria','multicellular','sexual reproduction','fungi','biota','ediacaran','avalon','dickinsonia','kimberella','bilaterian','skeleton','cambrian','trilobite','vertebrate','jawless','fish','ostracoderm','placoderm','plants colonize','land plant','moss','forest','tree','tetrapod','amphibian','reptile','amniote','synapsid','dinosaur','archosaur','pterosaur','mammal','marsupial','placental','bird','archaeopteryx','feather','flowering plant','angiosperm','insect','arthropod','crinoid','coral','reef','ammonite','mollusk','mass extinction','extinction','great dying','permian','triassic','jurassic','cretaceous','devonian','ordovician','silurian','carboniferous','k-pg','k–pg','chicxulub','primate','monkey','ape','hominoid','whale','cetacean','grass','savanna','photosynth','oxygenic','biosphere','evolv','species','genus','fossil','microbe','bacteria','algae','megafauna','ground sloth','megatherium','cave bear','megaloceros','giant deer','glyptodont','mammoth','mastodon','woolly','diprotodon','marsupial lion','giant marsupial','flightless bird','moa','smilodon','sabertooth','saber-tooth'],
       human: ['hominin','hominid','australopith','ardipithecus','sahelanthropus','orrorin','paranthropus','lucy','homo habilis','homo erectus','homo ergaster','homo sapiens','neanderthal','denisovan','floresiensis','naledi','genus homo','human line','human lineage','stone tool','oldowan','acheulean','handaxe','control of fire','learn to control fire','hearth','cooking','symbolic thought','ochre','beads','jewelry','cave paint','chauvet','lascaux','rock art','venus figurine','out of africa','beringia','peopling','first americans','clovis','last glacial maximum','ice age ends','holocene begins','holocene','hunter-gather','foraging','bipedal','brain size'],
       civ: ['göbekli','gobekli','agriculture','farming','neolithic','domesticat','first town','first city','cities','jericho','çatalhöyük','catalhoyuk','the wheel','pottery','bronze age','iron age','copper','writing','cuneiform','hieroglyph','pyramid','stonehenge','ziggurat','hammurabi','code of','law code','empire','dynasty','pharaoh','mesopotamia','sumer','babylon','assyria','egypt','indus','shang','zhou','qin','han dynasty','maya','aztec','inca','rome','roman','greek','athens','sparta','democracy','republic','caesar','augustus','alexander','persia','carthage','buddha','confucius','christianity','jesus','islam','muhammad','caliphate','crusade','feudal','middle ages','black death','plague','mongol','genghis','ottoman','renaissance','reformation','colon','slave trade','revolution','independence','constitution','napoleon','war','battle','treaty','empire falls','fall of','united nations','cold war','genocide','pandemic','covid','ceasefire','election','president','monarch','king','queen','trade route','silk road','city-state','civil war','world war'],
@@ -1593,6 +1661,8 @@
       "Polynesians settle Hawaii":"civ", "Gunpowder formulas recorded":"tech",
       "Al-Khwarizmi's algebra":"tech", "Omar Khayyam's mathematics":"tech", "Euclid's Elements":"tech",
       "Aryabhata's astronomy":"tech", "Babylonian mathematics":"tech",
+      "Titanosaurs dominate":"life", "The Messel Pit world":"life", "Ruminants spread widely":"life",
+      "Lystrosaurus dominates":"life", "Siberian Traps erupt":"planet", "Chicxulub asteroid impact":"planet",
     };
     const kwHas = (s, arr) => arr.some(w => s.includes(w));
     function classify(ev){
@@ -1615,7 +1685,7 @@
       if (kwHas(s, KW.life)) return 'life';
       if (kwHas(s, KW.cosmos)) return 'cosmos';
       if (kwHas(s, KW.planet)) return 'planet';
-      return 'life';
+      return ya > 3.9e9 ? 'planet' : 'life';   // before life existed, default to planet
     }
 
     const EVENTS = RAW.map(e => {
@@ -1627,6 +1697,27 @@
       ev.c = classify(ev);
       return ev;
     }).sort((a,b) => a.t - b.t);
+    const EVENT_TS = EVENTS.map(e => e.t);   // sorted times, for binary search
+
+    // ── eras: one table drives the readout, modal, grid labels, ticks & bubble ──
+    // [years-ago the era begins, name] — coarse chapters of the cosmic story
+    const ERAS = [
+      [13.787e9, "the big bang"],
+      [13.6e9,   "first stars"],
+      [13.2e9,   "the age of galaxies"],
+      [4.6e9,    "the Sun & Earth form"],
+      [3.8e9,    "first life"],
+      [2e9,      "complex cells"],
+      [635e6,    "first animals"],
+      [252e6,    "age of dinosaurs"],
+      [66e6,     "age of mammals"],
+      [2.5e6,    "the human story"],
+      [12e3,     "civilization"],
+    ];
+    function eraOf(ya){
+      for (let i = ERAS.length - 1; i >= 0; i--) if (ya <= ERAS[i][0]) return ERAS[i][1];
+      return ERAS[0][1];
+    }
 
     // ── formatting ─────────────────────────────────────────────
     const commas = n => Math.round(n).toLocaleString('en-US');
@@ -1638,6 +1729,19 @@
       if (u >= 1e6) return (u/1e6) + "M yrs";
       if (u >= 1e3) return (u/1e3) + "k yrs";
       return u === 1 ? "1 yr" : u + " yrs";
+    }
+    // a bare time span, e.g. "12M yrs", "600k yrs", "5,300 yrs"
+    function fmtGap(y){
+      if (y >= 1e9) return trim(y/1e9) + "B yrs";
+      if (y >= 1e6) return trim(y/1e6) + "M yrs";
+      if (y >= 1e3) return trim(y/1e3) + "k yrs";
+      return commas(Math.max(1, y)) + " yrs";
+    }
+    // first index in EVENT_TS whose t >= x (binary search over sorted events)
+    function lowerBound(x){
+      let lo = 0, hi = EVENT_TS.length;
+      while (lo < hi){ const m = (lo + hi) >> 1; if (EVENT_TS[m] < x) lo = m + 1; else hi = m; }
+      return lo;
     }
     function ago(ya){
       if (ya <= 0) return "today";
@@ -1657,11 +1761,16 @@
 
     // ── state ──────────────────────────────────────────────────
     let unitIdx = LAST;                 // start with the coarsest granularity (10M yrs/block)
-    let cols = 1, cellPx = 32, gap = CELL_GAP, rowH = 1;
+    let cols = 1, cellPx = 28, gap = 3, rowH = 1;
     let blocks = 0, totalRows = 0, nowBlock = 0, spacerH = 1, maxBlockCount = 1;
     let firstRow = -1, pool = [], blockCounts = new Map(), blockMix = new Map();
     let flashT0 = 0, flashT1 = 0, flashUntil = 0;
     let overlayOpen = false;
+    let sizeLevel = 0;                   // 0 = default (max) square size; higher = smaller
+    let mosaicOn = false;                // tiny squares → draw the grid on one canvas
+    let cursorGi = null;                 // keyboard cursor block, null until first arrow
+    let lastGi = null;                   // last-opened block, for flash-on-close
+    let gridPad = 0;                     // vertical offset when grid is centred (fits screen)
     const active = new Set(CAT_ORDER);   // categories currently shown; all on by default
 
     const rgba = (c, a) => `rgba(${CATS[c].rgb[0]},${CATS[c].rgb[1]},${CATS[c].rgb[2]},${a})`;
@@ -1669,11 +1778,34 @@
     const $ = id => document.getElementById(id);
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
-    const ticksEl = $('ticks'), pos = $('pos'), unitLabel = $('unitlabel');
-    const overlay = $('overlay');
-    const menu = $('menu'), filterBtn = $('filterBtn'), filterCount = $('filterCount');
+    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit');
+    const posEra = $('posEra'), posTime = $('posTime');
+    const overlay = $('overlay'), legend = $('legend'), mosaic = $('mosaic');
+    const zoomsmaller = $('zoomsmaller'), zoombigger = $('zoombigger');
+    const cellminus = $('cellminus'), cellplus = $('cellplus'), fitBtn = $('fit');
 
     const unit = () => UNITS[unitIdx];
+
+    // square size ladder: level 0 is the default (max); each step shrinks
+    // ~28%, bottoming out at 1px — enough to fit even the finest zoom's
+    // ~1.4M blocks on one screen. Gap shrinks along with the square.
+    function sizeAt(level, W){
+      const maxPx = Math.max(15, Math.min(28, Math.round(W / 18)));
+      const px = Math.max(1, Math.round(maxPx * Math.pow(0.72, level)));
+      const g = px >= 10 ? 3 : px >= 5 ? 2 : px >= 2 ? 1 : 0;
+      return { px, g };
+    }
+    // smallest useful level for a zoom: the first size where every block of
+    // this granularity fits the stage without scrolling (or 1px, the floor)
+    function fitLevelFor(W, H, nBlocks){
+      for (let k = 0; k < 40; k++){
+        const s = sizeAt(k, W), pitch = s.px + s.g;
+        const c = Math.max(4, Math.floor((W + s.g) / pitch));
+        const h = Math.ceil(nBlocks / c) * pitch - s.g;
+        if (h <= H || s.px === 1) return k;
+      }
+      return 39;
+    }
 
     // ── tally events per block, plus each block's dominant category,
     //    counting only categories the filter currently shows ──
@@ -1715,48 +1847,254 @@
     // ── layout: one grid for ALL of time at the current block size ──
     function setup(idx){
       unitIdx = idx;
-      const W = scroller.clientWidth;
-      // ONE constant block size for every zoom level — depends only on screen
-      // width, never on the zoom. Zooming changes granularity + scroll length.
-      cellPx = Math.max(24, Math.min(44, Math.round(W / 11)));
-      gap = CELL_GAP;
+      cursorGi = null;                    // block indices change with zoom
+      const W = scroller.clientWidth, H = scroller.clientHeight;
+      blocks = Math.ceil(AGE / unit());
+      // squares are one size at every zoom; the +/− stepper scales them, and
+      // shrinking stops once everything at this zoom fits without scrolling
+      sizeLevel = Math.min(sizeLevel, fitLevelFor(W, H, blocks));
+      const s = sizeAt(sizeLevel, W);
+      cellPx = s.px;
+      gap = s.g;
       rowH = cellPx + gap;
       cols = Math.max(4, Math.floor((W + gap) / (cellPx + gap)));
-      blocks = Math.ceil(AGE / unit());
       nowBlock = Math.min(blocks - 1, Math.floor(AGE / unit()));
       totalRows = Math.ceil(blocks / cols);
       spacerH = totalRows * rowH - gap;
       spacer.style.height = spacerH + "px";
-      win.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
-      win.style.gridAutoRows = cellPx + "px";
-      win.style.gap = gap + "px";
-      win.style.setProperty('--r', Math.max(2, Math.round(cellPx * 0.11)) + "px");
+      // centre the grid when it fits; otherwise it scrolls normally from the top
+      const fits = spacerH <= H;
+      scroller.classList.toggle('fits', fits);
+      gridPad = fits ? Math.max(0, (H - spacerH) / 2) : 0;
 
       // events per block at this scale (respecting the category filter)
       recount();
 
-      // pooled rows: only what fits on screen (plus overscan) ever exists in the DOM
-      const poolRows = Math.min(totalRows, Math.ceil(scroller.clientHeight / rowH) + OVERSCAN * 2);
+      // pooled rows: only what fits on screen (plus overscan) ever exists in
+      // the DOM. When the squares are tiny that count explodes, so past a
+      // budget we draw the whole grid on one canvas instead.
+      const poolRows = Math.min(totalRows, Math.ceil(H / rowH) + OVERSCAN * 2);
+      mosaicOn = poolRows * cols > 30000;
       win.innerHTML = "";
-      pool = new Array(poolRows * cols);
-      const frag = document.createDocumentFragment();
-      for (let k = 0; k < pool.length; k++){
-        const d = document.createElement('div');
-        d.className = 'cell';
-        pool[k] = d;
-        frag.appendChild(d);
+      pool = [];
+      win.style.display = mosaicOn ? 'none' : '';
+      mosaic.style.display = mosaicOn ? 'block' : 'none';
+      if (!mosaicOn){
+        win.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+        win.style.gridAutoRows = cellPx + "px";
+        win.style.gap = gap + "px";
+        win.style.setProperty('--r', Math.max(2, Math.round(cellPx * 0.11)) + "px");
+        pool = new Array(poolRows * cols);
+        const frag = document.createDocumentFragment();
+        for (let k = 0; k < pool.length; k++){
+          const d = document.createElement('div');
+          d.className = 'cell';
+          pool[k] = d;
+          frag.appendChild(d);
+        }
+        win.appendChild(frag);
+      } else {
+        drawMosaic();
       }
-      win.appendChild(frag);
 
       unitLabel.textContent = fmtUnit(unit());
+      scaleUnit.textContent = fmtUnit(unit());
+      buildEraLabels();
+      syncControls();
       firstRow = -1;                    // force a repaint
       render();
+    }
+
+    // ── era boundary labels running down the grid (live in .spacer) ──
+    function buildEraLabels(){
+      spacer.querySelectorAll('.era').forEach(el => el.remove());
+      const u = unit();
+      const frag = document.createDocumentFragment();
+      let lastTop = -1e9, kept = 0;
+      for (let i = 0; i < ERAS.length; i++){
+        const ya = ERAS[i][0];
+        const row = Math.round((AGE - ya) / u / cols);
+        const top = row * rowH;
+        if (i > 0 && (top - lastTop < 16 || top > spacerH - 16)) continue;  // self-prune crowding
+        lastTop = top;
+        const el = document.createElement('div');
+        el.className = 'era' + (kept === 0 ? ' first' : '');
+        el.style.top = Math.max(0, top) + 'px';
+        el.innerHTML = `<span>${esc(ERAS[i][1])}</span>`;
+        frag.appendChild(el);
+        kept++;
+      }
+      spacer.appendChild(frag);
+    }
+
+    // ── enable/disable steppers at their limits ──
+    function syncControls(){
+      const fitLevel = fitLevelFor(scroller.clientWidth, scroller.clientHeight, blocks);
+      zoombigger.disabled = unitIdx === 0;       // "+" time = fewer yrs/square (finest)
+      zoomsmaller.disabled = unitIdx === LAST;   // "−" time = more yrs/square (coarsest)
+      cellplus.disabled = sizeLevel === 0;       // already max size
+      cellminus.disabled = sizeLevel >= fitLevel;// already fits everything
+      fitBtn.disabled = sizeLevel === fitLevel;
+    }
+
+    // ── tiny-square mode: rasterize every block onto one canvas ──
+    // one pixel per block on an offscreen canvas, scaled up with nearest-
+    // neighbour so each block stays a crisp square. Colours match the DOM
+    // cells: category accents (multi-category blocks blend by share) with
+    // brightness from event density, composited over the page background.
+    function mosaicMixRGB(gi){
+      const mix = blockMix.get(gi);
+      let r = 0, g = 0, b = 0, t = 0;
+      for (const [c, n] of mix){
+        const [cr, cg, cb] = CATS[c].rgb;
+        r += cr * n; g += cg * n; b += cb * n; t += n;
+      }
+      return [r / t, g / t, b / t];
+    }
+    function drawMosaic(){
+      const pitch = cellPx + gap;
+      const dpr = window.devicePixelRatio || 1;
+      const off = document.createElement('canvas');
+      off.width = cols; off.height = totalRows;
+      const octx = off.getContext('2d');
+      const img = octx.createImageData(cols, totalRows);
+      const d = img.data;
+      const filtered = active.size < CAT_ORDER.length;
+      const base = Math.round(10 + (240 - 10) * (filtered ? 0.02 : 0.04));
+      for (let gi = 0; gi < blocks; gi++){
+        const i = gi * 4;
+        d[i] = base; d[i+1] = base; d[i+2] = base; d[i+3] = 255;
+      }
+      for (const [gi, n] of blockCounts){
+        const a = 0.30 + 0.55 * (Math.log1p(n) / Math.log1p(maxBlockCount));
+        const [r, g, b] = mosaicMixRGB(gi);
+        const i = gi * 4;
+        d[i]   = Math.round(10 + (r - 10) * a);
+        d[i+1] = Math.round(10 + (g - 10) * a);
+        d[i+2] = Math.round(10 + (b - 10) * a);
+      }
+      octx.putImageData(img, 0, 0);
+      mosaic.width = cols * pitch * dpr;
+      mosaic.height = totalRows * pitch * dpr;
+      mosaic.style.width = (cols * pitch) + "px";
+      mosaic.style.height = (totalRows * pitch) + "px";
+      const ctx = mosaic.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, mosaic.width, mosaic.height);
+      ctx.drawImage(off, 0, 0, mosaic.width, mosaic.height);
+      const P = pitch * dpr;
+      // keyboard cursor (muted) if present
+      if (cursorGi != null && cursorGi >= 0 && cursorGi < blocks){
+        const cr = Math.floor(cursorGi / cols), cc = cursorGi % cols;
+        ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = Math.max(1, Math.round(dpr));
+        ctx.strokeRect(cc*P + 0.5, cr*P + 0.5, Math.max(1, P - 1), Math.max(1, P - 1));
+      }
+      // present-day marker: outline, or a halo dot when blocks are tiny
+      const pr = Math.floor(nowBlock / cols), pc = nowBlock % cols;
+      if (P < 6){
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(pc*P - 2, pr*P - 2, P + 4, P + 4);
+        ctx.fillStyle = '#f0f0f0'; ctx.fillRect(pc*P - 1, pr*P - 1, P + 2, P + 2);
+      } else {
+        ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = Math.max(1, Math.round(dpr));
+        ctx.strokeRect(pc*P + 0.5, pr*P + 0.5, Math.max(1, P - 1), Math.max(1, P - 1));
+      }
+    }
+    // map a client point on the mosaic → block index (or null if outside)
+    function mosaicBlockAt(clientX, clientY){
+      const r = mosaic.getBoundingClientRect();
+      const pitch = cellPx + gap;
+      const c = Math.floor((clientX - r.left) / pitch);
+      const rw = Math.floor((clientY - r.top) / pitch);
+      if (c < 0 || c >= cols || rw < 0) return null;
+      const gi = rw * cols + c;
+      return (gi >= 0 && gi < blocks) ? gi : null;
+    }
+    // when squares are tiny, snap a tap to the nearest square that has events
+    function mosaicSnap(gi){
+      const pitch = cellPx + gap;
+      if (pitch > 4 || blockCounts.get(gi)) return gi;
+      const R = Math.ceil(8 / pitch), gr = Math.floor(gi / cols), gc = gi % cols;
+      let best = gi, bestD = Infinity;
+      for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++){
+        const rr = gr + dr, cc = gc + dc;
+        if (rr < 0 || cc < 0 || cc >= cols) continue;
+        const g2 = rr * cols + cc;
+        if (g2 < 0 || g2 >= blocks || !blockCounts.get(g2)) continue;
+        const d = dr*dr + dc*dc;
+        if (d < bestD){ bestD = d; best = g2; }
+      }
+      return bestD <= (R+1)*(R+1) ? best : gi;
+    }
+    // tap a mosaic block → same overlay as a DOM cell
+    mosaic.addEventListener('click', (e) => {
+      const gi = mosaicBlockAt(e.clientX, e.clientY);
+      if (gi != null) select(mosaicSnap(gi));
+    });
+
+    // ── desktop hover tooltip: peek inside a square without opening it ──
+    const tip = $('tip');
+    const canHover = window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches;
+    function eventsInBlock(gi, limit){
+      const u = unit(), t0 = gi*u, t1 = t0+u, res = [];
+      for (let i = lowerBound(t0); i < EVENTS.length && EVENTS[i].t < t1; i++){
+        if (!active.has(EVENTS[i].c)) continue;
+        res.push(EVENTS[i]);
+        if (res.length >= limit) break;
+      }
+      return res;
+    }
+    function hideTip(){ tip.style.display = 'none'; }
+    function showTip(gi, cx, cy){
+      const n = blockCounts.get(gi) || 0;
+      const when = agoShort(AGE - gi * unit());
+      let html;
+      if (n === 0){
+        html = `<div class="tip-when solo">${esc(when)}</div>`;
+      } else {
+        html = `<div class="tip-when">${esc(when)} · ${n} ${n===1?'event':'events'}</div>`;
+        for (const ev of eventsInBlock(gi, 3))
+          html += `<div class="tip-ev"><i style="background:${rgba(ev.c,1)}"></i>${esc(ev.title)}</div>`;
+        if (n > 3) html += `<div class="tip-more">+ ${n - 3} more</div>`;
+      }
+      tip.innerHTML = html;
+      tip.style.display = 'block';
+      const w = tip.offsetWidth, h = tip.offsetHeight;
+      let x = cx + 14, y = cy + 14;
+      if (x + w > innerWidth - 8) x = cx - 14 - w;
+      if (y + h > innerHeight - 8) y = cy - 14 - h;
+      tip.style.left = Math.max(4, x) + 'px';
+      tip.style.top = Math.max(4, y) + 'px';
+    }
+    if (canHover){
+      let tipRaf = false, lastXY = null;
+      const onHover = (e) => {
+        lastXY = [e.clientX, e.clientY];
+        if (tipRaf) return; tipRaf = true;
+        requestAnimationFrame(() => {
+          tipRaf = false;
+          if (overlayOpen || scrubbing || !lastXY){ hideTip(); return; }
+          const [cx, cy] = lastXY;
+          let gi = null;
+          if (mosaicOn){ gi = mosaicBlockAt(cx, cy); }
+          else {
+            const el = document.elementFromPoint(cx, cy);
+            const cell = el && el.closest ? el.closest('.cell') : null;
+            if (cell && cell.dataset.gi !== undefined) gi = +cell.dataset.gi;
+          }
+          if (gi == null || gi >= blocks){ hideTip(); return; }
+          showTip(gi, cx, cy);
+        });
+      };
+      scroller.addEventListener('pointermove', onHover, { passive: true });
+      scroller.addEventListener('pointerleave', hideTip, { passive: true });
+      scroller.addEventListener('pointerdown', hideTip, { passive: true });
     }
 
     // ── paint the visible pool ─────────────────────────────────
     // each block is tinted with its dominant category's accent colour;
     // brightness scales with event density (log) so it never blows out.
     function paintPool(){
+      if (mosaicOn){ drawMosaic(); return; }
       const base = firstRow * cols;
       const flashing = performance.now() < flashUntil;
       const filtered = active.size < CAT_ORDER.length;   // a real subset is selected
@@ -1767,13 +2105,14 @@
         const n = blockCounts.get(gi) || 0;
         if (n === 0){
           // no matching events: fainter when a filter is narrowing the view
-          el.style.background = `rgba(240,240,240,${filtered ? 0.03 : 0.06})`;
+          el.style.background = `rgba(240,240,240,${filtered ? 0.02 : 0.04})`;
         } else {
-          const a = 0.22 + 0.60 * (Math.log1p(n) / Math.log1p(maxBlockCount));
+          const a = 0.30 + 0.55 * (Math.log1p(n) / Math.log1p(maxBlockCount));
           el.style.background = blockBg(gi, a);
         }
         let cls = 'cell';
         if (gi === nowBlock) cls += ' now';
+        if (gi === cursorGi) cls += ' cursor';
         if (flashing){
           const t = gi * unit();
           if (t >= flashT0 && t < flashT1) cls += ' flash';
@@ -1783,6 +2122,7 @@
     }
 
     function render(){
+      if (mosaicOn){ syncBar(); syncPos(); return; }   // canvas is already fully drawn
       const maxFirst = Math.max(0, totalRows - pool.length / cols);
       const r0 = Math.min(maxFirst, Math.max(0, Math.floor(scroller.scrollTop / rowH) - OVERSCAN));
       if (r0 !== firstRow){
@@ -1795,6 +2135,7 @@
 
     let rafPending = false;
     scroller.addEventListener('scroll', () => {
+      tip.style.display = 'none';
       if (rafPending) return;
       rafPending = true;
       requestAnimationFrame(() => { rafPending = false; render(); });
@@ -1806,7 +2147,7 @@
       seg.style.width = Math.min(100, scroller.clientHeight / spacerH * 100) + "%";
     }
     function timeAtY(viewY){
-      return ((scroller.scrollTop + viewY) / rowH) * cols * unit();
+      return Math.max(0, ((scroller.scrollTop + viewY - gridPad) / rowH) * cols * unit());
     }
     // compact "years ago" for the always-visible readout
     function agoShort(ya){
@@ -1819,14 +2160,16 @@
     function syncPos(){
       const t = Math.min(AGE, Math.max(0, timeAtY(scroller.clientHeight / 2)));
       const ya = AGE - t;
-      pos.textContent = ya <= 0 ? "today" : "≈ " + agoShort(ya);
+      posEra.textContent = ya <= 0 ? "today" : eraOf(ya);
+      posTime.textContent = ya <= 0 ? "" : " · ≈ " + agoShort(ya);
     }
 
     function buildTicks(){
       const marks = [
-        { p: 0, label: "Big Bang", cls: "l" },
-        { p: (AGE - 4.54e9) / AGE, label: "Earth forms", cls: "" },
-        { p: (AGE - 3.8e9) / AGE, label: "life", cls: "", opt: true },
+        { p: 0, label: "big bang", cls: "l" },
+        { p: (AGE - 4.6e9) / AGE, label: "sun & earth form", cls: "" },
+        { p: (AGE - 3.8e9) / AGE, label: "first life", cls: "", opt: true },
+        { p: (AGE - 635e6) / AGE, label: "first animals", cls: "", opt: true },
         { p: 1, label: "now", cls: "r" },
       ];
       ticksEl.innerHTML = marks.map(m => {
@@ -1885,12 +2228,20 @@
     let overlayOpenedAt = 0, lastFocus = null;
     function openOverlay(){
       lastFocus = document.activeElement;
+      $('tip').style.display = 'none';
       overlay.hidden = false; overlayOpen = true; overlayOpenedAt = performance.now();
       $('close').focus();
     }
     function closeOverlay(){
       overlay.hidden = true; overlayOpen = false;
       (lastFocus && lastFocus.focus ? lastFocus : scroller).focus();
+      // keep your place: briefly flash the square you were reading
+      if (!mosaicOn && lastGi != null){
+        flashT0 = lastGi * unit(); flashT1 = flashT0 + unit();
+        flashUntil = performance.now() + 1400;
+        firstRow = -1; render();
+        setTimeout(() => { firstRow = -1; render(); }, 1500);
+      }
     }
 
     // event list rendering — escape all data, and break a dense period into
@@ -1905,12 +2256,28 @@
       const s = ago(AGE - a), e = (AGE - b) <= 0 ? "today" : ago(AGE - b);
       return s === e ? s : s + " → " + e;
     }
+    // split a dense span into labelled sub-periods; once bins get down to
+    // calendar scale (≤12k yrs) switch to millennium/century groups so the
+    // ~700-event civilization square reads as an outline, not a flat wall.
+    // A depth cap + a "step must subdivide" guard guarantee termination.
     function eventsHtml(list, tLo, tHi, depth){
-      if (list.length <= 18 || depth >= 3) return list.map(evHtml).join("");
-      const N = 10, step = (tHi - tLo) / N;
+      const span = tHi - tLo;
+      if (list.length <= 18 || span <= 100 || depth >= 6) return list.map(evHtml).join("");
+      // pick a bin size that strictly subdivides this span
+      const step = span <= 12000 ? (span > 3000 ? 1000 : 100) : span / 10;
+      if (step >= span) return list.map(evHtml).join("");
+      const edges = [];
+      if (span <= 12000){                          // calendar-aligned bins
+        for (let y = Math.ceil(tLo / step) * step; y < tHi; y += step)
+          if (y > tLo) edges.push(y);
+      } else {
+        for (let i = 1; i < 10; i++) edges.push(tLo + i * step);
+      }
+      edges.unshift(tLo); edges.push(tHi);
       let html = "";
-      for (let i = 0; i < N; i++){
-        const a = tLo + i*step, b = (i === N - 1) ? tHi : tLo + (i + 1)*step;
+      for (let i = 0; i < edges.length - 1; i++){
+        const a = edges[i], b = edges[i+1];
+        if (b <= a) continue;
         const sub = list.filter(ev => ev.t >= a && ev.t < b);
         if (!sub.length) continue;
         html += `<div class="grp"><div class="grp-h">${esc(groupLabel(a, b))}  ·  ${sub.length}</div>${eventsHtml(sub, a, b, depth + 1)}</div>`;
@@ -1918,41 +2285,72 @@
       return html;
     }
 
+    // find the block index of the nearest event strictly before / after [t0,t1),
+    // skipping categories the filter has hidden. Returns null if none.
+    function neighborBlock(t0, t1, dir){
+      const u = unit();
+      let i = dir < 0 ? lowerBound(t0) - 1 : lowerBound(t1);
+      for (; i >= 0 && i < EVENTS.length; i += dir){
+        if (active.has(EVENTS[i].c)) return Math.floor(EVENTS[i].t / u);
+      }
+      return null;
+    }
+
     function select(gi){
       const u = unit();
       const t0 = gi * u, t1 = t0 + u;
       const startYA = AGE - t0, endYA = AGE - t1;
-
-      $('mKicker').textContent = "each block = " + fmtUnit(u);
+      lastGi = gi;
+      const mMini = $('mMini');
 
       if (t0 >= AGE){
+        $('mKicker').textContent = "each square = " + fmtUnit(u);
         $('mTitle').textContent = "The future";
         $('mSub').textContent = "";
+        mMini.hidden = true;
         $('mActions').innerHTML = "";
-        $('mBody').innerHTML = '<p class="empty">Time hasn\'t reached here yet. The present is the last lit block on the grid.</p>';
+        $('mBody').innerHTML = '<p class="empty">Time hasn\'t reached here yet. The present is the outlined square at the end of the grid.</p>';
         openOverlay(); return;
       }
 
+      $('mKicker').textContent = "each square = " + fmtUnit(u) + " · " + eraOf(startYA);
       $('mTitle').textContent = (u <= 100)
         ? calendar(Math.round(PRESENT_YEAR - startYA))
         : ago(startYA);
       const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
-      $('mSub').textContent = a === b ? "this block covers about " + a : "this block spans " + a + " → " + b;
+      $('mSub').textContent = a === b ? "this square covers about " + a : "this square spans " + a + " → " + b;
 
-      if (unitIdx > 0){
-        $('mActions').innerHTML = '<button class="ui" id="mZoom">zoom into this period</button>';
-        $('mZoom').addEventListener('click', () => { closeOverlay(); focusSpan(t0, t1); });
-      } else {
-        $('mActions').innerHTML = "";
-      }
+      // mini position bar: where this square sits between big bang and now
+      mMini.hidden = false;
+      $('mDot').style.left = Math.min(100, (t0 + u/2) / AGE * 100) + "%";
+
+      // prev / next event navigation, with the time gap printed on each button
+      const prevB = neighborBlock(t0, t1, -1), nextB = neighborBlock(t0, t1, +1);
+      let actions = "";
+      if (prevB != null) actions += `<button class="ui" id="mPrev">‹ ${esc(fmtGap((gi - prevB) * u))} earlier</button>`;
+      if (unitIdx > 0) actions += '<button class="ui" id="mZoom">zoom in</button>';
+      if (nextB != null) actions += `<button class="ui" id="mNext">${esc(fmtGap((nextB - gi) * u))} later ›</button>`;
+      $('mActions').innerHTML = actions;
+      if (prevB != null) $('mPrev').addEventListener('click', () => hopTo(prevB));
+      if (nextB != null) $('mNext').addEventListener('click', () => hopTo(nextB));
+      if (unitIdx > 0) $('mZoom').addEventListener('click', () => { closeOverlay(); focusSpan(t0, t1); });
 
       const list = EVENTS.filter(ev => ev.t >= t0 && ev.t < t1);
       if (list.length) $('mSub').textContent += "  ·  " + list.length + (list.length === 1 ? " event" : " events");
+      // the emotional core, stated once, where it lands hardest
+      const lead = (gi === nowBlock)
+        ? '<p class="lead">everything humans have ever built — farming, writing, cities, science, you — happened inside this one square.</p>'
+        : '';
       $('mBody').innerHTML = list.length
-        ? eventsHtml(list, t0, t1, 0)
-        : '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
+        ? lead + eventsHtml(list, t0, t1, 0)
+        : lead + '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
       $('mBody').scrollTop = 0;
       openOverlay();
+    }
+    // jump to a neighbouring block: re-center the grid behind the modal, re-open
+    function hopTo(targetB){
+      if (!mosaicOn){ scroller.scrollTop = Math.floor(targetB / cols) * rowH - scroller.clientHeight / 2; }
+      select(targetB);
     }
 
     // tap a block: plain click delegation — the browser only fires a click
@@ -2025,6 +2423,16 @@
       const r = bar.getBoundingClientRect();
       return (x - r.left) / Math.max(1, r.width);
     };
+    // a time bubble that tracks the finger/cursor while scrubbing
+    const scrubtip = $('scrubtip');
+    function showScrubTip(clientX){
+      const f = Math.max(0, Math.min(1, barFrac(clientX)));
+      const ya = AGE - f * AGE;               // bar fraction = time fraction (linear)
+      scrubtip.innerHTML = ya <= 0 ? '<b>today</b>'
+        : `<b>${esc(eraOf(ya))}</b><span> · ≈ ${esc(agoShort(ya))}</span>`;
+      scrubtip.style.left = Math.max(8, Math.min(92, f * 100)) + "%";
+      scrubtip.hidden = false;
+    }
     barrow.addEventListener('pointerdown', (e) => {
       if (overlayOpen) return;
       if (e.target.closest('.tick')) return;   // let era-marker taps jump instead of scrub
@@ -2040,72 +2448,100 @@
       }
       scrubbing = true;
       barrow.classList.add('grabbing');
+      showScrubTip(e.clientX);
       try { barrow.setPointerCapture(e.pointerId); } catch {}
       e.preventDefault();
     });
     barrow.addEventListener('pointermove', (e) => {
       if (!scrubbing) return;
       scroller.scrollTop = (barFrac(e.clientX) - grabFrac) * spacerH;
+      showScrubTip(e.clientX);
       e.preventDefault();
     });
-    const endScrub = () => { scrubbing = false; barrow.classList.remove('grabbing'); };
+    const endScrub = () => { scrubbing = false; barrow.classList.remove('grabbing'); scrubtip.hidden = true; };
     barrow.addEventListener('pointerup', endScrub);
     barrow.addEventListener('pointercancel', endScrub);
 
     // ── controls & keyboard ────────────────────────────────────
-    // "+" grows the block (more time per block); "−" shrinks it.
-    $('zoombigger').addEventListener('click', () => stepZoom(1));
-    $('zoomsmaller').addEventListener('click', () => stepZoom(-1));
-    $('unitbtn').addEventListener('click', () => {
+    // square-size stepper: "−" shrinks the squares (down to whatever fits the
+    // whole timeline at this zoom on one screen), "+" grows them back, the
+    // label resets to the default (max) size. Keeps the viewed era anchored.
+    function setCellSize(newLevel){
       const mid = scroller.clientHeight / 2;
-      zoomTo(LAST, timeAtY(mid), mid);
+      const anchorT = timeAtY(mid);
+      sizeLevel = Math.max(0, newLevel);
+      setup(unitIdx);                                    // clamps to the fit level
+      scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - mid;
+      render();
+    }
+    cellminus.addEventListener('click', () => setCellSize(sizeLevel + 1));   // smaller squares
+    cellplus.addEventListener('click', () => setCellSize(sizeLevel - 1));    // bigger squares
+    // one tap: fit the current granularity's whole grid on one screen
+    fitBtn.addEventListener('click', () => {
+      setCellSize(fitLevelFor(scroller.clientWidth, scroller.clientHeight, blocks));
+      scroller.scrollTop = 0;
     });
 
-    // ── category filter dropdown ───────────────────────────────
-    function buildMenu(){
-      menu.innerHTML = [
-        `<div class="mrow allrow" data-cat="__all"><span class="sw"></span>All categories<span class="ck">✓</span></div>`,
-        `<div class="sep"></div>`,
+    // "+" always = more detail (fewer years per square); "−" = fewer, wider squares
+    zoombigger.addEventListener('click', () => stepZoom(-1));
+    zoomsmaller.addEventListener('click', () => stepZoom(1));
+
+    // ── category legend that doubles as the filter ─────────────
+    const LEG = { cosmos:'cosmos', planet:'earth', life:'life', human:'humans', civ:'civilization', tech:'tech' };
+    function buildLegend(){
+      legend.innerHTML = [
         ...CAT_ORDER.map(k =>
-          `<div class="mrow" data-cat="${k}"><span class="sw" style="background:${rgba(k,1)}"></span>${CATS[k].label}<span class="ck">✓</span></div>`)
+          `<button type="button" class="lchip" aria-pressed="true" data-cat="${k}"><i style="background:${rgba(k,1)}"></i>${LEG[k] || CATS[k].label}</button>`),
+        `<button type="button" class="lchip allchip" aria-pressed="true" data-cat="__all"><i style="background:var(--text)"></i>all</button>`
       ].join("");
-      menu.querySelectorAll('.mrow').forEach(row => {
-        row.addEventListener('click', () => {
-          const cat = row.dataset.cat;
-          if (cat === '__all'){
-            if (active.size === CAT_ORDER.length) active.clear();
-            else CAT_ORDER.forEach(k => active.add(k));
-          } else if (active.has(cat)){ active.delete(cat); }
-          else { active.add(cat); }
-          syncMenu();
-          recount();
-          paintPool();       // repaint the visible blocks with the new filter
-          buildMarks();      // and the timeline annotation lane
-        });
-      });
+      legend.querySelectorAll('.lchip').forEach(chip =>
+        chip.addEventListener('click', () => toggleCat(chip.dataset.cat)));
     }
-    function syncMenu(){
+    function toggleCat(cat){
+      if (cat === '__all'){
+        if (active.size === CAT_ORDER.length) return;    // already all on
+        CAT_ORDER.forEach(k => active.add(k));
+      } else if (active.has(cat)){
+        if (active.size > 1) active.delete(cat);         // never empty the whole view
+      } else { active.add(cat); }
+      syncLegend();
+      const doTween = !mosaicOn;
+      if (doTween) win.classList.add('tween');
+      recount(); paintPool(); buildMarks();
+      if (doTween) setTimeout(() => win.classList.remove('tween'), 260);
+    }
+    function syncLegend(){
       const all = active.size === CAT_ORDER.length;
-      filterCount.textContent = all ? "all" : (active.size === 0 ? "none" : String(active.size));
-      menu.querySelectorAll('.mrow').forEach(row => {
-        const cat = row.dataset.cat;
-        row.classList.toggle('on', cat === '__all' ? all : active.has(cat));
+      legend.querySelectorAll('.lchip').forEach(chip => {
+        const cat = chip.dataset.cat;
+        const on = cat === '__all' ? all : active.has(cat);
+        chip.classList.toggle('off', !on);
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
     }
-    filterBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = menu.hidden;
-      menu.hidden = !open;
-      filterBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    menu.addEventListener('click', (e) => e.stopPropagation());
-    document.addEventListener('click', () => {
-      if (!menu.hidden){ menu.hidden = true; filterBtn.setAttribute('aria-expanded', 'false'); }
-    });
+
+    // ── keyboard cursor over the grid ──────────────────────────
+    const srLive = $('srLive');
+    function ensureVisible(gi){
+      const top = Math.floor(gi / cols) * rowH, bottom = top + rowH;
+      if (top < scroller.scrollTop) scroller.scrollTop = top;
+      else if (bottom > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = bottom - scroller.clientHeight;
+    }
+    function repaintCursor(){ if (mosaicOn) drawMosaic(); else { firstRow = -1; render(); } }
+    function moveCursor(d){
+      if (cursorGi == null) cursorGi = Math.max(0, Math.min(blocks - 1, Math.round(timeAtY(scroller.clientHeight / 2) / unit())));
+      else cursorGi = Math.max(0, Math.min(blocks - 1, cursorGi + d));
+      ensureVisible(cursorGi);
+      repaintCursor();
+      const n = blockCounts.get(cursorGi) || 0;
+      srLive.textContent = agoShort(AGE - cursorGi * unit()) + " · " + n + (n === 1 ? " event" : " events");
+    }
 
     window.addEventListener('keydown', (e) => {
       if (overlayOpen){
         if (e.key === 'Escape'){ closeOverlay(); return; }
+        if (e.key === 'ArrowLeft'){ const b = $('mPrev'); if (b){ e.preventDefault(); b.click(); } return; }
+        if (e.key === 'ArrowRight'){ const b = $('mNext'); if (b){ e.preventDefault(); b.click(); } return; }
         if (e.key === 'Tab'){
           const f = [...overlay.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])')]
             .filter(el => el.offsetParent !== null);
@@ -2119,14 +2555,19 @@
       }
       const vh = scroller.clientHeight;
       switch (e.key){
-        case 'ArrowUp': case 'ArrowLeft':    e.preventDefault(); scroller.scrollTop -= rowH; break;
-        case 'ArrowDown': case 'ArrowRight': e.preventDefault(); scroller.scrollTop += rowH; break;
+        case 'ArrowLeft':  e.preventDefault(); moveCursor(-1); break;
+        case 'ArrowRight': e.preventDefault(); moveCursor(1); break;
+        case 'ArrowUp':    e.preventDefault(); moveCursor(-cols); break;
+        case 'ArrowDown':  e.preventDefault(); moveCursor(cols); break;
+        case 'Enter': case ' ':
+          if (cursorGi != null){ e.preventDefault(); select(cursorGi); } break;
+        case 'Escape': if (cursorGi != null){ cursorGi = null; repaintCursor(); } break;
         case 'PageUp':   e.preventDefault(); scroller.scrollTop -= vh * 0.9; break;
         case 'PageDown': e.preventDefault(); scroller.scrollTop += vh * 0.9; break;
         case 'Home': e.preventDefault(); scroller.scrollTop = 0; break;
         case 'End':  e.preventDefault(); scroller.scrollTop = spacerH; break;
-        case '+': case '=': stepZoom(1); break;    // bigger blocks (more time each)
-        case '-': case '_': stepZoom(-1); break;   // smaller blocks
+        case '+': case '=': stepZoom(-1); break;   // zoom in — fewer years per square
+        case '-': case '_': stepZoom(1); break;    // zoom out — more years per square
       }
     });
 
@@ -2158,10 +2599,19 @@
     }
 
     // ── go ─────────────────────────────────────────────────────
-    buildMenu();
-    syncMenu();
+    buildLegend();
+    syncLegend();
     buildTicks();
     buildMarks();
+    // landing view = the whole 13.787-billion-year universe on one screen,
+    // squares kept ≥8px so they stay tappable (small phones may take ~1 screen)
+    {
+      const W0 = scroller.clientWidth, H0 = scroller.clientHeight;
+      const nb = Math.ceil(AGE / UNITS[LAST]);
+      let k = fitLevelFor(W0, H0, nb);
+      while (k > 0 && sizeAt(k, W0).px < 8) k--;
+      sizeLevel = k;
+    }
     setup(LAST);
     lastW = scroller.clientWidth;
   })();
