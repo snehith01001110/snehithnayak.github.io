@@ -138,19 +138,24 @@
     /* hover overlay: how much time one square actually holds */
     #unitLab{ position:relative; cursor:help; outline:none; }
     #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
+    /* full-screen hover reveal: one grid square packed with tiny year-squares */
     .unittip{
-      position:absolute; bottom:calc(100% + 10px); right:0;
-      display:none; z-index:8; width:212px;
-      background:var(--pill); border:1px solid var(--border); border-radius:10px;
-      padding:12px; text-align:center; white-space:normal;
-      font-family:var(--mono); font-size:0.64rem; color:var(--muted); line-height:1.4;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      position:fixed; inset:0; display:none; z-index:120; pointer-events:none;
+      align-items:center; justify-content:center;
+      background:var(--scrim); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+      white-space:normal;
     }
-    #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:block; }
-    #uttCanvas{ display:block; width:188px; height:188px; margin:0 auto 9px; border-radius:3px; }
-    .utt-cap{ display:block; color:var(--text); font-size:0.7rem; }
-    .utt-cap b{ color:var(--text); font-weight:600; font-size:0.9rem; }
-    .utt-sub{ display:block; margin-top:3px; color:var(--faint); font-size:0.58rem; }
+    #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:flex; }
+    .utt-panel{
+      background:var(--pill); border:1px solid var(--border); border-radius:14px;
+      padding:18px 18px 16px; text-align:center;
+      font-family:var(--mono); color:var(--muted); line-height:1.4;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.7);
+    }
+    #uttCanvas{ display:block; margin:0 auto 13px; border-radius:4px; }
+    .utt-cap{ display:block; color:var(--text); font-size:0.95rem; }
+    .utt-cap b{ color:var(--text); font-weight:600; font-size:1.2rem; }
+    .utt-sub{ display:block; margin-top:6px; color:var(--faint); font-size:0.72rem; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -363,9 +368,11 @@
             <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
             <span class="lab" id="unitLab" tabindex="0">square = <b id="unitlabel">10M yrs</b>
               <span class="unittip" id="unittip" role="tooltip">
-                <canvas id="uttCanvas"></canvas>
-                <span class="utt-cap">one square = <b id="uttNum"></b> years</span>
-                <span class="utt-sub">each tiny square here is a single year</span>
+                <span class="utt-panel">
+                  <canvas id="uttCanvas"></canvas>
+                  <span class="utt-cap">one square = <b id="uttNum"></b> years</span>
+                  <span class="utt-sub">each tiny square here is a single year</span>
+                </span>
               </span>
             </span>
             <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
@@ -1830,25 +1837,38 @@
       return 39;
     }
 
-    // hover viz: pack one grid square with tiny 1-year squares. A million of
-    // them can't render distinctly, so we draw as many as read as a grid and
-    // spell out that even this dense block is a fraction of a single square.
+    // hover viz: pack one grid square with tiny 1-year squares — a big square
+    // (most of the screen) packed as densely as still reads as a grid, so the
+    // scale is felt. A literal million can't render distinctly at any size, so
+    // we draw as many as fit and spell out what fraction of one square that is.
+    function unitVizDims(){
+      const size = Math.max(240, Math.min(window.innerWidth - 40, window.innerHeight - 150, 760));
+      const pitch = 1.3, cell = 1.0;
+      const side = Math.floor(size / pitch);
+      return { size, pitch, cell, side };
+    }
+    function updateUnitLabel(){
+      const { side } = unitVizDims();
+      const total = unit(), drawn = Math.min(total, side * side);
+      uttNum.textContent = commas(total);
+      uttSub.textContent = drawn < total
+        ? 'each tiny square = 1 year · showing ' + commas(drawn) + ' — only ' +
+          (drawn / total * 100).toFixed(drawn / total < 0.1 ? 1 : 0) + '% of one square'
+        : 'each tiny square here is a single year';
+    }
     function drawUnitViz(){
-      const CSS = 188, dpr = window.devicePixelRatio || 1;
-      const pitch = 2.2, cell = 1.4;
-      const side = Math.floor(CSS / pitch);
-      uttCanvas.width = CSS * dpr; uttCanvas.height = CSS * dpr;
+      const { size, pitch, cell, side } = unitVizDims();
+      const dpr = window.devicePixelRatio || 1;
+      uttCanvas.style.width = size + 'px'; uttCanvas.style.height = size + 'px';
+      uttCanvas.width = Math.round(size * dpr); uttCanvas.height = Math.round(size * dpr);
       const ctx = uttCanvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, CSS, CSS);
+      ctx.clearRect(0, 0, size, size);
       const total = unit(), drawn = Math.min(total, side * side);
       ctx.fillStyle = 'rgba(240,240,240,0.5)';
       for (let i = 0; i < drawn; i++)
         ctx.fillRect((i % side) * pitch, Math.floor(i / side) * pitch, cell, cell);
-      uttNum.textContent = commas(total);
-      uttSub.textContent = drawn < total
-        ? 'each tiny square = 1 year — even this dense block is only ' + commas(drawn) + ' of them'
-        : 'each tiny square here is a single year';
+      updateUnitLabel();
     }
 
     // ── tally events per block, plus each block's dominant category,
@@ -1943,7 +1963,7 @@
 
       unitLabel.textContent = fmtUnit(unit());
       scaleUnit.textContent = fmtUnit(unit());
-      drawUnitViz();
+      updateUnitLabel();
       buildEraLabels();
       syncControls();
       firstRow = -1;                    // force a repaint
@@ -2530,6 +2550,11 @@
     // "+" always = more detail (fewer years per square); "−" = fewer, wider squares
     zoombigger.addEventListener('click', () => stepZoom(-1));
     zoomsmaller.addEventListener('click', () => stepZoom(1));
+
+    // render the (expensive) scale overlay only when it's actually revealed
+    const unitLab = $('unitLab');
+    unitLab.addEventListener('mouseenter', drawUnitViz);
+    unitLab.addEventListener('focus', drawUnitViz);
 
     // ── category legend that doubles as the filter ─────────────
     const LEG = { cosmos:'cosmos', planet:'earth', life:'life', human:'humans', civ:'civilization', tech:'tech' };
