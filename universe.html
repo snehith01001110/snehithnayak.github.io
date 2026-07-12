@@ -139,15 +139,18 @@
     #unitLab{ position:relative; cursor:help; outline:none; }
     #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
     .unittip{
-      position:absolute; bottom:calc(100% + 9px); right:0;
-      display:none; z-index:8;
-      background:var(--pill); border:1px solid var(--border); border-radius:8px;
-      padding:8px 11px; white-space:nowrap; text-align:right;
-      font-family:var(--mono); font-size:0.66rem; color:var(--muted); line-height:1.45;
+      position:absolute; bottom:calc(100% + 10px); right:0;
+      display:none; z-index:8; width:212px;
+      background:var(--pill); border:1px solid var(--border); border-radius:10px;
+      padding:12px; text-align:center; white-space:normal;
+      font-family:var(--mono); font-size:0.64rem; color:var(--muted); line-height:1.4;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
     }
     #unitLab:hover .unittip, #unitLab:focus-visible .unittip{ display:block; }
-    .unittip b{ color:var(--text); font-weight:600; font-size:0.82rem; }
-    .unittip .lede{ color:var(--text); }
+    #uttCanvas{ display:block; width:188px; height:188px; margin:0 auto 9px; border-radius:3px; }
+    .utt-cap{ display:block; color:var(--text); font-size:0.7rem; }
+    .utt-cap b{ color:var(--text); font-weight:600; font-size:0.9rem; }
+    .utt-sub{ display:block; margin-top:3px; color:var(--faint); font-size:0.58rem; }
     button.ui{
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
@@ -359,7 +362,11 @@
           <div class="zoom">
             <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
             <span class="lab" id="unitLab" tabindex="0">square = <b id="unitlabel">10M yrs</b>
-              <span class="unittip" id="unittip" role="tooltip"></span>
+              <span class="unittip" id="unittip" role="tooltip">
+                <canvas id="uttCanvas"></canvas>
+                <span class="utt-cap">one square = <b id="uttNum"></b> years</span>
+                <span class="utt-sub">each tiny square here is a single year</span>
+              </span>
             </span>
             <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
           </div>
@@ -1793,7 +1800,8 @@
     const $ = id => document.getElementById(id);
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
-    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit'), unittip = $('unittip');
+    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit');
+    const uttCanvas = $('uttCanvas'), uttNum = $('uttNum'), uttSub = document.querySelector('.utt-sub');
     const posEra = $('posEra'), posTime = $('posTime');
     const overlay = $('overlay'), legend = $('legend'), mosaic = $('mosaic');
     const zoomsmaller = $('zoomsmaller'), zoombigger = $('zoombigger');
@@ -1820,6 +1828,27 @@
         if (h <= H || s.px === 1) return k;
       }
       return 39;
+    }
+
+    // hover viz: pack one grid square with tiny 1-year squares. A million of
+    // them can't render distinctly, so we draw as many as read as a grid and
+    // spell out that even this dense block is a fraction of a single square.
+    function drawUnitViz(){
+      const CSS = 188, dpr = window.devicePixelRatio || 1;
+      const pitch = 2.2, cell = 1.4;
+      const side = Math.floor(CSS / pitch);
+      uttCanvas.width = CSS * dpr; uttCanvas.height = CSS * dpr;
+      const ctx = uttCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, CSS, CSS);
+      const total = unit(), drawn = Math.min(total, side * side);
+      ctx.fillStyle = 'rgba(240,240,240,0.5)';
+      for (let i = 0; i < drawn; i++)
+        ctx.fillRect((i % side) * pitch, Math.floor(i / side) * pitch, cell, cell);
+      uttNum.textContent = commas(total);
+      uttSub.textContent = drawn < total
+        ? 'each tiny square = 1 year — even this dense block is only ' + commas(drawn) + ' of them'
+        : 'each tiny square here is a single year';
     }
 
     // ── tally events per block, plus each block's dominant category,
@@ -1914,7 +1943,7 @@
 
       unitLabel.textContent = fmtUnit(unit());
       scaleUnit.textContent = fmtUnit(unit());
-      unittip.innerHTML = 'every square holds<br><b>' + commas(unit()) + '</b> years';
+      drawUnitViz();
       buildEraLabels();
       syncControls();
       firstRow = -1;                    // force a repaint
