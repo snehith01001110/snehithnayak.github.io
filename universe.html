@@ -1806,7 +1806,7 @@
     // ~1.4M blocks on one screen. Gap shrinks along with the square.
     function sizeAt(level, W){
       const maxPx = Math.max(15, Math.min(28, Math.round(W / 18)));
-      const px = Math.max(1, Math.round(maxPx * Math.pow(0.72, level)));
+      const px = Math.max(1, Math.round(maxPx * Math.pow(0.82, level)));
       const g = px >= 10 ? 3 : px >= 5 ? 2 : px >= 2 ? 1 : 0;
       return { px, g };
     }
@@ -2619,14 +2619,16 @@
     syncLegend();
     buildTicks();
     buildMarks();
-    // landing view = the whole timeline at 1M yrs/square, sized so it all fits
-    // on one screen (a legible ~8–15px square on desktop). 1M is granular
-    // enough that recent history already spreads across many squares.
+    // landing view = the whole timeline at 1M yrs/square, squares grown from a
+    // perfect fit up to a comfortably legible minimum (~11px). The grid then
+    // scrolls a little from the Big Bang (and "fit" zooms out to see it all).
     const LAND_UNIT = UNITS.indexOf(1e6);   // 1M yrs per square
     {
       const W0 = scroller.clientWidth, H0 = scroller.clientHeight;
       const nb = Math.ceil(AGE / UNITS[LAND_UNIT]);
-      sizeLevel = fitLevelFor(W0, H0, nb);
+      let k = fitLevelFor(W0, H0, nb);
+      while (k > 0 && sizeAt(k, W0).px < 12) k--;   // ensure a legible square size
+      sizeLevel = k;
     }
     setup(LAND_UNIT);
     lastW = scroller.clientWidth;
