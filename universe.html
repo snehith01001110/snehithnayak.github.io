@@ -83,20 +83,13 @@
     }
     .scroller{
       position:absolute; inset:0;
-      overflow-y:auto; overflow-x:hidden;
-      overscroll-behavior:contain;
-      touch-action:pan-y;                    /* native scroll; pinch is ours */
-      -webkit-overflow-scrolling:touch;
+      overflow:hidden;                       /* scrolling is ours (virtual), not native */
+      touch-action:none;
       scrollbar-width:none;
       outline:none;
     }
     .scroller::-webkit-scrollbar{ display:none; }
-    /* when the whole grid fits, centre it vertically (the landing money shot).
-       Auto margins (not justify-content:center) so a slight overflow can never
-       push the top of the grid out of scroll reach. */
-    .scroller.fits{ display:flex; flex-direction:column; }
-    .scroller.fits .spacer{ margin-top:auto; margin-bottom:auto; }
-    .spacer{ position:relative; margin-bottom:40px; }  /* room for the "today" tag under the last row */
+    .spacer{ position:relative; height:100%; }
     .win{
       position:absolute; top:0; left:0; right:0;
       display:grid; justify-content:center;
@@ -421,10 +414,10 @@
         <span class="pos" id="pos"><b id="posEra"></b><span id="posTime"></span></span>
         <div class="zoomcluster">
           <div class="zoom">
-            <button class="ui" id="zoomsmaller" title="zoom out — more years per square">−</button>
+            <button class="ui" id="zoomsmaller" title="fewer years per square">−</button>
             <span class="lab" id="unitLab" tabindex="0" role="button" aria-haspopup="dialog"
                   title="how much time is one square? click to see">square = <b id="unitlabel">10M yrs</b></span>
-            <button class="ui" id="zoombigger" title="zoom in — fewer years per square">+</button>
+            <button class="ui" id="zoombigger" title="more years per square">+</button>
           </div>
           <div class="zoom">
             <button class="ui" id="cellminus" title="smaller squares">−</button>
@@ -2001,12 +1994,12 @@
     })();
 
     // square size ladder: level 0 is the default (max); each step shrinks
-    // ~28%, bottoming out at 1px — enough to fit even the finest zoom's
-    // ~1.4M blocks on one screen. Gap shrinks along with the square.
+    // ~28%, bottoming out at 1px. With virtual scrolling there's no element-
+    // height ceiling, so the biggest size can be generous. Gap scales too.
     function sizeAt(level, W){
-      const maxPx = Math.max(15, Math.min(28, Math.round(W / 18)));
+      const maxPx = Math.max(15, Math.min(48, Math.round(W / 14)));
       const px = Math.max(1, Math.round(maxPx * Math.pow(0.82, level)));
-      const g = px >= 10 ? 3 : px >= 5 ? 2 : px >= 2 ? 1 : 0;
+      const g = px >= 20 ? 4 : px >= 10 ? 3 : px >= 5 ? 2 : px >= 2 ? 1 : 0;
       return { px, g };
     }
     // smallest useful level for a zoom: the first size where every block of
@@ -2020,16 +2013,30 @@
       }
       return 39;
     }
-    // ── virtual scroll gearing ─────────────────────────────────
-    // browsers can't lay out elements taller than ~16M px, but the 100-yr
-    // zoom's 137.9M blocks need far more. So the DOM spacer is capped at MAXH
-    // and, when the real grid is taller, scrolling is "geared": one scrolled
-    // pixel moves `gear` real pixels through the grid. Squares keep exactly
-    // the same size at every zoom — only the scroll rate changes.
-    const MAXH = 12e6, PAD_B = 40;         // cap + the spacer's bottom margin
-    let gear = 1;
-    const realTop = () => scroller.scrollTop * gear;
-    function scrollToRealY(y){ scroller.scrollTop = y / gear; }
+    // ── virtual scroll ─────────────────────────────────────────
+    // Virtual scroll: we own the scroll offset (vtop, real grid pixels) and
+    // advance it a FIXED number of real pixels per wheel/touch input, so the
+    // scroll speed never changes with zoom or square size. The grid can be
+    // billions of squares tall without hitting the browsers' element-height
+    // ceiling, because nothing scrolls natively — content is placed by
+    // transform each frame, and vtop is clamped exactly to [0, vmax] (no
+    // overscroll, no geared jitter).
+    const BOTTOM_PAD = 40;                 // room below the last row for the today tag
+    let vtop = 0, vmax = 0;
+    const realTop = () => vtop;
+    let rafPending = false;
+    function requestRender(){
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => { rafPending = false; render(); });
+    }
+    function setVTop(y){
+      const nv = Math.max(0, Math.min(vmax, y));
+      if (nv === vtop) return;
+      vtop = nv;
+      requestRender();
+    }
+    function scrollToRealY(y){ setVTop(y); }
 
     // "how long is one square" panel: click the square= label and scroll
     // through the square's years, ONE tiny square PER YEAR, exact count.
@@ -2140,16 +2147,14 @@
       cols = Math.max(4, Math.floor((W + gap) / (cellPx + gap)));
       nowBlock = Math.min(blocks - 1, Math.floor(AGE / unit()));
       totalRows = Math.ceil(blocks / cols);
-      spacerH = totalRows * rowH - gap;
-      // cap the DOM element under the browsers' height ceiling and gear the
-      // scroll to cover the (possibly much taller) real grid
-      const vH = Math.min(spacerH, MAXH);
-      gear = spacerH > vH ? (spacerH + PAD_B - H) / (vH + PAD_B - H) : 1;
-      spacer.style.height = vH + "px";
-      // centre the grid when it fits; otherwise it scrolls normally from the top
+      const gridH = totalRows * rowH - gap;      // just the rows
+      spacerH = gridH + BOTTOM_PAD;               // scrollable extent (drives the seg + vmax)
       const fits = spacerH <= H;
-      scroller.classList.toggle('fits', fits);
-      gridPad = fits ? Math.max(0, (H - spacerH) / 2) : 0;
+      // centre the grid when it all fits, but always keep room below the last
+      // row for the today tag; otherwise start at the top and scroll down
+      gridPad = fits ? Math.max(0, Math.min(Math.round((H - gridH) / 2), H - gridH - 36)) : 0;
+      vmax = fits ? 0 : (spacerH - H);
+      vtop = Math.max(0, Math.min(vmax, vtop));   // keep the current position valid
 
       // events per block at this scale (respecting the category filter)
       recount();
@@ -2215,8 +2220,8 @@
     // ── enable/disable steppers at their limits ──
     function syncControls(){
       const fitLevel = fitLevelFor(scroller.clientWidth, scroller.clientHeight, blocks);
-      zoombigger.disabled = unitIdx === 0;       // "+" time = fewer yrs/square (finest)
-      zoomsmaller.disabled = unitIdx === LAST;   // "−" time = more yrs/square (coarsest)
+      zoombigger.disabled = unitIdx === LAST;    // "+" = more yrs/square (already coarsest)
+      zoomsmaller.disabled = unitIdx === 0;      // "−" = fewer yrs/square (already finest)
       cellplus.disabled = sizeLevel === 0;       // already max size
 
       cellminus.disabled = sizeLevel >= fitLevel;// already fits everything
@@ -2282,7 +2287,7 @@
       mosaic.height = rows * pitch * dpr;
       mosaic.style.width = (cols * pitch) + "px";
       mosaic.style.height = (rows * pitch) + "px";
-      mosaic.style.top = gearY(r0 * rowH) + "px";
+      mosaic.style.top = (gridPad + r0 * rowH - vtop) + "px";
       const ctx = mosaic.getContext('2d');
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, mosaic.width, mosaic.height);
@@ -2433,10 +2438,6 @@
       }
     }
 
-    // geared positioning: an element pinned to real grid pixel Y sits in the
-    // (capped) spacer at Y − scrollTop·(gear−1), so it tracks its row exactly
-    const gearY = y => y - scroller.scrollTop * (gear - 1);
-
     // ── viewport-space annotations (era lines + the two end tags) ──
     // Nothing here lives in the scrollable content: each element is placed at
     // its live viewport Y every frame. That keeps them pixel-accurate at any
@@ -2498,14 +2499,14 @@
       if (tagNow) placeTag(tagNow, nowBlock, false);
     }
     function render(){
-      const rt = realTop();
+      const rt = vtop, H = scroller.clientHeight;
       if (mosaicOn){
         // re-slice the canvas when the viewport nears the drawn window's edge
         const vr0 = Math.floor(rt / rowH);
-        const vr1 = Math.ceil((rt + scroller.clientHeight) / rowH);
+        const vr1 = Math.ceil((rt + H) / rowH);
         if ((vr0 < mosR0 + 4 && mosR0 > 0) || (vr1 > mosR0 + mosRows - 4 && mosR0 + mosRows < totalRows))
           drawMosaic();
-        else if (gear !== 1) mosaic.style.top = gearY(mosR0 * rowH) + "px";
+        else mosaic.style.top = (gridPad + mosR0 * rowH - vtop) + "px";
         positionNotes(); syncBar(); syncPos(); return;
       }
       const maxFirst = Math.max(0, totalRows - pool.length / cols);
@@ -2514,17 +2515,9 @@
         firstRow = r0;
         paintPool();
       }
-      win.style.transform = `translateY(${gearY(r0 * rowH)}px)`;
+      win.style.transform = `translateY(${gridPad + r0 * rowH - vtop}px)`;
       positionNotes(); syncBar(); syncPos();
     }
-
-    let rafPending = false;
-    scroller.addEventListener('scroll', () => {
-      tip.style.display = 'none';
-      if (rafPending) return;
-      rafPending = true;
-      requestAnimationFrame(() => { rafPending = false; render(); });
-    }, { passive: true });
 
     // ── bottom bar = a scrollbar through time ──────────────────
     function syncBar(){
@@ -2569,8 +2562,7 @@
     function stopClock(){ if (clockTimer){ clearInterval(clockTimer); clockTimer = 0; } }
     function syncPos(){
       const H = scroller.clientHeight;
-      const maxScroll = scroller.scrollHeight - H;
-      if (maxScroll <= 4){                       // the whole grid is on screen
+      if (vmax <= 4){                            // the whole grid is on screen
         stopYa(); stopClock(); yaShown = null;
         posEra.textContent = "all of time";
         posTime.textContent = " · big bang → today";
@@ -2578,7 +2570,7 @@
       }
       // the anchor point slides down the viewport as you scroll, so the readout
       // is exactly "the big bang" at the very top and exactly "today" at the end
-      const f = Math.min(1, Math.max(0, scroller.scrollTop / maxScroll));
+      const f = Math.min(1, Math.max(0, vtop / vmax));
       const t = Math.min(AGE, Math.max(0, timeAtY(f * H)));
       const ya = AGE - t;
       if (ya < 1){
@@ -2852,53 +2844,89 @@
     }, true);
     $('close').addEventListener('click', closeOverlay);
 
-    // ── pinch zoom via touch events (robust on iOS Safari) ─────
-    let pinch = null;
+    // ── touch: one finger pans (with inertia), two fingers pinch-zoom ──
+    let pinch = null, pan = null;
+    let momRaf = 0, momVel = 0, momLast = 0;
+    function stopMomentum(){ if (momRaf){ cancelAnimationFrame(momRaf); momRaf = 0; } momVel = 0; }
+    function momentumStep(){
+      momRaf = 0;
+      const now = performance.now();
+      const dt = Math.min(40, now - momLast); momLast = now;
+      setVTop(vtop + momVel * dt);
+      momVel *= Math.pow(0.9, dt / 16);                 // decay
+      // keep going until the fling slows down or hits an end
+      if (Math.abs(momVel) > 0.02 && vtop > 0 && vtop < vmax)
+        momRaf = requestAnimationFrame(momentumStep);
+    }
     scroller.addEventListener('touchstart', (e) => {
+      stopMomentum();
       if (e.touches.length === 2){
+        pan = null;
         const [a, b] = e.touches;
         const rect = scroller.getBoundingClientRect();
         const midY = (a.clientY + b.clientY) / 2 - rect.top;
-        pinch = {
-          d0: Math.max(30, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)),
-          idx: unitIdx,
-          anchorT: timeAtY(midY),
-          midY,
-        };
-      } else {
+        pinch = { d0: Math.max(30, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)),
+                  idx: unitIdx, anchorT: timeAtY(midY), midY };
+      } else if (e.touches.length === 1){
         pinch = null;
+        pan = { y: e.touches[0].clientY, t: performance.now(), vel: 0 };
       }
     }, { passive: true });
     scroller.addEventListener('touchmove', (e) => {
       if (e.touches.length >= 2){
         e.preventDefault();               // stop Safari's page zoom / scroll
+        pan = null;
         if (!pinch) return;
         const [a, b] = e.touches;
         const d = Math.max(30, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY));
         const steps = Math.round(Math.log2(d / pinch.d0));   // ×2 spread = 1 level
         const target = Math.max(0, Math.min(LAST, pinch.idx - steps));
         if (target !== unitIdx) zoomTo(target, pinch.anchorT, pinch.midY);
+      } else if (e.touches.length === 1 && pan){
+        e.preventDefault();
+        hideTip();
+        const y = e.touches[0].clientY, now = performance.now();
+        const dy = y - pan.y, dt = now - pan.t;
+        if (dt > 0) pan.vel = -dy / dt;   // px/ms, content moves opposite the finger
+        setVTop(vtop - dy);
+        pan.y = y; pan.t = now;
       }
     }, { passive: false });
-    const endPinch = e => { if (e.touches.length < 2) pinch = null; };
-    scroller.addEventListener('touchend', endPinch);
-    scroller.addEventListener('touchcancel', endPinch);
+    const endTouch = (e) => {
+      if (e.touches.length < 2) pinch = null;
+      if (e.touches.length === 0 && pan){
+        const v = pan.vel; pan = null;
+        if (Math.abs(v) > 0.04){ momVel = v; momLast = performance.now(); momentumStep(); }
+      }
+    };
+    scroller.addEventListener('touchend', endTouch);
+    scroller.addEventListener('touchcancel', endTouch);
     // Safari-proprietary gesture events would still page-zoom; disarm them
     for (const t of ['gesturestart', 'gesturechange', 'gestureend'])
       document.addEventListener(t, e => e.preventDefault(), { passive: false });
 
-    // ctrl/cmd+wheel (trackpad pinch) = zoom at cursor; plain wheel scrolls natively
+    // ctrl/cmd+wheel (trackpad pinch) = zoom at cursor; plain wheel = virtual
+    // scroll at a FIXED real-pixel rate (constant speed at every zoom/size).
+    // On trackpads the OS momentum arrives as a tail of wheel events, so this
+    // stays smooth without any extra inertia code.
     let wheelAcc = 0;
     scroller.addEventListener('wheel', (e) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
-      e.preventDefault();
-      wheelAcc += -e.deltaY;
-      if (Math.abs(wheelAcc) >= 50){
-        const dir = Math.sign(wheelAcc);
-        wheelAcc = 0;
-        const y = e.clientY - scroller.getBoundingClientRect().top;
-        zoomTo(unitIdx - dir, timeAtY(y), y);
+      if (e.ctrlKey || e.metaKey){
+        e.preventDefault();
+        wheelAcc += -e.deltaY;
+        if (Math.abs(wheelAcc) >= 50){
+          const dir = Math.sign(wheelAcc);
+          wheelAcc = 0;
+          const y = e.clientY - scroller.getBoundingClientRect().top;
+          zoomTo(unitIdx - dir, timeAtY(y), y);
+        }
+        return;
       }
+      if (vmax <= 0) return;
+      e.preventDefault();
+      hideTip();
+      const mult = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroller.clientHeight : 1;
+      setVTop(vtop + e.deltaY * mult);
     }, { passive: false });
 
     // ── scrub the bottom bar = drag the scroll position ────────
@@ -2964,12 +2992,12 @@
     // one tap: fit the current granularity's whole grid on one screen
     fitBtn.addEventListener('click', () => {
       setCellSize(fitLevelFor(scroller.clientWidth, scroller.clientHeight, blocks));
-      scroller.scrollTop = 0;
+      setVTop(0);
     });
 
-    // "+" always = more detail (fewer years per square); "−" = fewer, wider squares
-    zoombigger.addEventListener('click', () => stepZoom(-1));
-    zoomsmaller.addEventListener('click', () => stepZoom(1));
+    // "+" = more years per square (coarser); "−" = fewer years per square (finer)
+    zoombigger.addEventListener('click', () => stepZoom(1));
+    zoomsmaller.addEventListener('click', () => stepZoom(-1));
 
     // the square= label opens the scrollable "how long is one square" panel
     const unitLab = $('unitLab');
@@ -3060,12 +3088,12 @@
         case 'Enter': case ' ':
           if (cursorGi != null){ e.preventDefault(); select(cursorGi); } break;
         case 'Escape': if (cursorGi != null){ cursorGi = null; repaintCursor(); } break;
-        case 'PageUp':   e.preventDefault(); scroller.scrollTop -= vh * 0.9; break;
-        case 'PageDown': e.preventDefault(); scroller.scrollTop += vh * 0.9; break;
-        case 'Home': e.preventDefault(); scroller.scrollTop = 0; break;
-        case 'End':  e.preventDefault(); scroller.scrollTop = spacerH; break;
-        case '+': case '=': stepZoom(-1); break;   // zoom in — fewer years per square
-        case '-': case '_': stepZoom(1); break;    // zoom out — more years per square
+        case 'PageUp':   e.preventDefault(); setVTop(vtop - vh * 0.9); break;
+        case 'PageDown': e.preventDefault(); setVTop(vtop + vh * 0.9); break;
+        case 'Home': e.preventDefault(); setVTop(0); break;
+        case 'End':  e.preventDefault(); setVTop(vmax); break;
+        case '+': case '=': stepZoom(1); break;    // more years per square (coarser)
+        case '-': case '_': stepZoom(-1); break;   // fewer years per square (finer)
       }
     });
 
