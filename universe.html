@@ -297,6 +297,19 @@
     #tip .tip-ev i{ width:6px; height:6px; border-radius:2px; flex:0 0 auto; position:relative; top:1px; }
     #tip .tip-more{ color:var(--muted); padding-top:2px; }
 
+    /* event-mark preview (hovering a mark on the bottom timeline) */
+    #evtip{
+      position:fixed; z-index:95; pointer-events:none; display:none;
+      font-family:var(--mono); font-size:0.7rem; color:var(--text);
+      background:var(--pill); border:1px solid var(--border); border-radius:9px;
+      padding:8px 10px; max-width:300px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    }
+    #evtip .evtip-when{ color:var(--muted); font-size:0.64rem; margin-bottom:5px; }
+    #evtip .evtip-row{ display:flex; align-items:baseline; gap:7px; padding:1.5px 0; }
+    #evtip .evtip-row i{ width:7px; height:7px; border-radius:2px; flex:0 0 auto; position:relative; top:1px; }
+    #evtip .evtip-more{ color:var(--faint); padding-top:5px; font-size:0.63rem; }
+
     /* keyboard focus for the scrollable timeline */
     .scroller:focus-visible{ outline:2px solid var(--muted); outline-offset:-2px; }
     .sr-live{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
@@ -431,6 +444,7 @@
   </div>
 
   <div id="tip" aria-hidden="true"></div>
+  <div id="evtip" aria-hidden="true"></div>
 
   <div class="unittip" id="unittip" role="dialog" aria-modal="true"
        aria-label="How much time one square holds" hidden>
@@ -477,7 +491,7 @@
     // absolute time, block indices are derived at runtime, the mosaic draws
     // only a viewport slice, and scrolling is geared whenever a zoom's full
     // grid would exceed the browser's height ceiling — squares never resize.
-    const UNITS = [1e2, 1e3, 1e4, 1e5, 1e6, 1e7];
+    const UNITS = [1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7];
     const LAST = UNITS.length - 1;
     const OVERSCAN = 3;                   // extra rows rendered above/below view
 
@@ -1802,6 +1816,57 @@
       return ERAS[0][1];
     }
 
+    // ── milestone lines drawn across the grid (in the .gridnotes overlay) ──
+    // A denser set than ERAS: hairlines with a label at the moment each one
+    // happened. positionNotes() prunes any that would crowd, so at coarse
+    // zoom only the big chapters show and zooming in reveals more. Ordered
+    // oldest → newest (big bang is the start tag, "now" is the end tag).
+    // [years-ago, label]
+    const LINES = [
+      [13.6e9,  "stars start to form"],
+      [13.4e9,  "the first galaxies"],
+      [11e9,    "galaxies fill the sky"],
+      [8e9,     "our galaxy takes shape"],
+      [4.6e9,   "the Sun & Earth form"],
+      [4.5e9,   "the Moon forms"],
+      [4.1e9,   "Earth's first oceans"],
+      [3.8e9,   "first life appears"],
+      [3.4e9,   "photosynthesis begins"],
+      [2.4e9,   "oxygen fills the air"],
+      [2e9,     "complex cells arrive"],
+      [1.2e9,   "sex evolves"],
+      [635e6,   "the first animals"],
+      [538e6,   "the Cambrian explosion"],
+      [470e6,   "plants move onto land"],
+      [375e6,   "animals crawl ashore"],
+      [320e6,   "the first reptiles"],
+      [252e6,   "the great dying"],
+      [230e6,   "the first dinosaurs"],
+      [200e6,   "the first mammals"],
+      [150e6,   "the first birds"],
+      [130e6,   "flowers bloom"],
+      [66e6,    "the dinosaurs die out"],
+      [55e6,    "the first primates"],
+      [25e6,    "the first apes"],
+      [7e6,     "the human line splits off"],
+      [3.3e6,   "the first stone tools"],
+      [2.5e6,   "the genus Homo appears"],
+      [1e6,     "humans tame fire"],
+      [300e3,   "Homo sapiens appears"],
+      [70e3,    "humans leave Africa"],
+      [40e3,    "the first cave art"],
+      [12e3,    "farming begins"],
+      [11.7e3,  "the last ice age ends"],
+      [5200,    "writing is invented"],
+      [4600,    "the Great Pyramid is built"],
+      [3000,    "the Iron Age"],
+      [2050,    "the Roman Empire begins"],
+      [1550,    "Rome falls"],
+      [600,     "the Renaissance"],
+      [250,     "the Industrial Revolution"],
+      [70,      "the Space Age"],
+    ].sort((a, b) => b[0] - a[0]);
+
     // ── formatting ─────────────────────────────────────────────
     const commas = n => Math.round(n).toLocaleString('en-US');
     const trim = x => (Math.round(x*100)/100).toString();
@@ -2134,12 +2199,13 @@
       eraEls = [];
       const u = unit();
       const frag = document.createDocumentFragment();
-      for (let i = 1; i < ERAS.length; i++){
-        const row = Math.round((AGE - ERAS[i][0]) / u / cols);
+      for (const [ya, label] of LINES){
+        const row = Math.round((AGE - ya) / u / cols);
         const el = document.createElement('div');
         el.className = 'era';
-        el._ry = row * rowH;              // real grid Y of the boundary
-        el.innerHTML = `<span>${esc(ERAS[i][1])}</span>`;
+        el._ry = row * rowH;              // real grid Y of the milestone
+        el._ya = ya;
+        el.innerHTML = `<span>${esc(label)}</span>`;
         frag.appendChild(el);
         eraEls.push(el);
       }
@@ -2529,17 +2595,15 @@
     }
 
     function buildTicks(){
+      // only the two endpoints are labelled; every milestone in between is a
+      // hoverable event mark instead
       const marks = [
         { p: 0, label: "big bang", cls: "l" },
-        { p: (AGE - 4.6e9) / AGE, label: "sun & earth form", cls: "" },
-        { p: (AGE - 3.8e9) / AGE, label: "first life", cls: "", opt: true },
-        { p: (AGE - 635e6) / AGE, label: "first animals", cls: "", opt: true },
         { p: 1, label: "now", cls: "r" },
       ];
-      ticksEl.innerHTML = marks.map(m => {
-        const style = m.cls ? "" : `left:${(m.p*100).toFixed(2)}%`;
-        return `<button type="button" class="tick ${m.cls}${m.opt ? ' opt' : ''}" style="${style}" data-p="${m.p}" aria-label="Jump to ${m.label}"><i></i>${m.label}</button>`;
-      }).join("");
+      ticksEl.innerHTML = marks.map(m =>
+        `<button type="button" class="tick ${m.cls}" data-p="${m.p}" aria-label="Jump to ${m.label}"><i></i>${m.label}</button>`
+      ).join("");
     }
     // colour-coded event markers along the timeline, placed by when they
     // happened (linear in time, so recent history clusters near "now").
@@ -2547,28 +2611,68 @@
     const evstrip = $('evstrip');
     function buildMarks(){
       const seen = new Set(), html = [];
-      for (const ev of EVENTS){
+      for (let i = 0; i < EVENTS.length; i++){
+        const ev = EVENTS[i];
         if (!active.has(ev.c)) continue;
         const pct = (ev.t / AGE) * 100;
         const key = Math.round(pct * 5) + ":" + ev.c;   // ~0.2% resolution per colour
         if (seen.has(key)) continue;
         seen.add(key);
-        html.push(`<span class="evmark" data-t="${ev.t}" title="${esc(ev.title)} — ${esc(eventWhen(ev.t))}" style="left:${pct.toFixed(3)}%;background:${rgba(ev.c,0.9)}"></span>`);
+        html.push(`<span class="evmark" data-i="${i}" data-t="${ev.t}" style="left:${pct.toFixed(3)}%;background:${rgba(ev.c,0.9)}"></span>`);
       }
       evstrip.innerHTML = html.join("");
     }
-    // tap a mark → jump the grid to that moment and flash its square
-    evstrip.addEventListener('click', (e) => {
-      const mkEl = e.target.closest('.evmark');
-      if (!mkEl) return;
-      const t = parseFloat(mkEl.dataset.t);
+    // jump the grid to a moment and flash its square
+    function jumpToTime(t){
       const gi = Math.max(0, Math.min(blocks - 1, Math.floor(t / unit())));
       scrollToRealY(Math.floor(gi / cols) * rowH - scroller.clientHeight / 2);
       flashT0 = gi * unit(); flashT1 = flashT0 + unit();
       flashUntil = performance.now() + 1400;
       repaintCursor();
       setTimeout(repaintCursor, 1500);
+    }
+    evstrip.addEventListener('click', (e) => {
+      const mkEl = e.target.closest('.evmark');
+      if (mkEl) jumpToTime(parseFloat(mkEl.dataset.t));
     });
+
+    // hover a mark → a rich preview of the event(s) at that moment, before
+    // you decide to click to jump. Events sharing the mark's spot are grouped.
+    const evtip = $('evtip');
+    function marksEventsAt(mkEl){
+      const t = parseFloat(mkEl.dataset.t), i = +mkEl.dataset.i, c = EVENTS[i].c;
+      // gather nearby same-category events the mark de-duplicates (±0.1% of AGE)
+      const win = AGE * 0.001, out = [];
+      for (let j = Math.max(0, i - 40); j < Math.min(EVENTS.length, i + 40); j++){
+        if (EVENTS[j].c === c && Math.abs(EVENTS[j].t - t) <= win && active.has(EVENTS[j].c)) out.push(EVENTS[j]);
+      }
+      return out.length ? out : [EVENTS[i]];
+    }
+    function showEvTip(mkEl){
+      const evs = marksEventsAt(mkEl);
+      const lead = evs[0];
+      let html = `<div class="evtip-when">${esc(eventWhen(lead.t))}</div>`;
+      for (const ev of evs.slice(0, 4))
+        html += `<div class="evtip-row"><i style="background:${rgba(ev.c,1)}"></i><span>${esc(ev.title)}</span></div>`;
+      if (evs.length > 4) html += `<div class="evtip-more">+ ${evs.length - 4} more · click to jump</div>`;
+      else html += `<div class="evtip-more">click to jump</div>`;
+      evtip.innerHTML = html;
+      evtip.style.display = 'block';
+      const mr = mkEl.getBoundingClientRect();
+      const w = evtip.offsetWidth, h = evtip.offsetHeight;
+      let x = mr.left + mr.width / 2 - w / 2;
+      x = Math.max(6, Math.min(innerWidth - w - 6, x));
+      evtip.style.left = x + 'px';
+      evtip.style.top = Math.max(6, mr.top - h - 8) + 'px';
+    }
+    function hideEvTip(){ evtip.style.display = 'none'; }
+    if (canHover){
+      evstrip.addEventListener('pointermove', (e) => {
+        const mkEl = e.target.closest ? e.target.closest('.evmark') : null;
+        if (mkEl) showEvTip(mkEl); else hideEvTip();
+      }, { passive: true });
+      evstrip.addEventListener('pointerleave', hideEvTip, { passive: true });
+    }
 
     // tap an era marker → jump the scroll to that moment in time
     ticksEl.addEventListener('click', (e) => {
