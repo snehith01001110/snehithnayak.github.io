@@ -117,7 +117,7 @@
     .cell.cursor{ box-shadow: inset 0 0 0 1.5px var(--muted); }
     .cell.flash{ outline:1px solid rgba(240,240,240,0.55); outline-offset:-1px; }
     @media (hover:hover){
-      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:var(--curact, pointer); }
+      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:var(--curgrid, pointer); }
     }
     /* on-grid anchors: a pill pinned to the first square (the big bang) and
        to the present square, so the two ends of time are unmissable */
@@ -130,7 +130,9 @@
     .gridtag i{ width:12px; height:1px; background:var(--muted); flex:0 0 auto; }
     .gridtag b{ color:var(--text); font-weight:600; }
     .gridtag span{ background:var(--pill); border:1px solid var(--border); border-radius:999px; padding:3px 9px; }
-    .gridtag.rt{ flex-direction:row-reverse; }
+    /* "below the square" variant: vertical connector, pill hanging underneath */
+    .gridtag.dn{ flex-direction:column; align-items:flex-start; gap:2px; transform:none; }
+    .gridtag.dn i{ width:1px; height:8px; }
     /* gated crossfade only when toggling categories, never during scroll */
     .win.tween .cell{ transition: background .22s ease; }
 
@@ -204,7 +206,7 @@
     /* tiny-square mode: the grid drawn on a canvas — only a slice around the
        viewport, positioned absolutely in the spacer, so canvas size limits
        never bite no matter how many rows a fine zoom produces */
-    #mosaic{ display:none; position:absolute; top:0; left:0; right:0; margin:0 auto; cursor:var(--curact, pointer); }
+    #mosaic{ display:none; position:absolute; top:0; left:0; right:0; margin:0 auto; cursor:var(--curgrid, pointer); }
 
     .barrow{
       position:relative;
@@ -237,9 +239,12 @@
     .scrubtip[hidden]{ display:none; }
     .scrubtip b{ font-weight:600; }
     .scrubtip span{ color:var(--muted); }
-    /* event annotation lane (VS Code overview-ruler style), coloured by category */
+    /* event annotation lane (VS Code overview-ruler style), coloured by
+       category — each mark is tappable and jumps the grid to that moment */
     .evstrip{ position:relative; height:7px; margin-top:4px; }
-    .evmark{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px; }
+    .evmark{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px; cursor:var(--curact, pointer); }
+    .evmark::after{ content:""; position:absolute; inset:-5px -3px; }  /* enlarge tap target */
+    @media (hover:hover){ .evmark:hover{ transform:scaleY(1.6); } }
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
@@ -1862,11 +1867,13 @@
     const unit = () => UNITS[unitIdx];
 
     // ── custom cursors ─────────────────────────────────────────
-    // a soft ring everywhere; a focus reticle (ring + dot + ticks) over
-    // anything clickable. Drawn onto tiny canvases at runtime so they ship
-    // as data URIs and stay crisp on retina displays via image-set(2x).
+    // a soft ring everywhere; the same ring with a centre dot over the grid
+    // (nearly the whole screen is clickable, so this stays quiet); a focus
+    // reticle (ring + dot + ticks) over the discrete controls. Drawn onto
+    // tiny canvases at runtime so they ship as data URIs and stay crisp on
+    // retina displays via image-set(2x).
     (function makeCursors(){
-      function draw(size, scale, reticle){
+      function draw(size, scale, style){       // 'ring' | 'dot' | 'reticle'
         const c = document.createElement('canvas');
         c.width = c.height = size * scale;
         const g = c.getContext('2d');
@@ -1874,10 +1881,10 @@
         const m = size / 2;
         const dark = 'rgba(8,8,8,0.72)', light = 'rgba(246,246,246,0.96)';
         const ring = (r, w, col) => { g.beginPath(); g.arc(m, m, r, 0, Math.PI * 2); g.lineWidth = w; g.strokeStyle = col; g.stroke(); };
-        if (reticle){
+        const dot = (r, col) => { g.beginPath(); g.arc(m, m, r, 0, Math.PI * 2); g.fillStyle = col; g.fill(); };
+        if (style === 'reticle'){
           ring(6.5, 3.4, dark); ring(6.5, 1.6, light);
-          g.beginPath(); g.arc(m, m, 2.6, 0, Math.PI * 2); g.fillStyle = dark; g.fill();
-          g.beginPath(); g.arc(m, m, 1.7, 0, Math.PI * 2); g.fillStyle = light; g.fill();
+          dot(2.6, dark); dot(1.7, light);
           for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
             for (const [w, col] of [[3, dark], [1.4, light]]){
               g.beginPath();
@@ -1887,12 +1894,13 @@
           }
         } else {
           ring(5.5, 3.2, dark); ring(5.5, 1.6, light);
+          if (style === 'dot'){ dot(1.9, dark); dot(1.2, light); }
         }
         return c.toDataURL('image/png');
       }
-      function setVar(name, size, reticle, fallback){
+      function setVar(name, size, style, fallback){
         const m = size / 2;
-        const u1 = draw(size, 1, reticle), u2 = draw(size, 2, reticle);
+        const u1 = draw(size, 1, style), u2 = draw(size, 2, style);
         const candidates = [
           `image-set(url("${u1}") 1x, url("${u2}") 2x) ${m} ${m}, ${fallback}`,
           `-webkit-image-set(url("${u1}") 1x, url("${u2}") 2x) ${m} ${m}, ${fallback}`,
@@ -1905,8 +1913,9 @@
           }
         }
       }
-      setVar('--cur', 16, false, 'default');
-      setVar('--curact', 26, true, 'pointer');
+      setVar('--cur', 16, 'ring', 'default');
+      setVar('--curgrid', 16, 'dot', 'pointer');
+      setVar('--curact', 26, 'reticle', 'pointer');
     })();
 
     // square size ladder: level 0 is the default (max); each step shrinks
@@ -2115,26 +2124,57 @@
     }
 
     // ── on-grid anchors: pin "the big bang" to the first square and
-    //    "today · you are here" to the present square ──
+    //    "today · you are here" to the present square. A tag sits beside its
+    //    square only when that space holds no event squares (and stays on
+    //    screen); otherwise it hangs below — under the last row is always empty.
     function buildGridTags(){
       spacer.querySelectorAll('.gridtag').forEach(el => el.remove());
       const pitch = cellPx + gap;
       const W = scroller.clientWidth;
       const left0 = Math.max(0, (W - (cols * pitch - gap)) / 2);   // grid is centred
+      // any event squares inside this spacer-coords rect?
+      const litIn = (x0, y0, x1, y1) => {
+        const r0 = Math.max(0, Math.floor(y0 / rowH)), r1 = Math.min(totalRows - 1, Math.floor(y1 / rowH));
+        const c0 = Math.max(0, Math.floor((x0 - left0) / pitch)), c1 = Math.min(cols - 1, Math.floor((x1 - left0) / pitch));
+        for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++){
+          const gi = r * cols + c;
+          if (gi !== 0 && gi !== nowBlock && blockCounts.get(gi)) return true;
+        }
+        return false;
+      };
       const mk = (gi, html) => {
         const row = Math.floor(gi / cols), col = gi % cols;
         const el = document.createElement('div');
         el.className = 'gridtag';
-        el.style.top = Math.max(11, Math.min(spacerH - 3, row * rowH + cellPx / 2)) + 'px';
-        const x = left0 + (col + 1) * pitch + 5;
-        if (x > W - 240){                     // no room on the right → flip sides
-          el.classList.add('rt');
-          el.style.right = (W - (left0 + col * pitch) + 5) + 'px';
-        } else {
-          el.style.left = x + 'px';
-        }
         el.innerHTML = html;
         spacer.appendChild(el);
+        const w = el.offsetWidth || 170, h = el.offsetHeight || 21;
+        const cy = row * rowH + cellPx / 2;
+        const xR = left0 + (col + 1) * pitch + 5;
+        if (xR + w <= W - 6 && !litIn(xR, cy - h / 2, xR + w, cy + h / 2)){
+          el.style.top = Math.max(11, cy) + 'px';
+          el.style.left = xR + 'px';
+        } else {
+          el.classList.add('dn');
+          const w2 = el.offsetWidth || w;
+          const h2 = el.querySelector('span').offsetHeight || 21;
+          const cx = left0 + col * pitch + cellPx / 2;
+          const x = Math.max(6, Math.min(W - w2 - 6, cx - w2 / 2));
+          const top = row * rowH + cellPx + 2;
+          // hang below the square, stretching the connector until the pill
+          // covers no event squares (below the last row it's clean at once)
+          let iH = 8;
+          for (let drop = 0; drop < 4; drop++){
+            iH = 8 + drop * rowH;
+            const y0 = top + iH + 2;
+            if (!litIn(x, y0, x + w2, y0 + h2)) break;
+          }
+          el.style.top = top + 'px';
+          el.style.left = x + 'px';
+          const line = el.querySelector('i');
+          line.style.height = iH + 'px';
+          line.style.marginLeft = Math.max(2, Math.min(w2 - 3, cx - x)) + 'px';
+        }
       };
       mk(0, '<i></i><span><b>the big bang</b> — time starts here</span>');
       mk(nowBlock, '<i></i><span><b>today</b> — you are here</span>');
@@ -2230,6 +2270,11 @@
       mark(cursorGi, '#8a8a8a', false);   // keyboard cursor
       mark(0, '#f0f0f0', true);           // the big bang square
       mark(nowBlock, '#f0f0f0', true);    // the present square
+      // brief flash after a jump — bounded so a huge span can't stall the draw
+      if (performance.now() < flashUntil){
+        const u = unit(), b0 = Math.floor(flashT0 / u), b1 = Math.min(b0 + 64, Math.ceil(flashT1 / u));
+        for (let b = b0; b < b1; b++) mark(b, '#f0f0f0', false);
+      }
     }
     // map a client point on the mosaic slice → block index (or null if outside)
     function mosaicBlockAt(clientX, clientY){
@@ -2450,10 +2495,22 @@
         const key = Math.round(pct * 5) + ":" + ev.c;   // ~0.2% resolution per colour
         if (seen.has(key)) continue;
         seen.add(key);
-        html.push(`<span class="evmark" style="left:${pct.toFixed(3)}%;background:${rgba(ev.c,0.9)}"></span>`);
+        html.push(`<span class="evmark" data-t="${ev.t}" title="${esc(ev.title)} — ${esc(eventWhen(ev.t))}" style="left:${pct.toFixed(3)}%;background:${rgba(ev.c,0.9)}"></span>`);
       }
       evstrip.innerHTML = html.join("");
     }
+    // tap a mark → jump the grid to that moment and flash its square
+    evstrip.addEventListener('click', (e) => {
+      const mkEl = e.target.closest('.evmark');
+      if (!mkEl) return;
+      const t = parseFloat(mkEl.dataset.t);
+      const gi = Math.max(0, Math.min(blocks - 1, Math.floor(t / unit())));
+      scroller.scrollTop = Math.floor(gi / cols) * rowH - scroller.clientHeight / 2;
+      flashT0 = gi * unit(); flashT1 = flashT0 + unit();
+      flashUntil = performance.now() + 1400;
+      repaintCursor();
+      setTimeout(repaintCursor, 1500);
+    });
 
     // tap an era marker → jump the scroll to that moment in time
     ticksEl.addEventListener('click', (e) => {
@@ -2697,6 +2754,7 @@
     barrow.addEventListener('pointerdown', (e) => {
       if (overlayOpen) return;
       if (e.target.closest('.tick')) return;   // let era-marker taps jump instead of scrub
+      if (e.target.closest('.evmark')) return; // same for event marks
       const f = barFrac(e.clientX);
       const thumb0 = scroller.scrollTop / spacerH;
       const thumbW = Math.max(scroller.clientHeight / spacerH,
