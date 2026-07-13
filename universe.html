@@ -41,6 +41,9 @@
       -webkit-tap-highlight-color: transparent;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      /* custom cursors (set as vars at runtime): a small ring everywhere,
+         a focus reticle over anything clickable */
+      cursor: var(--cur, default);
     }
 
     .app{
@@ -60,7 +63,7 @@
     .legend{ display:flex; flex-wrap:wrap; gap:5px 14px; justify-content:flex-end; align-items:center; }
     .lchip{
       display:inline-flex; align-items:center; gap:6px;
-      background:none; border:none; padding:2px 0; cursor:pointer;
+      background:none; border:none; padding:2px 0; cursor:var(--curact, pointer);
       font-family:var(--mono); font-size:0.66rem; color:var(--muted); line-height:1;
     }
     .lchip i{ width:8px; height:8px; border-radius:2px; flex:0 0 auto; }
@@ -87,9 +90,12 @@
       outline:none;
     }
     .scroller::-webkit-scrollbar{ display:none; }
-    /* when the whole grid fits, centre it vertically (the landing money shot) */
-    .scroller.fits{ display:flex; flex-direction:column; justify-content:center; }
-    .spacer{ position:relative; }
+    /* when the whole grid fits, centre it vertically (the landing money shot).
+       Auto margins (not justify-content:center) so a slight overflow can never
+       push the top of the grid out of scroll reach. */
+    .scroller.fits{ display:flex; flex-direction:column; }
+    .scroller.fits .spacer{ margin-top:auto; margin-bottom:auto; }
+    .spacer{ position:relative; margin-bottom:14px; }  /* the last row never sits flush on the footer */
     .win{
       position:absolute; top:0; left:0; right:0;
       display:grid; justify-content:center;
@@ -106,11 +112,25 @@
       50%    { box-shadow: inset 0 0 0 1.5px rgba(240,240,240,0.40); }
     }
     .cell.now{ animation: breathe 2.8s ease-in-out infinite; }
+    /* the very first square — where time starts */
+    .cell.origin{ box-shadow: inset 0 0 0 1.5px rgba(240,240,240,0.9); }
     .cell.cursor{ box-shadow: inset 0 0 0 1.5px var(--muted); }
     .cell.flash{ outline:1px solid rgba(240,240,240,0.55); outline-offset:-1px; }
     @media (hover:hover){
-      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:pointer; }
+      .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:var(--curact, pointer); }
     }
+    /* on-grid anchors: a pill pinned to the first square (the big bang) and
+       to the present square, so the two ends of time are unmissable */
+    .gridtag{
+      position:absolute; z-index:3; pointer-events:none;
+      display:flex; align-items:center; gap:6px;
+      transform:translateY(-50%);
+      font-family:var(--mono); font-size:0.64rem; color:var(--text2); white-space:nowrap;
+    }
+    .gridtag i{ width:12px; height:1px; background:var(--muted); flex:0 0 auto; }
+    .gridtag b{ color:var(--text); font-weight:600; }
+    .gridtag span{ background:var(--pill); border:1px solid var(--border); border-radius:999px; padding:3px 9px; }
+    .gridtag.rt{ flex-direction:row-reverse; }
     /* gated crossfade only when toggling categories, never during scroll */
     .win.tween .cell{ transition: background .22s ease; }
 
@@ -136,7 +156,7 @@
     .lab{ font-family:var(--mono); font-size:0.72rem; color:var(--muted); white-space:nowrap; }
     .lab b{ color:var(--text); font-weight:600; }
     /* the square= label opens the "how long is one square" panel */
-    #unitLab{ cursor:pointer; }
+    #unitLab{ cursor:var(--curact, pointer); }
     #unitLab:hover, #unitLab:focus-visible{ color:var(--text); }
     #unitLab:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:4px; }
     /* full-screen "how long is one square" panel: click the square= label,
@@ -172,26 +192,28 @@
       font-family:var(--mono); font-size:0.72rem;
       background:var(--surface); color:var(--text);
       border:1px solid var(--border); border-radius:6px;
-      padding:5px 10px; cursor:pointer; line-height:1;
+      padding:5px 10px; cursor:var(--curact, pointer); line-height:1;
     }
     button.ui:hover{ background:var(--surface2); }
     button.ui:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; }
-    button.ui:disabled{ opacity:.32; cursor:default; background:var(--surface); }
+    button.ui:disabled{ opacity:.32; cursor:var(--cur, default); background:var(--surface); }
     @media (pointer:coarse){
       button.ui{ padding:8px 12px; }
     }
 
-    /* tiny-square mode: the whole grid drawn on one canvas */
-    #mosaic{ display:none; margin:0 auto; cursor:pointer; }
+    /* tiny-square mode: the grid drawn on a canvas — only a slice around the
+       viewport, positioned absolutely in the spacer, so canvas size limits
+       never bite no matter how many rows a fine zoom produces */
+    #mosaic{ display:none; position:absolute; top:0; left:0; right:0; margin:0 auto; cursor:var(--curact, pointer); }
 
     .barrow{
       position:relative;
       padding:8px 0 2px;                    /* generous touch target */
       touch-action:none;
       user-select:none; -webkit-user-select:none;
-      cursor:grab;
+      cursor:var(--curact, grab);
     }
-    .barrow.grabbing{ cursor:grabbing; }
+    .barrow.grabbing{ cursor:var(--curact, grabbing); }
     .bar{
       position:relative; height:6px; border-radius:3px;
       background: rgba(240,240,240,0.08);
@@ -221,7 +243,7 @@
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
-      background:none; border:none; padding:0; margin:0; cursor:pointer;
+      background:none; border:none; padding:0; margin:0; cursor:var(--curact, pointer);
       font-family:var(--mono); font-size:0.6rem; color:var(--faint); white-space:nowrap;
       text-decoration:underline; text-decoration-color:rgba(240,240,240,0.20); text-underline-offset:3px;
     }
@@ -240,7 +262,6 @@
       position:absolute; left:0; right:0; z-index:2; pointer-events:none;
       border-top:1px solid rgba(240,240,240,0.10);
     }
-    .era.first{ border-top:none; }
     .era span{
       position:relative; top:2px;
       font-family:var(--mono); font-size:0.62rem; color:var(--faint);
@@ -301,7 +322,7 @@
     .modal .close{
       position:absolute; top:14px; right:14px;
       background:transparent; border:none; color:var(--muted);
-      font-size:1rem; cursor:pointer; line-height:1; padding:6px;
+      font-size:1rem; cursor:var(--curact, pointer); line-height:1; padding:6px;
     }
     .modal .close:hover{ color:var(--text); }
     .modal-kicker{ font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
@@ -442,9 +463,11 @@
     // years per block; index 0 = finest. Every level spans all of time as one
     // scrollable grid. Blocks are ONE fixed size at every zoom — zooming only
     // changes how many years each block holds (and thus how long the scroll is).
-    // Finest is 10k yrs/block: any finer would push the scroll height past
-    // mobile Safari's element-height limit at this block size.
-    const UNITS = [1e4, 1e5, 1e6, 1e7];
+    // To add a finer level later (e.g. 100 yrs/block), just prepend it here:
+    // events store absolute time, block indices are derived at runtime, the
+    // mosaic draws only a viewport slice, and setup() auto-shrinks squares
+    // whenever a zoom's full grid would exceed the browser's height ceiling.
+    const UNITS = [1e3, 1e4, 1e5, 1e6, 1e7];
     const LAST = UNITS.length - 1;
     const OVERSCAN = 3;                   // extra rows rendered above/below view
 
@@ -1838,6 +1861,54 @@
 
     const unit = () => UNITS[unitIdx];
 
+    // ── custom cursors ─────────────────────────────────────────
+    // a soft ring everywhere; a focus reticle (ring + dot + ticks) over
+    // anything clickable. Drawn onto tiny canvases at runtime so they ship
+    // as data URIs and stay crisp on retina displays via image-set(2x).
+    (function makeCursors(){
+      function draw(size, scale, reticle){
+        const c = document.createElement('canvas');
+        c.width = c.height = size * scale;
+        const g = c.getContext('2d');
+        g.scale(scale, scale);
+        const m = size / 2;
+        const dark = 'rgba(8,8,8,0.72)', light = 'rgba(246,246,246,0.96)';
+        const ring = (r, w, col) => { g.beginPath(); g.arc(m, m, r, 0, Math.PI * 2); g.lineWidth = w; g.strokeStyle = col; g.stroke(); };
+        if (reticle){
+          ring(6.5, 3.4, dark); ring(6.5, 1.6, light);
+          g.beginPath(); g.arc(m, m, 2.6, 0, Math.PI * 2); g.fillStyle = dark; g.fill();
+          g.beginPath(); g.arc(m, m, 1.7, 0, Math.PI * 2); g.fillStyle = light; g.fill();
+          for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            for (const [w, col] of [[3, dark], [1.4, light]]){
+              g.beginPath();
+              g.moveTo(m + dx * 8.6, m + dy * 8.6); g.lineTo(m + dx * 11.4, m + dy * 11.4);
+              g.lineWidth = w; g.strokeStyle = col; g.stroke();
+            }
+          }
+        } else {
+          ring(5.5, 3.2, dark); ring(5.5, 1.6, light);
+        }
+        return c.toDataURL('image/png');
+      }
+      function setVar(name, size, reticle, fallback){
+        const m = size / 2;
+        const u1 = draw(size, 1, reticle), u2 = draw(size, 2, reticle);
+        const candidates = [
+          `image-set(url("${u1}") 1x, url("${u2}") 2x) ${m} ${m}, ${fallback}`,
+          `-webkit-image-set(url("${u1}") 1x, url("${u2}") 2x) ${m} ${m}, ${fallback}`,
+          `url("${u1}") ${m} ${m}, ${fallback}`,
+        ];
+        for (const v of candidates){
+          if (window.CSS && CSS.supports && CSS.supports('cursor', v)){
+            document.documentElement.style.setProperty(name, v);
+            return;
+          }
+        }
+      }
+      setVar('--cur', 16, false, 'default');
+      setVar('--curact', 26, true, 'pointer');
+    })();
+
     // square size ladder: level 0 is the default (max); each step shrinks
     // ~28%, bottoming out at 1px — enough to fit even the finest zoom's
     // ~1.4M blocks on one screen. Gap shrinks along with the square.
@@ -1872,7 +1943,7 @@
       const total = unit();
       // comfortable cell pitch per zoom: coarser squares hold more years, so
       // their cells shrink a little — but never below clearly-visible
-      const pitch = total >= 1e7 ? 4 : total >= 1e6 ? 5 : total >= 1e5 ? 8 : 14;
+      const pitch = total >= 1e7 ? 4 : total >= 1e6 ? 5 : total >= 1e5 ? 8 : total >= 1e4 ? 14 : 20;
       const p = Math.max(2, Math.round(pitch * dpr));       // device-px tile
       const g = Math.max(1, Math.round(p * 0.18));
       const tile = document.createElement('canvas');
@@ -1957,6 +2028,16 @@
       // squares are one size at every zoom; the +/− stepper scales them, and
       // shrinking stops once everything at this zoom fits without scrolling
       sizeLevel = Math.min(sizeLevel, fitLevelFor(W, H, blocks));
+      // stay under the browsers' element-height ceiling (~16M px on iOS):
+      // if this zoom's full grid would be too tall at the requested square
+      // size, shrink until it isn't. Matters from 1k-yr squares down.
+      const MAXH = 12e6;
+      while (sizeLevel < 39){
+        const q = sizeAt(sizeLevel, W), qp = q.px + q.g;
+        const qc = Math.max(4, Math.floor((W + q.g) / qp));
+        if (q.px === 1 || Math.ceil(blocks / qc) * qp - q.g <= MAXH) break;
+        sizeLevel++;
+      }
       const s = sizeAt(sizeLevel, W);
       cellPx = s.px;
       gap = s.g;
@@ -2005,31 +2086,58 @@
       scaleUnit.textContent = fmtUnit(unit());
       updateUnitLabel();
       buildEraLabels();
+      buildGridTags();
       syncControls();
       firstRow = -1;                    // force a repaint
       render();
     }
 
     // ── era boundary labels running down the grid (live in .spacer) ──
+    // the big bang itself (ERAS[0]) is marked by the start tag, not a label
     function buildEraLabels(){
       spacer.querySelectorAll('.era').forEach(el => el.remove());
       const u = unit();
       const frag = document.createDocumentFragment();
-      let lastTop = -1e9, kept = 0;
-      for (let i = 0; i < ERAS.length; i++){
+      let lastTop = -1e9;
+      for (let i = 1; i < ERAS.length; i++){
         const ya = ERAS[i][0];
         const row = Math.round((AGE - ya) / u / cols);
         const top = row * rowH;
-        if (i > 0 && (top - lastTop < 16 || top > spacerH - 16)) continue;  // self-prune crowding
+        if (top < 24 || top - lastTop < 16 || top > spacerH - 16) continue;  // self-prune crowding
         lastTop = top;
         const el = document.createElement('div');
-        el.className = 'era' + (kept === 0 ? ' first' : '');
-        el.style.top = Math.max(0, top) + 'px';
+        el.className = 'era';
+        el.style.top = top + 'px';
         el.innerHTML = `<span>${esc(ERAS[i][1])}</span>`;
         frag.appendChild(el);
-        kept++;
       }
       spacer.appendChild(frag);
+    }
+
+    // ── on-grid anchors: pin "the big bang" to the first square and
+    //    "today · you are here" to the present square ──
+    function buildGridTags(){
+      spacer.querySelectorAll('.gridtag').forEach(el => el.remove());
+      const pitch = cellPx + gap;
+      const W = scroller.clientWidth;
+      const left0 = Math.max(0, (W - (cols * pitch - gap)) / 2);   // grid is centred
+      const mk = (gi, html) => {
+        const row = Math.floor(gi / cols), col = gi % cols;
+        const el = document.createElement('div');
+        el.className = 'gridtag';
+        el.style.top = Math.max(11, Math.min(spacerH - 3, row * rowH + cellPx / 2)) + 'px';
+        const x = left0 + (col + 1) * pitch + 5;
+        if (x > W - 240){                     // no room on the right → flip sides
+          el.classList.add('rt');
+          el.style.right = (W - (left0 + col * pitch) + 5) + 'px';
+        } else {
+          el.style.left = x + 'px';
+        }
+        el.innerHTML = html;
+        spacer.appendChild(el);
+      };
+      mk(0, '<i></i><span><b>the big bang</b> — time starts here</span>');
+      mk(nowBlock, '<i></i><span><b>today</b> — you are here</span>');
     }
 
     // ── enable/disable steppers at their limits ──
@@ -2056,60 +2164,79 @@
       }
       return [r / t, g / t, b / t];
     }
+    // Only the rows around the viewport are ever rasterized (a "slice"), so
+    // canvas size limits never bite no matter how many rows the zoom produces
+    // — 1k-yr squares today, 100-yr squares later. render() re-slices as the
+    // viewport approaches an edge.
+    let mosR0 = 0, mosRows = 0, mosOff = null, mosImg = null;
+    const MOS_OVER = 24;                                 // slack rows above/below
     function drawMosaic(){
       const pitch = cellPx + gap;
       const dpr = window.devicePixelRatio || 1;
-      const off = document.createElement('canvas');
-      off.width = cols; off.height = totalRows;
-      const octx = off.getContext('2d');
-      const img = octx.createImageData(cols, totalRows);
-      const d = img.data;
+      const H = scroller.clientHeight;
+      const r0 = Math.max(0, Math.floor(scroller.scrollTop / rowH) - MOS_OVER);
+      const rN = Math.min(totalRows, Math.ceil((scroller.scrollTop + H) / rowH) + MOS_OVER);
+      const rows = Math.max(1, rN - r0);
+      mosR0 = r0; mosRows = rows;
+      if (!mosOff || mosOff.width !== cols || mosOff.height !== rows){
+        mosOff = document.createElement('canvas');
+        mosOff.width = cols; mosOff.height = rows;
+        mosImg = null;
+      }
+      const octx = mosOff.getContext('2d');
+      if (!mosImg) mosImg = octx.createImageData(cols, rows);
+      const d = mosImg.data;
       const filtered = active.size < CAT_ORDER.length;
       const base = Math.round(10 + (240 - 10) * (filtered ? 0.02 : 0.04));
-      for (let gi = 0; gi < blocks; gi++){
-        const i = gi * 4;
-        d[i] = base; d[i+1] = base; d[i+2] = base; d[i+3] = 255;
+      const dim  = Math.round(10 + (240 - 10) * 0.01);   // future blocks
+      const g0 = r0 * cols, g1 = rN * cols;
+      for (let gi = g0; gi < g1; gi++){
+        const i = (gi - g0) * 4, v = gi < blocks ? base : dim;
+        d[i] = v; d[i+1] = v; d[i+2] = v; d[i+3] = 255;
       }
       for (const [gi, n] of blockCounts){
+        if (gi < g0 || gi >= g1) continue;
         const a = 0.30 + 0.55 * (Math.log1p(n) / Math.log1p(maxBlockCount));
         const [r, g, b] = mosaicMixRGB(gi);
-        const i = gi * 4;
+        const i = (gi - g0) * 4;
         d[i]   = Math.round(10 + (r - 10) * a);
         d[i+1] = Math.round(10 + (g - 10) * a);
         d[i+2] = Math.round(10 + (b - 10) * a);
       }
-      octx.putImageData(img, 0, 0);
+      octx.putImageData(mosImg, 0, 0);
       mosaic.width = cols * pitch * dpr;
-      mosaic.height = totalRows * pitch * dpr;
+      mosaic.height = rows * pitch * dpr;
       mosaic.style.width = (cols * pitch) + "px";
-      mosaic.style.height = (totalRows * pitch) + "px";
+      mosaic.style.height = (rows * pitch) + "px";
+      mosaic.style.top = (r0 * rowH) + "px";
       const ctx = mosaic.getContext('2d');
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, mosaic.width, mosaic.height);
-      ctx.drawImage(off, 0, 0, mosaic.width, mosaic.height);
+      ctx.drawImage(mosOff, 0, 0, cols, rows, 0, 0, mosaic.width, mosaic.height);
       const P = pitch * dpr;
-      // keyboard cursor (muted) if present
-      if (cursorGi != null && cursorGi >= 0 && cursorGi < blocks){
-        const cr = Math.floor(cursorGi / cols), cc = cursorGi % cols;
-        ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = Math.max(1, Math.round(dpr));
-        ctx.strokeRect(cc*P + 0.5, cr*P + 0.5, Math.max(1, P - 1), Math.max(1, P - 1));
-      }
-      // present-day marker: outline, or a halo dot when blocks are tiny
-      const pr = Math.floor(nowBlock / cols), pc = nowBlock % cols;
-      if (P < 6){
-        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(pc*P - 2, pr*P - 2, P + 4, P + 4);
-        ctx.fillStyle = '#f0f0f0'; ctx.fillRect(pc*P - 1, pr*P - 1, P + 2, P + 2);
-      } else {
-        ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = Math.max(1, Math.round(dpr));
-        ctx.strokeRect(pc*P + 0.5, pr*P + 0.5, Math.max(1, P - 1), Math.max(1, P - 1));
-      }
+      // box markers, slice-local: outline, or a halo dot when blocks are tiny
+      const mark = (gi, col, halo) => {
+        if (gi == null || gi < 0 || gi >= blocks) return;
+        const mr = Math.floor(gi / cols) - r0, mc = gi % cols;
+        if (mr < 0 || mr >= rows) return;
+        if (P < 6 && halo){
+          ctx.fillStyle = '#0a0a0a'; ctx.fillRect(mc*P - 2, mr*P - 2, P + 4, P + 4);
+          ctx.fillStyle = col;       ctx.fillRect(mc*P - 1, mr*P - 1, P + 2, P + 2);
+        } else {
+          ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, Math.round(dpr));
+          ctx.strokeRect(mc*P + 0.5, mr*P + 0.5, Math.max(1, P - 1), Math.max(1, P - 1));
+        }
+      };
+      mark(cursorGi, '#8a8a8a', false);   // keyboard cursor
+      mark(0, '#f0f0f0', true);           // the big bang square
+      mark(nowBlock, '#f0f0f0', true);    // the present square
     }
-    // map a client point on the mosaic → block index (or null if outside)
+    // map a client point on the mosaic slice → block index (or null if outside)
     function mosaicBlockAt(clientX, clientY){
       const r = mosaic.getBoundingClientRect();
       const pitch = cellPx + gap;
       const c = Math.floor((clientX - r.left) / pitch);
-      const rw = Math.floor((clientY - r.top) / pitch);
+      const rw = Math.floor((clientY - r.top) / pitch) + mosR0;
       if (c < 0 || c >= cols || rw < 0) return null;
       const gi = rw * cols + c;
       return (gi >= 0 && gi < blocks) ? gi : null;
@@ -2216,6 +2343,7 @@
           el.style.background = blockBg(gi, a);
         }
         let cls = 'cell';
+        if (gi === 0) cls += ' origin';
         if (gi === nowBlock) cls += ' now';
         if (gi === cursorGi) cls += ' cursor';
         if (flashing){
@@ -2227,7 +2355,14 @@
     }
 
     function render(){
-      if (mosaicOn){ syncBar(); syncPos(); return; }   // canvas is already fully drawn
+      if (mosaicOn){
+        // re-slice the canvas when the viewport nears the drawn window's edge
+        const vr0 = Math.floor(scroller.scrollTop / rowH);
+        const vr1 = Math.ceil((scroller.scrollTop + scroller.clientHeight) / rowH);
+        if ((vr0 < mosR0 + 4 && mosR0 > 0) || (vr1 > mosR0 + mosRows - 4 && mosR0 + mosRows < totalRows))
+          drawMosaic();
+        syncBar(); syncPos(); return;
+      }
       const maxFirst = Math.max(0, totalRows - pool.length / cols);
       const r0 = Math.min(maxFirst, Math.max(0, Math.floor(scroller.scrollTop / rowH) - OVERSCAN));
       if (r0 !== firstRow){
@@ -2248,8 +2383,9 @@
 
     // ── bottom bar = a scrollbar through time ──────────────────
     function syncBar(){
-      seg.style.left = (scroller.scrollTop / spacerH * 100) + "%";
-      seg.style.width = Math.min(100, scroller.clientHeight / spacerH * 100) + "%";
+      const w = Math.min(100, scroller.clientHeight / spacerH * 100);
+      seg.style.left = Math.max(0, Math.min(100 - w, scroller.scrollTop / spacerH * 100)) + "%";
+      seg.style.width = w + "%";
     }
     function timeAtY(viewY){
       return Math.max(0, ((scroller.scrollTop + viewY - gridPad) / rowH) * cols * unit());
@@ -2262,11 +2398,31 @@
       if (ya >= 10000) return commas(ya) + " yrs ago";
       return calendar(Math.round(PRESENT_YEAR - ya));
     }
+    // round to a few significant digits but keep every zero — 87,310,000, not 87.3M
+    function roundSig(x, sig){
+      const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(x)) - sig + 1));
+      return Math.round(x / mag) * mag;
+    }
     function syncPos(){
-      const t = Math.min(AGE, Math.max(0, timeAtY(scroller.clientHeight / 2)));
+      const H = scroller.clientHeight;
+      const maxScroll = scroller.scrollHeight - H;
+      if (maxScroll <= 4){                       // the whole grid is on screen
+        posEra.textContent = "all of time";
+        posTime.textContent = " · big bang → today";
+        return;
+      }
+      // the anchor point slides down the viewport as you scroll, so the readout
+      // is exactly "the big bang" at the very top and exactly "today" at the end
+      const f = Math.min(1, Math.max(0, scroller.scrollTop / maxScroll));
+      const t = Math.min(AGE, Math.max(0, timeAtY(f * H)));
       const ya = AGE - t;
-      posEra.textContent = ya <= 0 ? "today" : eraOf(ya);
-      posTime.textContent = ya <= 0 ? "" : " · ≈ " + agoShort(ya);
+      if (ya < 1){
+        posEra.textContent = "today";
+        posTime.textContent = " · you are here";
+        return;
+      }
+      posEra.textContent = eraOf(ya);
+      posTime.textContent = " · ≈ " + commas(roundSig(ya, 4)) + " years ago";
     }
 
     function buildTicks(){
@@ -2613,10 +2769,10 @@
     }
     function toggleCat(cat){
       if (cat === '__all'){
-        if (active.size === CAT_ORDER.length) return;    // already all on
-        CAT_ORDER.forEach(k => active.add(k));
+        if (active.size === CAT_ORDER.length) active.clear();   // all on → all off
+        else CAT_ORDER.forEach(k => active.add(k));             // anything else → all on
       } else if (active.has(cat)){
-        if (active.size > 1) active.delete(cat);         // never empty the whole view
+        active.delete(cat);
       } else { active.add(cat); }
       syncLegend();
       const doTween = !mosaicOn;
