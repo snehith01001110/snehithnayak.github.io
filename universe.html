@@ -51,16 +51,16 @@
       display:flex; flex-direction:column;
     }
 
-    /* ── top bar: identity (left) + colour legend/filter (right) ── */
-    header{
-      flex:0 0 auto;
-      display:flex; align-items:flex-start; justify-content:space-between; gap:10px 20px; flex-wrap:wrap;
-      padding:calc(12px + env(safe-area-inset-top)) 16px 8px;
+    /* ── colour legend/filter: a blurred pill floating over the grid ── */
+    .legend{
+      position:absolute; top:calc(8px + env(safe-area-inset-top)); right:0; z-index:5;
+      display:flex; flex-wrap:wrap; gap:5px 14px; justify-content:flex-end; align-items:center;
+      max-width:calc(100% - 16px);
+      background:rgba(12,12,12,0.55);
+      -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+      border:1px solid var(--border); border-radius:999px;
+      padding:7px 14px;
     }
-    .brand h1{ margin:0; font:600 0.9rem/1.2 var(--sans); letter-spacing:-0.01em; color:var(--text); }
-    .brand .scale{ margin:2px 0 0; font-family:var(--mono); font-size:0.64rem; color:var(--muted); white-space:nowrap; }
-    .scale b{ color:var(--text); font-weight:600; }
-    .legend{ display:flex; flex-wrap:wrap; gap:5px 14px; justify-content:flex-end; align-items:center; }
     .lchip{
       display:inline-flex; align-items:center; gap:6px;
       background:none; border:none; padding:2px 0; cursor:var(--curact, pointer);
@@ -71,7 +71,7 @@
     .lchip.off i{ box-shadow: inset 0 0 0 1px var(--border); background:transparent !important; }
     @media (hover:hover){ .lchip:hover{ color:var(--text); } }
     .lchip:focus-visible{ outline:2px solid var(--muted); outline-offset:2px; border-radius:4px; }
-    @media (max-width:480px){ .lchip{ font-size:0.62rem; } .brand h1{ font-size:0.82rem; } }
+    @media (max-width:480px){ .lchip{ font-size:0.62rem; } }
 
     /* ── the squares: a natively scrollable grid of all of time ── */
     .stage{
@@ -95,7 +95,7 @@
        push the top of the grid out of scroll reach. */
     .scroller.fits{ display:flex; flex-direction:column; }
     .scroller.fits .spacer{ margin-top:auto; margin-bottom:auto; }
-    .spacer{ position:relative; margin-bottom:14px; }  /* the last row never sits flush on the footer */
+    .spacer{ position:relative; margin-bottom:40px; }  /* room for the "today" tag under the last row */
     .win{
       position:absolute; top:0; left:0; right:0;
       display:grid; justify-content:center;
@@ -378,15 +378,8 @@
 </head>
 <body>
   <div class="app">
-    <header>
-      <div class="brand">
-        <h1>Since the Big Bang</h1>
-        <p class="scale">13.787 billion years · each square = <b id="scaleUnit">10M yrs</b></p>
-      </div>
-      <div class="legend" id="legend" role="group" aria-label="Categories — tap to filter"></div>
-    </header>
-
     <div class="stage">
+      <div class="legend" id="legend" role="group" aria-label="Categories — tap to filter"></div>
       <div class="scroller" id="scroller" tabindex="0" role="region"
            aria-label="Timeline of the universe, from the Big Bang to today. Scroll to move through time.">
         <div class="spacer" id="spacer">
@@ -470,8 +463,8 @@
     // changes how many years each block holds (and thus how long the scroll is).
     // To add an even finer level later, just prepend it here: events store
     // absolute time, block indices are derived at runtime, the mosaic draws
-    // only a viewport slice, and setup() auto-shrinks squares whenever a
-    // zoom's full grid would exceed the browser's height ceiling.
+    // only a viewport slice, and scrolling is geared whenever a zoom's full
+    // grid would exceed the browser's height ceiling — squares never resize.
     const UNITS = [1e2, 1e3, 1e4, 1e5, 1e6, 1e7];
     const LAST = UNITS.length - 1;
     const OVERSCAN = 3;                   // extra rows rendered above/below view
@@ -1856,7 +1849,7 @@
     const $ = id => document.getElementById(id);
     const scroller = $('scroller'), spacer = $('spacer'), win = $('win');
     const seg = $('seg'), barrow = $('barrow'), bar = document.querySelector('.bar');
-    const ticksEl = $('ticks'), unitLabel = $('unitlabel'), scaleUnit = $('scaleUnit');
+    const ticksEl = $('ticks'), unitLabel = $('unitlabel');
     const unittip = $('unittip'), uttNum = $('uttNum'), uttSub = document.querySelector('.utt-sub');
     const uttScroll = $('uttScroll'), uttFull = $('uttFull'), uttRem = $('uttRem'), uttCount = $('uttCount');
     const posEra = $('posEra'), posTime = $('posTime');
@@ -1938,18 +1931,16 @@
       }
       return 39;
     }
-    // biggest square level (smallest k) whose full grid stays under the
-    // browsers' element-height ceiling (~16M px on iOS) — the 100-yr zoom's
-    // 137.9M blocks would otherwise scroll past what Safari can address
-    const MAXH = 12e6;
-    function heightFloor(W){
-      for (let k = 0; k < 39; k++){
-        const s = sizeAt(k, W), pitch = s.px + s.g;
-        const c = Math.max(4, Math.floor((W + s.g) / pitch));
-        if (s.px === 1 || Math.ceil(blocks / c) * pitch - s.g <= MAXH) return k;
-      }
-      return 39;
-    }
+    // ── virtual scroll gearing ─────────────────────────────────
+    // browsers can't lay out elements taller than ~16M px, but the 100-yr
+    // zoom's 137.9M blocks need far more. So the DOM spacer is capped at MAXH
+    // and, when the real grid is taller, scrolling is "geared": one scrolled
+    // pixel moves `gear` real pixels through the grid. Squares keep exactly
+    // the same size at every zoom — only the scroll rate changes.
+    const MAXH = 12e6, PAD_B = 40;         // cap + the spacer's bottom margin
+    let gear = 1;
+    const realTop = () => scroller.scrollTop * gear;
+    function scrollToRealY(y){ scroller.scrollTop = y / gear; }
 
     // "how long is one square" panel: click the square= label and scroll
     // through the square's years, ONE tiny square PER YEAR, exact count.
@@ -1984,6 +1975,10 @@
         el.style.backgroundSize = pitch + 'px ' + pitch + 'px';
       }
       uvCols = cols; uvPitch = pitch; uvTotal = total;
+      // only promise more scrolling when the year-field actually overflows
+      const fieldH = (fullRows + (rem ? 1 : 0)) * pitch;
+      uttSub.textContent = "every tiny square below is a single year" +
+        (fieldH > window.innerHeight * 0.7 ? " — keep scrolling" : "");
       updateUnitLabel();
     }
     function syncUnitCount(){
@@ -2047,10 +2042,8 @@
       const W = scroller.clientWidth, H = scroller.clientHeight;
       blocks = Math.ceil(AGE / unit());
       // squares are one size at every zoom; the +/− stepper scales them, and
-      // shrinking stops once everything at this zoom fits without scrolling.
-      // heightFloor keeps the grid under the browsers' height ceiling.
+      // shrinking stops once everything at this zoom fits without scrolling
       sizeLevel = Math.min(sizeLevel, fitLevelFor(W, H, blocks));
-      sizeLevel = Math.max(sizeLevel, heightFloor(W));
       const s = sizeAt(sizeLevel, W);
       cellPx = s.px;
       gap = s.g;
@@ -2059,7 +2052,11 @@
       nowBlock = Math.min(blocks - 1, Math.floor(AGE / unit()));
       totalRows = Math.ceil(blocks / cols);
       spacerH = totalRows * rowH - gap;
-      spacer.style.height = spacerH + "px";
+      // cap the DOM element under the browsers' height ceiling and gear the
+      // scroll to cover the (possibly much taller) real grid
+      const vH = Math.min(spacerH, MAXH);
+      gear = spacerH > vH ? (spacerH + PAD_B - H) / (vH + PAD_B - H) : 1;
+      spacer.style.height = vH + "px";
       // centre the grid when it fits; otherwise it scrolls normally from the top
       const fits = spacerH <= H;
       scroller.classList.toggle('fits', fits);
@@ -2096,10 +2093,10 @@
       }
 
       unitLabel.textContent = fmtUnit(unit());
-      scaleUnit.textContent = fmtUnit(unit());
       updateUnitLabel();
       buildEraLabels();
       buildGridTags();
+      overlayEls = [...spacer.querySelectorAll('.era, .gridtag')];
       syncControls();
       firstRow = -1;                    // force a repaint
       render();
@@ -2121,6 +2118,7 @@
         const el = document.createElement('div');
         el.className = 'era';
         el.style.top = top + 'px';
+        el._ry = top;                     // real grid Y, re-pinned when geared
         el.innerHTML = `<span>${esc(ERAS[i][1])}</span>`;
         frag.appendChild(el);
       }
@@ -2157,6 +2155,7 @@
         const xR = left0 + (col + 1) * pitch + 5;
         if (xR + w <= W - 6 && !litIn(xR, cy - h / 2, xR + w, cy + h / 2)){
           el.style.top = Math.max(11, cy) + 'px';
+          el._ry = Math.max(11, cy);
           el.style.left = xR + 'px';
         } else {
           el.classList.add('dn');
@@ -2174,6 +2173,7 @@
             if (!litIn(x, y0, x + w2, y0 + h2)) break;
           }
           el.style.top = top + 'px';
+          el._ry = top;
           el.style.left = x + 'px';
           const line = el.querySelector('i');
           line.style.height = iH + 'px';
@@ -2189,8 +2189,8 @@
       const fitLevel = fitLevelFor(scroller.clientWidth, scroller.clientHeight, blocks);
       zoombigger.disabled = unitIdx === 0;       // "+" time = fewer yrs/square (finest)
       zoomsmaller.disabled = unitIdx === LAST;   // "−" time = more yrs/square (coarsest)
-      // "+" size is also capped by the height ceiling at very fine zooms
-      cellplus.disabled = sizeLevel <= heightFloor(scroller.clientWidth);
+      cellplus.disabled = sizeLevel === 0;       // already max size
+
       cellminus.disabled = sizeLevel >= fitLevel;// already fits everything
       fitBtn.disabled = sizeLevel === fitLevel;
     }
@@ -2219,8 +2219,9 @@
       const pitch = cellPx + gap;
       const dpr = window.devicePixelRatio || 1;
       const H = scroller.clientHeight;
-      const r0 = Math.max(0, Math.floor(scroller.scrollTop / rowH) - MOS_OVER);
-      const rN = Math.min(totalRows, Math.ceil((scroller.scrollTop + H) / rowH) + MOS_OVER);
+      const rt = realTop();
+      const r0 = Math.max(0, Math.floor(rt / rowH) - MOS_OVER);
+      const rN = Math.min(totalRows, Math.ceil((rt + H) / rowH) + MOS_OVER);
       const rows = Math.max(1, rN - r0);
       mosR0 = r0; mosRows = rows;
       if (!mosOff || mosOff.width !== cols || mosOff.height !== rows){
@@ -2253,7 +2254,7 @@
       mosaic.height = rows * pitch * dpr;
       mosaic.style.width = (cols * pitch) + "px";
       mosaic.style.height = (rows * pitch) + "px";
-      mosaic.style.top = (r0 * rowH) + "px";
+      mosaic.style.top = gearY(r0 * rowH) + "px";
       const ctx = mosaic.getContext('2d');
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, mosaic.width, mosaic.height);
@@ -2404,23 +2405,33 @@
       }
     }
 
+    // geared positioning: an element pinned to real grid pixel Y sits in the
+    // (capped) spacer at Y − scrollTop·(gear−1), so it tracks its row exactly
+    const gearY = y => y - scroller.scrollTop * (gear - 1);
+    let overlayEls = [];                 // era labels + grid tags, re-pinned per frame
+    function syncOverlayPos(){
+      if (gear === 1) return;
+      for (const el of overlayEls) el.style.top = gearY(el._ry) + 'px';
+    }
     function render(){
+      const rt = realTop();
       if (mosaicOn){
         // re-slice the canvas when the viewport nears the drawn window's edge
-        const vr0 = Math.floor(scroller.scrollTop / rowH);
-        const vr1 = Math.ceil((scroller.scrollTop + scroller.clientHeight) / rowH);
+        const vr0 = Math.floor(rt / rowH);
+        const vr1 = Math.ceil((rt + scroller.clientHeight) / rowH);
         if ((vr0 < mosR0 + 4 && mosR0 > 0) || (vr1 > mosR0 + mosRows - 4 && mosR0 + mosRows < totalRows))
           drawMosaic();
-        syncBar(); syncPos(); return;
+        else if (gear !== 1) mosaic.style.top = gearY(mosR0 * rowH) + "px";
+        syncOverlayPos(); syncBar(); syncPos(); return;
       }
       const maxFirst = Math.max(0, totalRows - pool.length / cols);
-      const r0 = Math.min(maxFirst, Math.max(0, Math.floor(scroller.scrollTop / rowH) - OVERSCAN));
+      const r0 = Math.min(maxFirst, Math.max(0, Math.floor(rt / rowH) - OVERSCAN));
       if (r0 !== firstRow){
         firstRow = r0;
-        win.style.transform = `translateY(${r0 * rowH}px)`;
         paintPool();
       }
-      syncBar(); syncPos();
+      win.style.transform = `translateY(${gearY(r0 * rowH)}px)`;
+      syncOverlayPos(); syncBar(); syncPos();
     }
 
     let rafPending = false;
@@ -2434,11 +2445,11 @@
     // ── bottom bar = a scrollbar through time ──────────────────
     function syncBar(){
       const w = Math.min(100, scroller.clientHeight / spacerH * 100);
-      seg.style.left = Math.max(0, Math.min(100 - w, scroller.scrollTop / spacerH * 100)) + "%";
+      seg.style.left = Math.max(0, Math.min(100 - w, realTop() / spacerH * 100)) + "%";
       seg.style.width = w + "%";
     }
     function timeAtY(viewY){
-      return Math.max(0, ((scroller.scrollTop + viewY - gridPad) / rowH) * cols * unit());
+      return Math.max(0, ((realTop() + viewY - gridPad) / rowH) * cols * unit());
     }
     // compact "years ago" for the always-visible readout
     function agoShort(ya){
@@ -2534,7 +2545,7 @@
       if (!mkEl) return;
       const t = parseFloat(mkEl.dataset.t);
       const gi = Math.max(0, Math.min(blocks - 1, Math.floor(t / unit())));
-      scroller.scrollTop = Math.floor(gi / cols) * rowH - scroller.clientHeight / 2;
+      scrollToRealY(Math.floor(gi / cols) * rowH - scroller.clientHeight / 2);
       flashT0 = gi * unit(); flashT1 = flashT0 + unit();
       flashUntil = performance.now() + 1400;
       repaintCursor();
@@ -2545,7 +2556,7 @@
     ticksEl.addEventListener('click', (e) => {
       const t = e.target.closest('.tick');
       if (!t) return;
-      scroller.scrollTop = parseFloat(t.dataset.p) * Math.max(0, spacerH - scroller.clientHeight);
+      scrollToRealY(parseFloat(t.dataset.p) * Math.max(0, spacerH - scroller.clientHeight));
     });
 
     // ── zoom (block size), keeping an anchor moment fixed on screen ──
@@ -2553,19 +2564,21 @@
       newIdx = Math.max(0, Math.min(LAST, newIdx));
       if (newIdx === unitIdx) return;
       setup(newIdx);
-      scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - anchorY;
+      scrollToRealY((anchorT / (unit() * cols)) * rowH - anchorY);
       render();
     }
+    // stepper zooms anchor the BOTTOM edge — the most recent moment on screen
+    // stays exactly where it is, so you never have to scroll back to it
     const stepZoom = dir => {
-      const mid = scroller.clientHeight / 2;
-      zoomTo(unitIdx + dir, timeAtY(mid), mid);
+      const bot = scroller.clientHeight;
+      zoomTo(unitIdx + dir, timeAtY(bot), bot);
     };
 
     // "zoom into this period": finer blocks, period parked near the top
     function focusSpan(t0, t1){
       const target = Math.max(0, unitIdx - 2);
       if (target !== unitIdx) setup(target);
-      scroller.scrollTop = (t0 / (unit() * cols)) * rowH - rowH;
+      scrollToRealY((t0 / (unit() * cols)) * rowH - rowH);
       flashT0 = t0; flashT1 = t1; flashUntil = performance.now() + 1400;
       firstRow = -1; render();
       setTimeout(() => { firstRow = -1; render(); }, 1500);
@@ -2661,9 +2674,11 @@
       }
 
       $('mKicker').textContent = "each square = " + fmtUnit(u) + " · " + eraOf(startYA);
-      $('mTitle').textContent = (u <= 100)
+      // calendar years only make sense in recorded history; deep-time squares
+      // are titled with a plain, fully-written year count instead
+      $('mTitle').textContent = (u <= 100 && startYA < 10000)
         ? calendar(Math.round(PRESENT_YEAR - startYA))
-        : ago(startYA);
+        : (u <= 100 ? commas(startYA) + " years ago" : ago(startYA));
       const a = ago(startYA), b = endYA <= 0 ? "today" : ago(endYA);
       $('mSub').textContent = a === b ? "this square covers about " + a : "this square spans " + a + " → " + b;
 
@@ -2690,13 +2705,13 @@
         : '';
       $('mBody').innerHTML = list.length
         ? lead + eventsHtml(list, t0, t1, 0)
-        : lead + '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet — that\'s the point.</p>';
+        : lead + '<p class="empty">No recorded events in this period. Most of the universe\'s history is quiet.</p>';
       $('mBody').scrollTop = 0;
       openOverlay();
     }
     // jump to a neighbouring block: re-center the grid behind the modal, re-open
     function hopTo(targetB){
-      if (!mosaicOn){ scroller.scrollTop = Math.floor(targetB / cols) * rowH - scroller.clientHeight / 2; }
+      if (!mosaicOn){ scrollToRealY(Math.floor(targetB / cols) * rowH - scroller.clientHeight / 2); }
       select(targetB);
     }
 
@@ -2785,14 +2800,14 @@
       if (e.target.closest('.tick')) return;   // let era-marker taps jump instead of scrub
       if (e.target.closest('.evmark')) return; // same for event marks
       const f = barFrac(e.clientX);
-      const thumb0 = scroller.scrollTop / spacerH;
+      const thumb0 = realTop() / spacerH;
       const thumbW = Math.max(scroller.clientHeight / spacerH,
                               10 / Math.max(1, bar.getBoundingClientRect().width));
       if (f >= thumb0 && f <= thumb0 + thumbW){
         grabFrac = f - thumb0;            // grabbed the thumb: no jump
       } else {
         grabFrac = thumbW / 2;            // tapped the track: center there
-        scroller.scrollTop = (f - grabFrac) * spacerH;
+        scrollToRealY((f - grabFrac) * spacerH);
       }
       scrubbing = true;
       barrow.classList.add('grabbing');
@@ -2802,7 +2817,7 @@
     });
     barrow.addEventListener('pointermove', (e) => {
       if (!scrubbing) return;
-      scroller.scrollTop = (barFrac(e.clientX) - grabFrac) * spacerH;
+      scrollToRealY((barFrac(e.clientX) - grabFrac) * spacerH);
       showScrubTip(e.clientX);
       e.preventDefault();
     });
@@ -2815,11 +2830,11 @@
     // whole timeline at this zoom on one screen), "+" grows them back, the
     // label resets to the default (max) size. Keeps the viewed era anchored.
     function setCellSize(newLevel){
-      const mid = scroller.clientHeight / 2;
-      const anchorT = timeAtY(mid);
+      const bot = scroller.clientHeight;                 // keep the most recent
+      const anchorT = timeAtY(bot);                      // visible moment pinned
       sizeLevel = Math.max(0, newLevel);
       setup(unitIdx);                                    // clamps to the fit level
-      scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - mid;
+      scrollToRealY((anchorT / (unit() * cols)) * rowH - bot);
       render();
     }
     cellminus.addEventListener('click', () => setCellSize(sizeLevel + 1));   // smaller squares
@@ -2881,8 +2896,8 @@
     const srLive = $('srLive');
     function ensureVisible(gi){
       const top = Math.floor(gi / cols) * rowH, bottom = top + rowH;
-      if (top < scroller.scrollTop) scroller.scrollTop = top;
-      else if (bottom > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = bottom - scroller.clientHeight;
+      if (top < realTop()) scrollToRealY(top);
+      else if (bottom > realTop() + scroller.clientHeight) scrollToRealY(bottom - scroller.clientHeight);
     }
     function repaintCursor(){ if (mosaicOn) drawMosaic(); else { firstRow = -1; render(); } }
     function moveCursor(d){
@@ -2945,7 +2960,7 @@
         const mid = scroller.clientHeight / 2;
         const anchorT = timeAtY(mid);
         setup(unitIdx);
-        scroller.scrollTop = (anchorT / (unit() * cols)) * rowH - mid;
+        scrollToRealY((anchorT / (unit() * cols)) * rowH - mid);
         render();
       }, 120);
     });
