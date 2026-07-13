@@ -2460,11 +2460,23 @@
       posTime.textContent = " · ≈ " + commas(yaShown) + " years ago";
     }
     function stopYa(){ if (yaRaf){ cancelAnimationFrame(yaRaf); yaRaf = 0; } }
+    // at the very bottom the readout becomes a live clock: 13.787 billion
+    // years of scrolling lands you on the actual current second
+    let clockTimer = 0;
+    function paintClock(){
+      const d = new Date();
+      posTime.textContent = " · " +
+        d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }).toLowerCase() +
+        " · " +
+        d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', second:'2-digit' }).toLowerCase();
+    }
+    function startClock(){ if (!clockTimer){ paintClock(); clockTimer = setInterval(paintClock, 1000); } }
+    function stopClock(){ if (clockTimer){ clearInterval(clockTimer); clockTimer = 0; } }
     function syncPos(){
       const H = scroller.clientHeight;
       const maxScroll = scroller.scrollHeight - H;
       if (maxScroll <= 4){                       // the whole grid is on screen
-        stopYa(); yaShown = null;
+        stopYa(); stopClock(); yaShown = null;
         posEra.textContent = "all of time";
         posTime.textContent = " · big bang → today";
         return;
@@ -2477,9 +2489,10 @@
       if (ya < 1){
         stopYa(); yaShown = 0;                   // resume counting up from 0
         posEra.textContent = "today";
-        posTime.textContent = " · you are here";
+        startClock();
         return;
       }
+      stopClock();
       posEra.textContent = eraOf(ya);
       yaTarget = Math.round(ya);
       if (yaShown == null) yaShown = yaTarget;   // first paint: no sweep
