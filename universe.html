@@ -53,7 +53,7 @@
 
     /* ── colour legend/filter: a blurred pill floating over the grid ── */
     .legend{
-      position:absolute; top:calc(8px + env(safe-area-inset-top)); right:0; z-index:5;
+      position:absolute; top:2px; right:0; z-index:5;
       display:flex; flex-wrap:wrap; gap:5px 14px; justify-content:flex-end; align-items:center;
       max-width:calc(100% - 16px);
       background:rgba(12,12,12,0.55);
@@ -78,7 +78,8 @@
       flex:1 1 auto;
       position:relative;
       min-height:0; min-width:0;
-      margin:0 16px;
+      /* top gap so row 0 clears the edge AND the big-bang pill has room above it */
+      margin:calc(36px + env(safe-area-inset-top)) 16px 0;
     }
     .scroller{
       position:absolute; inset:0;
@@ -119,20 +120,22 @@
     @media (hover:hover){
       .cell:not(.future):hover{ outline:1px solid rgba(240,240,240,0.4); outline-offset:-1px; cursor:var(--curgrid, pointer); }
     }
-    /* on-grid anchors: a pill pinned to the first square (the big bang) and
-       to the present square, so the two ends of time are unmissable */
-    .gridtag{
-      position:absolute; z-index:3; pointer-events:none;
-      display:flex; align-items:center; gap:6px;
-      transform:translateY(-50%);
+    /* annotations (era lines + the big-bang/today tags) live in a viewport-
+       space overlay, positioned every frame — never inside the scrollable
+       content, so they can't extend scrollHeight or fight the scroll gearing */
+    /* extends 36px up into the top margin so the big-bang pill can sit above row 0 */
+    .gridnotes{ position:absolute; top:-36px; left:0; right:0; bottom:0; z-index:3; pointer-events:none; overflow:hidden; }
+    /* the big-bang pill (above its square) and the today pill (below its square) */
+    .gtag{
+      position:absolute; display:flex; align-items:flex-start;
       font-family:var(--mono); font-size:0.64rem; color:var(--text2); white-space:nowrap;
     }
-    .gridtag i{ width:12px; height:1px; background:var(--muted); flex:0 0 auto; }
-    .gridtag b{ color:var(--text); font-weight:600; }
-    .gridtag span{ background:var(--pill); border:1px solid var(--border); border-radius:999px; padding:3px 9px; }
-    /* "below the square" variant: vertical connector, pill hanging underneath */
-    .gridtag.dn{ flex-direction:column; align-items:flex-start; gap:2px; transform:none; }
-    .gridtag.dn i{ width:1px; height:8px; }
+    .gtag[hidden]{ display:none; }
+    .gtag .pill{ background:var(--pill); border:1px solid var(--border); border-radius:999px; padding:3px 9px; }
+    .gtag b{ color:var(--text); font-weight:600; }
+    .gtag i{ width:1px; background:var(--muted); }              /* vertical connector */
+    .gtag.up{ flex-direction:column; }                         /* pill on top, line below → points down to square */
+    .gtag.down{ flex-direction:column-reverse; }               /* line on top, pill below → points up to square */
     /* gated crossfade only when toggling categories, never during scroll */
     .win.tween .cell{ transition: background .22s ease; }
 
@@ -240,11 +243,18 @@
     .scrubtip b{ font-weight:600; }
     .scrubtip span{ color:var(--muted); }
     /* event annotation lane (VS Code overview-ruler style), coloured by
-       category — each mark is tappable and jumps the grid to that moment */
-    .evstrip{ position:relative; height:7px; margin-top:4px; }
-    .evmark{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px; cursor:var(--curact, pointer); }
-    .evmark::after{ content:""; position:absolute; inset:-5px -3px; }  /* enlarge tap target */
-    @media (hover:hover){ .evmark:hover{ transform:scaleY(1.6); } }
+       category — each mark is tappable and jumps the grid to that moment.
+       A precise crosshair (open centre) is used so the pointer never hides
+       the slim mark it's aimed at. */
+    .evstrip{ position:relative; height:9px; margin-top:4px; }
+    .evmark{
+      position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; border-radius:1px;
+      cursor:var(--curcross, crosshair); transition:transform .1s ease, filter .1s ease;
+    }
+    .evmark::after{ content:""; position:absolute; inset:-6px -4px; }  /* enlarge tap target */
+    @media (hover:hover){
+      .evmark:hover{ transform:scaleY(1.9); filter:brightness(1.5) saturate(1.2); z-index:2; }
+    }
     .ticks{ position:relative; height:14px; margin-top:4px; }
     .tick{
       position:absolute; top:0; transform:translateX(-50%);
@@ -262,11 +272,12 @@
     .tick.l i, .tick.r i{ margin:0 0 2px; }
     @media (max-width:899px){ .tick.opt{ display:none; } }
 
-    /* era boundary labels drawn down the grid (live in .spacer, scroll natively) */
+    /* era boundary lines — full-width hairline + label, in the .gridnotes overlay */
     .era{
-      position:absolute; left:0; right:0; z-index:2; pointer-events:none;
+      position:absolute; left:0; right:0; pointer-events:none;
       border-top:1px solid rgba(240,240,240,0.10);
     }
+    .era[hidden]{ display:none; }
     .era span{
       position:relative; top:2px;
       font-family:var(--mono); font-size:0.62rem; color:var(--faint);
@@ -387,6 +398,7 @@
           <canvas id="mosaic"></canvas>
         </div>
       </div>
+      <div class="gridnotes" id="gridnotes" aria-hidden="true"></div>
       <div class="cue" id="cue">the whole history of the universe — tap a square to explore</div>
       <span class="sr-live" id="srLive" aria-live="polite"></span>
     </div>
@@ -1885,6 +1897,17 @@
               g.lineWidth = w; g.strokeStyle = col; g.stroke();
             }
           }
+        } else if (style === 'cross'){
+          // a thin crosshair with an open centre, so a slim target (an event
+          // mark) stays fully visible under the pointer
+          for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            for (const [w, col] of [[2.6, dark], [1.2, light]]){
+              g.beginPath();
+              g.moveTo(m + dx * 3, m + dy * 3); g.lineTo(m + dx * 9.5, m + dy * 9.5);
+              g.lineWidth = w; g.strokeStyle = col; g.stroke();
+            }
+          }
+          dot(1.3, dark); dot(0.7, light);
         } else {
           ring(5.5, 3.2, dark); ring(5.5, 1.6, light);
           if (style === 'dot'){ dot(1.9, dark); dot(1.2, light); }
@@ -1909,6 +1932,7 @@
       setVar('--cur', 16, 'ring', 'default');
       setVar('--curgrid', 16, 'dot', 'pointer');
       setVar('--curact', 26, 'reticle', 'pointer');
+      setVar('--curcross', 22, 'cross', 'crosshair');
     })();
 
     // square size ladder: level 0 is the default (max); each step shrinks
@@ -2095,93 +2119,31 @@
       unitLabel.textContent = fmtUnit(unit());
       updateUnitLabel();
       buildEraLabels();
-      buildGridTags();
-      overlayEls = [...spacer.querySelectorAll('.era, .gridtag')];
       syncControls();
       firstRow = -1;                    // force a repaint
       render();
     }
 
-    // ── era boundary labels running down the grid (live in .spacer) ──
-    // the big bang itself (ERAS[0]) is marked by the start tag, not a label
+    // ── era boundary lines (in the viewport-space .gridnotes overlay) ──
+    // one <div> per era boundary is created here; positionNotes() places each
+    // at its live viewport Y every frame, so they stay accurate at any zoom or
+    // gearing. The big bang itself (ERAS[0]) is marked by the start tag.
+    let eraEls = [];
     function buildEraLabels(){
-      spacer.querySelectorAll('.era').forEach(el => el.remove());
+      gridnotes.querySelectorAll('.era').forEach(el => el.remove());
+      eraEls = [];
       const u = unit();
       const frag = document.createDocumentFragment();
-      let lastTop = -1e9;
       for (let i = 1; i < ERAS.length; i++){
-        const ya = ERAS[i][0];
-        const row = Math.round((AGE - ya) / u / cols);
-        const top = row * rowH;
-        if (top < 24 || top - lastTop < 16 || top > spacerH - 16) continue;  // self-prune crowding
-        lastTop = top;
+        const row = Math.round((AGE - ERAS[i][0]) / u / cols);
         const el = document.createElement('div');
         el.className = 'era';
-        el.style.top = top + 'px';
-        el._ry = top;                     // real grid Y, re-pinned when geared
+        el._ry = row * rowH;              // real grid Y of the boundary
         el.innerHTML = `<span>${esc(ERAS[i][1])}</span>`;
         frag.appendChild(el);
+        eraEls.push(el);
       }
-      spacer.appendChild(frag);
-    }
-
-    // ── on-grid anchors: pin "the big bang" to the first square and
-    //    "today · you are here" to the present square. A tag sits beside its
-    //    square only when that space holds no event squares (and stays on
-    //    screen); otherwise it hangs below — under the last row is always empty.
-    function buildGridTags(){
-      spacer.querySelectorAll('.gridtag').forEach(el => el.remove());
-      const pitch = cellPx + gap;
-      const W = scroller.clientWidth;
-      const left0 = Math.max(0, (W - (cols * pitch - gap)) / 2);   // grid is centred
-      // any event squares inside this spacer-coords rect?
-      const litIn = (x0, y0, x1, y1) => {
-        const r0 = Math.max(0, Math.floor(y0 / rowH)), r1 = Math.min(totalRows - 1, Math.floor(y1 / rowH));
-        const c0 = Math.max(0, Math.floor((x0 - left0) / pitch)), c1 = Math.min(cols - 1, Math.floor((x1 - left0) / pitch));
-        for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++){
-          const gi = r * cols + c;
-          if (gi !== 0 && gi !== nowBlock && blockCounts.get(gi)) return true;
-        }
-        return false;
-      };
-      const mk = (gi, html) => {
-        const row = Math.floor(gi / cols), col = gi % cols;
-        const el = document.createElement('div');
-        el.className = 'gridtag';
-        el.innerHTML = html;
-        spacer.appendChild(el);
-        const w = el.offsetWidth || 170, h = el.offsetHeight || 21;
-        const cy = row * rowH + cellPx / 2;
-        const xR = left0 + (col + 1) * pitch + 5;
-        if (xR + w <= W - 6 && !litIn(xR, cy - h / 2, xR + w, cy + h / 2)){
-          el.style.top = Math.max(11, cy) + 'px';
-          el._ry = Math.max(11, cy);
-          el.style.left = xR + 'px';
-        } else {
-          el.classList.add('dn');
-          const w2 = el.offsetWidth || w;
-          const h2 = el.querySelector('span').offsetHeight || 21;
-          const cx = left0 + col * pitch + cellPx / 2;
-          const x = Math.max(6, Math.min(W - w2 - 6, cx - w2 / 2));
-          const top = row * rowH + cellPx + 2;
-          // hang below the square, stretching the connector until the pill
-          // covers no event squares (below the last row it's clean at once)
-          let iH = 8;
-          for (let drop = 0; drop < 4; drop++){
-            iH = 8 + drop * rowH;
-            const y0 = top + iH + 2;
-            if (!litIn(x, y0, x + w2, y0 + h2)) break;
-          }
-          el.style.top = top + 'px';
-          el._ry = top;
-          el.style.left = x + 'px';
-          const line = el.querySelector('i');
-          line.style.height = iH + 'px';
-          line.style.marginLeft = Math.max(2, Math.min(w2 - 3, cx - x)) + 'px';
-        }
-      };
-      mk(0, '<i></i><span><b>the big bang</b> — time starts here</span>');
-      mk(nowBlock, '<i></i><span><b>today</b> — you are here</span>');
+      gridnotes.appendChild(frag);
     }
 
     // ── enable/disable steppers at their limits ──
@@ -2408,10 +2370,66 @@
     // geared positioning: an element pinned to real grid pixel Y sits in the
     // (capped) spacer at Y − scrollTop·(gear−1), so it tracks its row exactly
     const gearY = y => y - scroller.scrollTop * (gear - 1);
-    let overlayEls = [];                 // era labels + grid tags, re-pinned per frame
-    function syncOverlayPos(){
-      if (gear === 1) return;
-      for (const el of overlayEls) el.style.top = gearY(el._ry) + 'px';
+
+    // ── viewport-space annotations (era lines + the two end tags) ──
+    // Nothing here lives in the scrollable content: each element is placed at
+    // its live viewport Y every frame. That keeps them pixel-accurate at any
+    // zoom AND stops them from extending scrollHeight — which, when geared,
+    // used to create a receding wall you couldn't scroll past. The overlay is
+    // shifted up NOTE_OFF px (into the top margin) so the big-bang pill has
+    // room to sit above its first-row square.
+    const NOTE_OFF = 36;
+    const gridnotes = $('gridnotes');
+    const cellTop = gi => gridPad + Math.floor(gi / cols) * rowH - realTop();
+    let tagBB = null, tagNow = null;
+    function buildTags(){
+      const mk = (cls, html) => {
+        const el = document.createElement('div');
+        el.className = 'gtag ' + cls;
+        el.innerHTML = '<span class="pill">' + html + '</span><i></i>';
+        el.hidden = true;
+        gridnotes.appendChild(el);
+        return el;
+      };
+      tagBB = mk('up', '<b>the big bang</b> — time starts here');
+      tagNow = mk('down', '<b>today</b> — you are here');
+    }
+    function placeTag(el, gi, preferUp){
+      const W = scroller.clientWidth, H = scroller.clientHeight, pitch = cellPx + gap;
+      const left0 = Math.max(0, (W - (cols * pitch - gap)) / 2);
+      const sqTop = cellTop(gi), sqBot = sqTop + cellPx;
+      if (sqBot < -40 || sqTop > H + 40){ el.hidden = true; return; }
+      el.hidden = false;
+      const pill = el.querySelector('.pill'), line = el.querySelector('i');
+      const pillW = pill.offsetWidth || 170, pillH = pill.offsetHeight || 22;
+      const conn = Math.max(6, Math.min(12, Math.round(rowH * 0.45)));   // compact, always fits
+      // the big-bang pill sits above its square (it has the top margin to do so,
+      // and only flips below if somehow starved). The today pill ALWAYS sits
+      // below its square — never flips up — and is clamped to stay on screen.
+      let up = preferUp;
+      if (up && sqTop - conn - pillH < -NOTE_OFF + 2) up = false;
+      el.classList.toggle('up', up);
+      el.classList.toggle('down', !up);
+      line.style.height = conn + 'px';
+      let top = NOTE_OFF + (up ? sqTop - conn - pillH : sqBot);
+      if (!up) top = Math.min(top, NOTE_OFF + H - pillH - conn - 3);      // keep the pill fully visible
+      el.style.top = top + 'px';
+      const cx = left0 + (gi % cols) * pitch + cellPx / 2;
+      const x = Math.max(4, Math.min(W - pillW - 4, cx - pillW / 2));
+      el.style.left = x + 'px';
+      line.style.marginLeft = Math.max(2, Math.min(pillW - 3, cx - x)) + 'px';
+    }
+    function positionNotes(){
+      const H = scroller.clientHeight;
+      let last = -1e9;
+      for (const el of eraEls){
+        const y = gridPad + el._ry - realTop();
+        if (y < 6 || y > H - 6 || y - last < 15){ el.hidden = true; continue; }
+        el.hidden = false; last = y;
+        el.style.top = (NOTE_OFF + y) + 'px';
+      }
+      if (tagBB) placeTag(tagBB, 0, true);
+      if (tagNow) placeTag(tagNow, nowBlock, false);
     }
     function render(){
       const rt = realTop();
@@ -2422,7 +2440,7 @@
         if ((vr0 < mosR0 + 4 && mosR0 > 0) || (vr1 > mosR0 + mosRows - 4 && mosR0 + mosRows < totalRows))
           drawMosaic();
         else if (gear !== 1) mosaic.style.top = gearY(mosR0 * rowH) + "px";
-        syncOverlayPos(); syncBar(); syncPos(); return;
+        positionNotes(); syncBar(); syncPos(); return;
       }
       const maxFirst = Math.max(0, totalRows - pool.length / cols);
       const r0 = Math.min(maxFirst, Math.max(0, Math.floor(rt / rowH) - OVERSCAN));
@@ -2431,7 +2449,7 @@
         paintPool();
       }
       win.style.transform = `translateY(${gearY(r0 * rowH)}px)`;
-      syncOverlayPos(); syncBar(); syncPos();
+      positionNotes(); syncBar(); syncPos();
     }
 
     let rafPending = false;
@@ -2977,6 +2995,7 @@
     // ── go ─────────────────────────────────────────────────────
     buildLegend();
     syncLegend();
+    buildTags();
     buildTicks();
     buildMarks();
     // landing view = the whole timeline at 1M yrs/square, squares grown from a
