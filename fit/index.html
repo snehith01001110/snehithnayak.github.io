@@ -16,9 +16,41 @@
   <div id="updated"></div>
 </header>
 
-<main>
+<nav class="tabs" id="tabs" role="tablist" aria-label="View">
+  <button role="tab" id="tab-today" aria-controls="view-today" aria-selected="true">Today</button>
+  <button role="tab" id="tab-metrics" aria-controls="view-metrics" aria-selected="false" tabindex="-1">Metrics</button>
+  <button role="tab" id="tab-activities" aria-controls="view-activities" aria-selected="false" tabindex="-1">Activities</button>
+</nav>
+
+<main id="view-today" role="tabpanel" aria-labelledby="tab-today">
   <div class="hero">
-    <h1 class="title" id="title">Loading…</h1>
+    <div class="eyebrow" id="todayWhen"></div>
+    <h1 class="title verdict" id="verdict">Loading…</h1>
+    <p class="lede" id="verdictText"></p>
+    <div class="signals" id="signals"></div>
+  </div>
+
+  <div class="rest">
+    <section>
+      <h2>Patterns <span class="hint">from your own history</span></h2>
+      <div id="patterns"></div>
+      <p class="footnote">Averages over your data. They show what tends to go together, not what causes what.</p>
+    </section>
+    <section>
+      <h2>Personal bests</h2>
+      <div class="stats" id="bests"></div>
+    </section>
+  </div>
+
+  <aside aria-label="Last 7 days">
+    <h3>Last 7 days <span class="hint">vs the 7 before</span></h3>
+    <div id="week"></div>
+  </aside>
+</main>
+
+<main id="view-metrics" role="tabpanel" aria-labelledby="tab-metrics" hidden>
+  <div class="hero">
+    <h1 class="title" id="title"></h1>
     <p class="value num" id="value"></p>
     <div class="status" id="status"></div>
 
@@ -46,7 +78,7 @@
     </div>
     <div class="legend" id="legend"></div>
 
-    <nav class="ranges" id="ranges" aria-label="Time range"></nav>
+    <nav class="ranges" data-ranges aria-label="Time range"></nav>
   </div>
 
   <div class="rest">
@@ -54,25 +86,9 @@
       <h2>Stats</h2>
       <div class="stats" id="stats"></div>
     </section>
-
-    <section>
-      <h2>Activities</h2>
-      <div class="tiles" id="actTiles"></div>
-      <div class="cal-scroll" id="calScroll">
-        <div class="cal-months" id="calMonths"></div>
-        <div class="cal" id="cal"></div>
-      </div>
-      <div class="cal-foot">
-        <span>Training time per day · click a day to see it</span>
-        <span class="cal-key">Less <i></i><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i> More</span>
-      </div>
-
-      <h3>By type <span class="hint">Tap a type to filter</span></h3>
-      <div id="types"></div>
-
-      <h3>History <span id="filterChip"></span></h3>
-      <div id="actList"></div>
-      <button class="more" id="more" hidden>Show more</button>
+    <section id="weekdaysSec">
+      <h2>By day of week <span class="hint" id="weekdaysHint"></span></h2>
+      <div class="wd" id="weekdays"></div>
     </section>
   </div>
 
@@ -82,9 +98,48 @@
   </aside>
 </main>
 
-<div class="tip" id="tip" hidden></div>
-<footer>Data from Garmin Connect, synced twice a day. Green and red mark good and bad days against each metric’s zones.</footer>
+<main id="view-activities" role="tabpanel" aria-labelledby="tab-activities" hidden>
+  <div class="hero">
+    <h1 class="title">Activities</h1>
+    <p class="value num" id="actValue"></p>
+    <div class="status"><span class="when" id="actSub"></span></div>
 
-<script src="/fit/fit.js" defer></script>
+    <div class="cal-box" id="calBox">
+      <div class="cal-scroll" id="calScroll">
+        <div class="cal-months" id="calMonths"></div>
+        <div class="cal" id="cal"></div>
+      </div>
+      <div class="cal-foot">
+        <span>Training time per day · click a day to see it</span>
+        <span class="cal-key">Less <i></i><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i> More</span>
+      </div>
+    </div>
+
+    <nav class="ranges" data-ranges aria-label="Time range"></nav>
+  </div>
+
+  <div class="rest">
+    <section>
+      <h2>Totals</h2>
+      <div class="tiles" id="actTiles"></div>
+    </section>
+
+    <section>
+      <h2>History <span id="filterChip"></span></h2>
+      <div id="actList"></div>
+      <button class="more" id="more" hidden>Show more</button>
+    </section>
+  </div>
+
+  <aside aria-label="Activity types">
+    <h3>By type <span class="hint">Tap to filter</span></h3>
+    <div id="types"></div>
+  </aside>
+</main>
+
+<div class="tip" id="tip" hidden></div>
+<footer>Data from Garmin Connect, synced twice a day. Green is a good day, red a rough one, measured against each metric’s zones.</footer>
+
+<script type="module" src="/fit/js/app.js"></script>
 </body>
 </html>
