@@ -15,7 +15,12 @@ jobs:
       - run: pip install "garminconnect>=0.3.2,<0.4"
       - name: Sync script tests
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
-      - name: Page script parses
-        run: node --check fit/fit.js
+      - name: Page modules parse
+        run: for f in fit/js/*.js; do node --check "$f"; done
       - name: Data file is valid JSON
         run: python -m json.tool fit/data.json > /dev/null
+      - name: Page loads with real data
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+          python scripts/smoke_test.py

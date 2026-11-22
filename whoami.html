@@ -382,6 +382,21 @@
       margin-left: 0.45rem;
     }
 
+    .live-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 1.05rem; }
+    .live-stats[hidden] { display: none; }
+    .live-stat {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--surface); border-radius: 8px; padding: 6px 10px;
+      font-family: var(--sans); font-size: 0.8125rem; color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .live-stat svg { width: 15px; height: 15px; flex: none; color: var(--accent2); }
+    .live-stat small { color: var(--muted); font-size: 0.75rem; }
+    .live-note { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-left: 0.3rem; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #27c93f; animation: livePulse 2s ease-in-out infinite; }
+    @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
     /* ── FOOTER ──────────────────────────────────────── */
     footer {
       background: #111111;
@@ -722,6 +737,22 @@
 
       <div class="log-entry">
         <div class="log-meta">
+          <span class="log-date">Nov 2026</span>
+          <span class="log-type">dashboard</span>
+        </div>
+        <div class="log-body">
+          <h3 class="log-title">Fit &mdash; my Garmin data, live</h3>
+          <p class="log-desc">A dashboard for everything my watch records, styled after a brokerage app. A GitHub Action pulls from Garmin Connect twice a day and commits one JSON file; a static page turns it into a <em>Today</em> view (a recovery verdict from last night&rsquo;s sleep, HRV, resting heart rate and Body Battery), charts coloured by whether each day was good or rough, patterns from my own history, and a training calendar with heart-rate zones for every workout. No server, no database. The numbers below are live.</p>
+          <div class="live-stats" id="fitLive" hidden></div>
+          <div class="p-links">
+            <a href="/fit/" target="_blank" rel="noopener">launch</a>
+            <a href="https://github.com/snehith01001110/snehithnayak.github.io/tree/main/fit" target="_blank" rel="noopener">github</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="log-entry">
+        <div class="log-meta">
           <span class="log-date">Sep 2026</span>
           <span class="log-type">game</span>
         </div>
@@ -807,6 +838,52 @@
 </footer>
 
 <script>
+  // Tinkering → Fit: live numbers from /fit/data.json, loaded when the section is near the viewport.
+  (() => {
+    const box = document.getElementById('fitLive');
+    if (!box || !('IntersectionObserver' in window)) return;
+    const icon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    const ICONS = {
+      heart: icon('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>'),
+      pulse: icon('<path d="M3 12h4l2-6 4 12 2-6h6"/>'),
+      moon:  icon('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
+      steps: icon('<path d="M8 3c-1.7 0-3 2-3 4.5S6 12 7.5 12 10 10 10 7.5 9.7 3 8 3z"/><path d="M6.5 15h3l-.5 3a1.5 1.5 0 0 1-3 0z"/><path d="M16 7c-1.7 0-3 2-3 4.5S14 16 15.5 16 18 14 18 11.5 17.7 7 16 7z"/><path d="M14.5 19h3l-.5 2a1.5 1.5 0 0 1-3 0z"/>'),
+    };
+    const ago = (iso) => {
+      const s = (Date.now() - new Date(iso).getTime()) / 1000;
+      return s < 3600 ? `${Math.max(1, Math.round(s / 60))} min ago` : s < 86400 ? `${Math.round(s / 3600)} hr ago` : `${Math.round(s / 86400)} days ago`;
+    };
+    const hm = (h) => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`; };
+    const today = new Date().toLocaleDateString('en-CA');            // YYYY-MM-DD, local
+    async function load() {
+      try {
+        const res = await fetch('/fit/data.json', { cache: 'no-cache' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const days = Object.keys(data.days || {}).sort().reverse();
+        // newest value; daytime totals skip today because it's still in progress
+        const latest = (key, finished) => {
+          for (const d of days) if ((!finished || d < today) && data.days[d][key] != null) return data.days[d][key];
+          return null;
+        };
+        const stats = [
+          ['heart', latest('rhr', true), (v) => `${v} <small>bpm resting</small>`],
+          ['pulse', latest('hrv'), (v) => `${v} <small>ms HRV</small>`],
+          ['moon', latest('sleep'), (v) => `${hm(v)} <small>sleep</small>`],
+          ['steps', latest('steps', true), (v) => `${v.toLocaleString('en-US')} <small>steps</small>`],
+        ].filter(([, v]) => typeof v === 'number' && isFinite(v));
+        if (!stats.length) return;
+        box.innerHTML = stats.map(([k, v, f]) => `<span class="live-stat">${ICONS[k]}${f(v)}</span>`).join('')
+          + (data.updated ? `<span class="live-note"><span class="live-dot"></span>synced ${ago(data.updated)}</span>` : '');
+        box.hidden = false;
+      } catch (e) { /* leave the row hidden */ }
+    }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { io.disconnect(); load(); }
+    }, { rootMargin: '400px' });
+    io.observe(box.closest('section') || box);
+  })();
+
   const projectModal = document.querySelector('#project-modal');
   const projectDialog = projectModal?.querySelector('.project-dialog');
   const modalClose = projectModal?.querySelector('.modal-close');
