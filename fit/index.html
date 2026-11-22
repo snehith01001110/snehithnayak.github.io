@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex">
+<title>Fit · Snehith</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  :root {
+    --bg: #000000;
+    --ink: #ffffff;
+    --ink-2: #c7c7cc;
+    --muted: #8e8e93;
+    --hair: #1f1f1f;
+    --hair-2: #2c2c2e;
+    --dim: #3a3a3c;
+    --up: #00c805;
+    --down: #ff5000;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+    --accent: var(--up);
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  a { color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; text-decoration: none; }
+  .brand span { color: var(--muted); font-weight: 500; }
+  #updated { color: var(--muted); font-size: 13px; }
+
+  main {
+    max-width: 1100px; margin: 0 auto; padding: 8px 24px 64px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: 56px; align-items: start;
+    grid-template-areas: "hero aside" "rest aside";
+  }
+  .hero { grid-area: hero; }
+  .rest { grid-area: rest; }
+  aside { grid-area: aside; }
+
+  /* ---------- hero ---------- */
+  .title { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 2px; }
+  .value { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0; line-height: 1.15; }
+  .value .unit { font-size: 0.56em; color: var(--muted); font-weight: 500; margin-left: 4px; letter-spacing: 0; }
+  .change { margin-top: 6px; font-size: 14px; font-weight: 600; min-height: 20px; }
+  .change .delta { color: var(--accent); transition: color .3s; }
+  .change .when { color: var(--ink); font-weight: 500; margin-left: 4px; }
+
+  /* ---------- chart ---------- */
+  .chart-wrap { position: relative; margin: 20px 0 0; height: 320px; touch-action: pan-y; outline: none; }
+  .chart-wrap:focus-visible { box-shadow: 0 0 0 2px var(--hair-2); border-radius: 8px; }
+  #chart { display: block; width: 100%; height: 100%; overflow: visible; }
+  #chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; transition: stroke .3s; }
+  #chart .line.on { stroke: var(--accent); }
+  #chart .line.off { stroke: var(--dim); }
+  #chart .base { stroke: var(--dim); stroke-width: 1.5; stroke-dasharray: 0.1 5; stroke-linecap: round; }
+  #chart .cursor { stroke: var(--hair-2); stroke-width: 1; }
+  #chart .dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; transition: fill .3s; }
+  .hover-label {
+    position: absolute; top: -18px; transform: translateX(-50%);
+    font-size: 12px; color: var(--muted); white-space: nowrap; pointer-events: none;
+  }
+  .note { position: absolute; left: 0; top: -18px; font-size: 12px; color: var(--muted); }
+  .empty {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: var(--muted); font-size: 14px; text-align: center; padding: 0 24px;
+  }
+
+  .ranges {
+    display: flex; gap: 4px; margin-top: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .ranges button {
+    font-size: 13px; font-weight: 700; padding: 8px 10px 6px; letter-spacing: 0.02em;
+    border-bottom: 2px solid transparent; transition: color .15s;
+  }
+  .ranges button:hover { color: var(--accent); }
+  .ranges button[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ---------- sections ---------- */
+  section h2 {
+    font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 40px 0 0; padding-bottom: 14px; border-bottom: 1px solid var(--hair);
+  }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; }
+  .stat { padding: 16px 0; border-bottom: 1px solid var(--hair); }
+  .stat .k { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .stat .v { font-size: 15px; margin-top: 4px; }
+  .stat .s { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  .acts { list-style: none; margin: 0; padding: 0; }
+  .acts li {
+    display: flex; justify-content: space-between; gap: 16px; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--hair);
+  }
+  .acts .a { font-weight: 600; }
+  .acts .b { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  .acts .r { text-align: right; }
+  .more { margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--accent); }
+
+  /* ---------- watchlist ---------- */
+  aside {
+    position: sticky; top: 20px;
+    border: 1px solid var(--hair-2); border-radius: 12px; overflow: hidden;
+  }
+  aside h3 {
+    margin: 0; padding: 18px 20px; font-size: 17px; font-weight: 600;
+    border-bottom: 1px solid var(--hair-2);
+  }
+  .row {
+    display: grid; grid-template-columns: minmax(0, 1fr) 64px 76px; align-items: center; gap: 12px;
+    width: 100%; padding: 12px 20px; text-align: left; transition: background .15s;
+  }
+  .row + .row { border-top: 1px solid var(--hair); }
+  .row:hover { background: #0e0e0f; }
+  .row[aria-pressed="true"] { background: #141415; }
+  .row .n { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .l { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .row svg { width: 64px; height: 28px; display: block; overflow: visible; }
+  .row svg path { fill: none; stroke-width: 1.5; stroke-linejoin: round; }
+  .pill {
+    justify-self: end; font-size: 12px; font-weight: 700; padding: 5px 8px; border-radius: 6px;
+    min-width: 64px; text-align: center;
+  }
+  .pill.up { color: var(--up); background: rgba(0, 200, 5, 0.14); }
+  .pill.down { color: var(--down); background: rgba(255, 80, 0, 0.14); }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 0 24px 40px; color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "aside" "rest"; }
+    aside { position: static; margin-top: 32px; }
+  }
+  @media (max-width: 560px) {
+    header, main, footer { padding-left: 16px; padding-right: 16px; }
+    .title, .value { font-size: 28px; }
+    .chart-wrap { height: 240px; }
+    .ranges { justify-content: space-between; gap: 0; }
+    .ranges button { padding: 8px 6px 6px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">snehithn <span>/ fit</span></a>
+  <div id="updated"></div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1 class="title" id="title">Loading…</h1>
+    <p class="value num" id="value"></p>
+    <div class="change num" id="change"></div>
+
+    <div class="chart-wrap" id="chartWrap" tabindex="0" aria-label="Chart. Use left and right arrow keys to inspect values.">
+      <svg id="chart" aria-hidden="true">
+        <defs>
+          <clipPath id="clipOn"><rect id="clipOnRect" x="0" y="-20" height="2000" width="100000"></rect></clipPath>
+          <clipPath id="clipOff"><rect id="clipOffRect" x="100000" y="-20" height="2000" width="100000"></rect></clipPath>
+        </defs>
+        <line class="base" id="base"></line>
+        <path class="line off" id="lineOff" clip-path="url(#clipOff)"></path>
+        <path class="line on" id="lineOn" clip-path="url(#clipOn)"></path>
+        <line class="cursor" id="cursor" visibility="hidden"></line>
+        <circle class="dot" id="dot" r="5" visibility="hidden"></circle>
+      </svg>
+      <div class="note" id="note"></div>
+      <div class="hover-label" id="hoverLabel" hidden></div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+
+    <nav class="ranges" id="ranges" aria-label="Time range"></nav>
+  </div>
+
+  <div class="rest">
+    <section>
+      <h2>Stats</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section>
+      <h2>Recent activity</h2>
+      <ul class="acts" id="acts"></ul>
+      <button class="more" id="more" hidden>Show more</button>
+    </section>
+  </div>
+
+  <aside aria-label="Metrics">
+    <h3>Metrics</h3>
+    <div id="list"></div>
+  </aside>
+</main>
+
+<footer>Data from Garmin Connect, synced twice a day.</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  // ------------------------------------------------------------------ config
+  const RANGES = [
+    { id: "1W", days: 7, label: "Past week", w: 1 },
+    { id: "1M", days: 30, label: "Past month", w: 1 },
+    { id: "3M", days: 91, label: "Past 3 months", w: 7 },
+    { id: "YTD", days: null, label: "Year to date", w: 7 },
+    { id: "1Y", days: 365, label: "Past year", w: 14 },
+    { id: "5Y", days: 1826, label: "Past 5 years", w: 30 },
+    { id: "ALL", days: Infinity, label: "All time", w: 30 },
+  ];
+
+  let units = "metric";
+  const imperial = () => units === "statute_us" || units === "statute_uk";
+  const nf = (d) => new Intl.NumberFormat("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const fmtN = (v, d = 0) => nf(d).format(v);
+  const hm = (h) => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`; };
+  const hmShort = (h) => { const m = Math.round(h * 60); return m < 60 ? `${m}m` : hm(h); };
+  const dist = (m) => imperial() ? m / 1609.344 : m / 1000;
+  const distUnit = () => imperial() ? "mi" : "km";
+
+  // unit: shown after the big number. du: shown after deltas, stats and list values.
+  // better: which direction is good (drives green/red). null → up = green.
+  const wUnit = () => imperial() ? "lb" : "kg";
+  const METRICS = [
+    { key: "rhr", name: "Resting heart rate", short: "Resting HR", unit: "bpm", du: "bpm", better: "down", dec: 0 },
+    { key: "hrv", name: "Heart rate variability", short: "HRV", unit: "ms", du: "ms", better: "up", dec: 0, night: true },
+    { key: "sleep", name: "Sleep", night: true, better: "up", dec: 1, fmt: hm, dfmt: (v) => `${v < 0 ? "−" : "+"}${hmShort(Math.abs(v))}` },
+    { key: "sleepScore", name: "Sleep score", better: "up", dec: 0, night: true },
+    { key: "steps", name: "Steps", unit: "per day", better: "up", dec: 0, cumulative: true },
+    { key: "vo2", name: "VO₂ max", better: "up", dec: 1, ffill: true, night: true },
+    // weekly metrics built from recorded activities (acts → that activity's contribution)
+    { key: "workout", name: "Workouts", unit: "per week", better: "up", dec: 1, weekly: true, fmt: hm,
+      dfmt: (v) => `${v < 0 ? "−" : "+"}${hmShort(Math.abs(v))}`, total: hm,
+      acts: (a) => /meditation|breathwork/.test(a.t) ? 0 : (a.s || 0) / 3600,
+      longest: { label: "Longest workout", fmt: (a) => hm(a.s / 3600), sub: (a) => `${typeName(a.t)} · ${fmtDate(toT(a.d))}` } },
+    { key: "run", name: "Running", unit: () => `${distUnit()} / week`, du: () => `${distUnit()}/wk`, better: "up", dec: 1, weekly: true, minActs: 10,
+      total: (v) => `${fmtN(v, 1)} ${distUnit()}`, acts: (a) => /run/.test(a.t) ? dist(a.m || 0) : 0,
+      longest: { label: "Longest run", fmt: (a) => `${fmtN(dist(a.m), 1)} ${distUnit()}`, sub: (a) => fmtDate(toT(a.d)) } },
+    { key: "im", name: "Intensity minutes", short: "Intensity min", unit: "min / week", du: "min/wk", better: "up", dec: 0, weekly: true,
+      total: (v) => `${fmtN(v, 0)} min` },
+    { key: "bb", name: "Body Battery", unit: "peak", better: "up", dec: 0 },
+    { key: "stress", name: "Stress", unit: "avg", better: "down", dec: 0 },
+    { key: "kcal", name: "Active calories", short: "Active cal", unit: "kcal", du: "kcal", better: "up", dec: 0, cumulative: true },
+    { key: "weight", name: "Weight", unit: wUnit, du: wUnit, better: null, dec: 1, conv: (kg) => imperial() ? kg * 2.20462 : kg },
+  ];
+  const resolve = (u) => (typeof u === "function" ? u() : u) || "";
+  const unitOf = (m) => resolve(m.unit);
+  const fmtV = (m, v) => m.fmt ? m.fmt(v) : fmtN(v, m.dec);
+  const fmtU = (m, v) => fmtV(m, v) + (resolve(m.du) ? " " + resolve(m.du) : "");
+  const has = (m) => lastIdx(series[m.key]) >= 0 && (!m.minActs || m.count >= m.minActs);
+
+  // ------------------------------------------------------------------ dates
+  const DAY = 86400000;
+  const toT = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const toS = (t) => new Date(t).toISOString().slice(0, 10);
+  const fmtDate = (t, withYear = true) => new Date(t).toLocaleDateString("en-US",
+    { month: "short", day: "numeric", year: withYear ? "numeric" : undefined, timeZone: "UTC" });
+
+  // ------------------------------------------------------------------ state
+  const $ = (id) => document.getElementById(id);
+  let T0 = 0, N = 0;               // dense day axis: index i ↔ T0 + i*DAY
+  const series = {};               // key → Float64Array of daily base values (NaN = none)
+  let activities = [];
+  let state = { metric: "rhr", range: "1Y" };
+  let view = null;                 // current chart view (points etc.)
+  let shown = null;                // resampled y's currently on screen (for morphing)
+  let hoverIdx = null;
+
+  // ------------------------------------------------------------------ build series
+  function build(data) {
+    units = data.units || "metric";
+    const keys = Object.keys(data.days || {}).sort();
+    activities = (data.activities || []).slice().sort((a, b) => (b.d > a.d ? 1 : b.d < a.d ? -1 : 0));
+    if (!keys.length) return false;
+    T0 = toT(keys[0]);
+    N = Math.round((toT(keys[keys.length - 1]) - T0) / DAY) + 1;
+
+    // The first day (watch setup) and the newest day (still in progress) are partial.
+    // Keep only overnight metrics from them (sleep, HRV, VO₂ max are final once you
+    // wake) plus finished activities.
+    const updatedDay = data.updated ? localDay(new Date(data.updated)) : null;
+    const lastKey = keys[keys.length - 1];
+    const partial = updatedDay && lastKey >= updatedDay;
+
+    for (const m of METRICS) {
+      const a = new Float64Array(N).fill(NaN);
+      if (m.acts) {
+        for (const k of keys) a[idx(k)] = 0;
+        m.count = 0;
+        for (const x of activities) {
+          const v = m.acts(x), i = idx(x.d);
+          if (!v || i < 0 || i >= N) continue;
+          a[i] += v; m.count++;
+        }
+      } else {
+        for (const k of keys) {
+          const v = data.days[k][m.key];
+          if (v != null) a[idx(k)] = v;
+        }
+      }
+      if (m.conv) for (let i = 0; i < N; i++) if (!isNaN(a[i])) a[i] = m.conv(a[i]);
+      const dropToday = partial && !m.night && !m.acts;
+      if (dropToday) a[N - 1] = NaN;
+      if (!m.night && !m.acts && N > 1) a[0] = NaN;
+      m.lastReal = lastIdx(a);
+      if (m.ffill) { let last = NaN; for (let i = 0; i < N; i++) { if (!isNaN(a[i])) last = a[i]; else a[i] = last; } }
+      if (m.weekly) {
+        // trailing 7-day total; days without a watch count as 0
+        const out = new Float64Array(N).fill(NaN);
+        let sum = 0, seen = 0;
+        for (let i = 0; i < N; i++) {
+          sum += isNaN(a[i]) ? 0 : a[i]; seen += isNaN(a[i]) ? 0 : 1;
+          if (i >= 7) { sum -= isNaN(a[i - 7]) ? 0 : a[i - 7]; seen -= isNaN(a[i - 7]) ? 0 : 1; }
+          if (i >= 6 && seen > 0) out[i] = sum;
+        }
+        if (dropToday) out[N - 1] = NaN;
+        m.daily = a;
+        series[m.key] = out;
+      } else {
+        series[m.key] = a;
+      }
+    }
+    return true;
+  }
+  const idx = (k) => Math.round((toT(k) - T0) / DAY);
+  function localDay(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  function lastIdx(a) { for (let i = a.length - 1; i >= 0; i--) if (!isNaN(a[i])) return i; return -1; }
+  function firstIdx(a) { for (let i = 0; i < a.length; i++) if (!isNaN(a[i])) return i; return -1; }
+
+  // trailing mean over w calendar days, skipping days without data
+  function smooth(a, w, from, to) {
+    const out = [];
+    const warm = firstIdx(a) + Math.ceil(w / 2) - 1;
+    const s = Math.max(0, from - w + 1);
+    let sum = 0, cnt = 0;
+    for (let i = s; i <= to; i++) {
+      if (!isNaN(a[i])) { sum += a[i]; cnt++; }
+      const j = i - w;
+      if (j >= s && !isNaN(a[j])) { sum -= a[j]; cnt--; }
+      if (i >= from && i >= warm && cnt > 0 && (w > 1 || !isNaN(a[i]))) out.push([i, sum / cnt]);
+    }
+    return out;
+  }
+
+  function rangeBounds(key, r) {
+    const a = series[key];
+    const end = lastIdx(a);
+    if (end < 0) return null;
+    let start;
+    if (r.days === Infinity) start = firstIdx(a);
+    else if (r.days === null) start = idx(`${toS(T0 + end * DAY).slice(0, 4)}-01-01`);
+    else start = end - r.days + 1;
+    return { start: Math.max(start, firstIdx(a), 0), end };
+  }
+
+  function computeView(m, r) {
+    const b = rangeBounds(m.key, r);
+    if (!b) return null;
+    const w = m.ffill ? 1 : r.w;
+    const pts = smooth(series[m.key], w, b.start, b.end);
+    return { m, r, w, pts, start: b.start, end: b.end };
+  }
+
+  function tone(m, delta) {
+    const good = m.better === "down" ? delta <= 0 : delta >= 0;
+    return good ? "up" : "down";
+  }
+
+  // ------------------------------------------------------------------ chart
+  const svg = $("chart"), wrap = $("chartWrap");
+  const PAD_T = 8, PAD_B = 12;
+  let W = 0, H = 0;
+
+  function geometry(v) {
+    const ys = v.pts.map((p) => p[1]);
+    let lo = Math.min(...ys), hi = Math.max(...ys);
+    if (hi - lo < 1e-9) { lo -= 1; hi += 1; }
+    const pad = (hi - lo) * 0.08;
+    lo -= pad; hi += pad;
+    const span = Math.max(1, v.end - v.start);
+    const x = (i) => ((i - v.start) / span) * W;
+    const y = (val) => PAD_T + (1 - (val - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
+    return { x, y };
+  }
+
+  // resample a view to K evenly spaced y's in pixel space so any two lines can morph
+  const K = 240;
+  function resample(v, g) {
+    const xs = v.pts.map((p) => g.x(p[0])), ys = v.pts.map((p) => g.y(p[1]));
+    const out = new Float64Array(K);
+    let j = 0;
+    for (let k = 0; k < K; k++) {
+      const X = (k / (K - 1)) * W;
+      while (j < xs.length - 2 && xs[j + 1] < X) j++;
+      const x0 = xs[j], x1 = xs[Math.min(j + 1, xs.length - 1)];
+      const t = x1 === x0 ? 0 : Math.min(1, Math.max(0, (X - x0) / (x1 - x0)));
+      out[k] = ys[j] + (ys[Math.min(j + 1, ys.length - 1)] - ys[j]) * t;
+    }
+    return out;
+  }
+  const pathFromYs = (ys) => {
+    let d = "";
+    for (let k = 0; k < ys.length; k++) d += (k ? "L" : "M") + ((k / (ys.length - 1)) * W).toFixed(1) + "," + ys[k].toFixed(1);
+    return d;
+  };
+  const pathFromPts = (pts, g) => pts.map((p, k) => (k ? "L" : "M") + g.x(p[0]).toFixed(1) + "," + g.y(p[1]).toFixed(1)).join("");
+
+  let anim = 0;
+  function drawChart(animate) {
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const v = view;
+    const ok = v && v.pts.length >= 2;
+    $("empty").hidden = ok;
+    svg.style.visibility = ok ? "visible" : "hidden";
+    $("note").textContent = ok && v.w > 1 ? `${v.w}-day average` : "";
+    if (!ok) { $("empty").textContent = "Not enough data for this range yet."; shown = null; return; }
+
+    const g = geometry(v);
+    v.g = g;
+    const target = resample(v, g);
+    const finalD = pathFromPts(v.pts, g);
+    const by = g.y(v.pts[0][1]).toFixed(1);
+    $("base").setAttribute("x1", 0); $("base").setAttribute("x2", W);
+    $("base").setAttribute("y1", by); $("base").setAttribute("y2", by);
+
+    cancelAnimationFrame(anim);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!animate || !shown || reduce) {
+      setPath(finalD); shown = target; return;
+    }
+    const from = shown, t0 = performance.now(), dur = 420;
+    const cur = new Float64Array(K);
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+      for (let k = 0; k < K; k++) cur[k] = from[k] + (target[k] - from[k]) * e;
+      if (t < 1) { setPath(pathFromYs(cur)); anim = requestAnimationFrame(step); }
+      else setPath(finalD);
+    };
+    shown = target;
+    anim = requestAnimationFrame(step);
+  }
+  function setPath(d) { $("lineOn").setAttribute("d", d); $("lineOff").setAttribute("d", d); }
+
+  // ------------------------------------------------------------------ hover / scrub
+  function setHover(k) {
+    const v = view;
+    if (!v || !v.g || v.pts.length < 2) return;
+    if (k == null) {
+      hoverIdx = null;
+      $("cursor").setAttribute("visibility", "hidden");
+      $("dot").setAttribute("visibility", "hidden");
+      $("hoverLabel").hidden = true;
+      $("note").style.visibility = "visible";
+      $("clipOnRect").setAttribute("width", 100000);
+      $("clipOffRect").setAttribute("x", 100000);
+      renderHeadline();
+      return;
+    }
+    hoverIdx = Math.max(0, Math.min(v.pts.length - 1, k));
+    const [i, val] = v.pts[hoverIdx];
+    const x = v.g.x(i), y = v.g.y(val);
+    const c = $("cursor");
+    c.setAttribute("x1", x); c.setAttribute("x2", x); c.setAttribute("y1", 0); c.setAttribute("y2", H);
+    c.setAttribute("visibility", "visible");
+    $("dot").setAttribute("cx", x); $("dot").setAttribute("cy", y); $("dot").setAttribute("visibility", "visible");
+    $("clipOnRect").setAttribute("width", Math.max(0, x));
+    $("clipOffRect").setAttribute("x", x);
+    const lab = $("hoverLabel");
+    lab.textContent = fmtDate(T0 + i * DAY) + (v.w > 1 ? ` · ${v.w}-day avg` : "");
+    lab.hidden = false;
+    const half = lab.offsetWidth / 2;
+    lab.style.left = Math.max(half, Math.min(W - half, x)) + "px";
+    $("note").style.visibility = "hidden";
+    renderHeadline(hoverIdx);
+  }
+
+  function nearest(clientX) {
+    const v = view;
+    const rect = wrap.getBoundingClientRect();
+    const X = clientX - rect.left;
+    let best = 0, bd = Infinity;
+    // points are sorted by x: binary search
+    let lo = 0, hi = v.pts.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (v.g.x(v.pts[mid][0]) < X) lo = mid + 1; else hi = mid; }
+    for (const k of [lo - 1, lo]) {
+      if (k < 0 || k >= v.pts.length) continue;
+      const d = Math.abs(v.g.x(v.pts[k][0]) - X);
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  }
+
+  wrap.addEventListener("pointermove", (e) => { if (view && view.g) setHover(nearest(e.clientX)); });
+  wrap.addEventListener("pointerdown", (e) => { if (view && view.g) setHover(nearest(e.clientX)); });
+  wrap.addEventListener("pointerleave", () => setHover(null));
+  wrap.addEventListener("pointercancel", () => setHover(null));
+  wrap.addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") setHover(null); });
+  wrap.addEventListener("keydown", (e) => {
+    if (!view || !view.g) return;
+    const n = view.pts.length;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      const cur = hoverIdx == null ? n - 1 : hoverIdx;
+      const step = e.shiftKey ? Math.ceil(n / 10) : 1;
+      setHover(cur + (e.key === "ArrowLeft" ? -step : step));
+    } else if (e.key === "Escape") setHover(null);
+  });
+  wrap.addEventListener("blur", () => setHover(null));
+
+  // ------------------------------------------------------------------ headline
+  function renderHeadline(k) {
+    const v = view, m = METRICS.find((x) => x.key === state.metric);
+    $("title").textContent = m.name;
+    const valEl = $("value"), chEl = $("change");
+    if (!v || !v.pts.length) {
+      valEl.textContent = "—"; chEl.textContent = ""; return;
+    }
+    const p = v.pts[k == null ? v.pts.length - 1 : k];
+    const first = v.pts[0][1];
+    const delta = p[1] - first;
+    const pct = first ? (delta / Math.abs(first)) * 100 : 0;
+    const t = tone(m, delta);
+    document.documentElement.style.setProperty("--accent", `var(--${t})`);
+
+    valEl.textContent = fmtV(m, p[1]);
+    const u = unitOf(m);
+    if (u) { const s = document.createElement("span"); s.className = "unit"; s.textContent = u; valEl.appendChild(s); }
+
+    const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
+    const dtxt = m.dfmt ? m.dfmt(delta) : sign + fmtU(m, Math.abs(delta));
+    const pctAbs = fmtN(Math.abs(pct), 2);
+    const pctTxt = `(${parseFloat(pctAbs) ? sign : ""}${pctAbs}%)`;
+    chEl.replaceChildren();
+    const d = document.createElement("span"); d.className = "delta"; d.textContent = `${dtxt} ${pctTxt}`;
+    const w = document.createElement("span"); w.className = "when";
+    w.textContent = k == null ? v.r.label : `since ${fmtDate(T0 + v.pts[0][0] * DAY)}`;
+    chEl.append(d, w);
+  }
+
+  // ------------------------------------------------------------------ stats
+  function stat(k, v, s) {
+    const el = document.createElement("div"); el.className = "stat";
+    const a = document.createElement("div"); a.className = "k"; a.textContent = k;
+    const b = document.createElement("div"); b.className = "v num"; b.textContent = v;
+    el.append(a, b);
+    if (s) { const c = document.createElement("div"); c.className = "s"; c.textContent = s; el.append(c); }
+    return el;
+  }
+  function extremes(a, from, to) {
+    let hi = -Infinity, lo = Infinity, hiI = -1, loI = -1, sum = 0, n = 0;
+    for (let i = from; i <= to; i++) {
+      const x = a[i]; if (isNaN(x)) continue;
+      sum += x; n++;
+      if (x > hi) { hi = x; hiI = i; }
+      if (x < lo) { lo = x; loI = i; }
+    }
+    return { hi, lo, hiI, loI, avg: n ? sum / n : NaN, n };
+  }
+  function renderStats() {
+    const box = $("stats"); box.replaceChildren();
+    const v = view, m = METRICS.find((x) => x.key === state.metric);
+    if (!v) return;
+    const withU = (x) => fmtU(m, x);
+    const on = (i) => fmtDate(T0 + i * DAY);
+    if (m.weekly) {
+      const daily = m.daily;
+      let total = 0, active = 0;
+      for (let i = v.start; i <= v.end; i++) if (daily[i] > 0) { total += daily[i]; active++; }
+      const wk = extremes(series[m.key], v.start, v.end);
+      const all = extremes(series[m.key], 0, N - 1);
+      const days = v.end - v.start + 1;
+      const T = m.total;
+      box.append(
+        stat("Total", T(total), v.r.label),
+        stat("Weekly average", T(total / Math.max(1, days / 7))),
+        stat("Active days", fmtN(active, 0), `of ${fmtN(days, 0)}`),
+        stat("Best week", wk.n ? T(wk.hi) : "—", wk.n ? `ending ${on(wk.hiI)}` : ""),
+        stat("All-time best week", all.n ? T(all.hi) : "—", all.n ? `ending ${on(all.hiI)}` : ""),
+      );
+      if (m.longest) {
+        const inRange = activities.filter((a) => m.acts(a) && idx(a.d) >= v.start && idx(a.d) <= v.end);
+        const best = inRange.reduce((b, a) => (!b || m.acts(a) > m.acts(b) ? a : b), null);
+        box.append(stat(m.longest.label, best ? m.longest.fmt(best) : "—", best ? m.longest.sub(best) : ""));
+      } else {
+        box.append(stat("Days tracked", fmtN(extremes(daily, v.start, v.end).n, 0)));
+      }
+      return;
+    }
+    const raw = series[m.key];
+    const r = extremes(raw, v.start, v.end);
+    const all = extremes(raw, 0, N - 1);
+    const latestI = m.ffill ? m.lastReal : lastIdx(raw);
+    box.append(
+      stat("Latest", withU(raw[latestI]), on(latestI)),
+      stat("Average", r.n ? withU(r.avg) : "—", v.r.label),
+      stat(m.ffill ? "Readings" : "Days tracked", fmtN(m.ffill ? countChanges(m.key, v.start, v.end) : r.n, 0), m.ffill ? v.r.label : `of ${fmtN(v.end - v.start + 1, 0)}`),
+      stat("High", r.n ? withU(r.hi) : "—", r.n ? on(r.hiI) : ""),
+      stat("Low", r.n ? withU(r.lo) : "—", r.n ? on(r.loI) : ""),
+      stat(m.better === "down" ? "All-time low" : "All-time high",
+        m.better === "down" ? withU(all.lo) : withU(all.hi),
+        on(m.better === "down" ? all.loI : all.hiI)),
+    );
+  }
+  let rawDays = {};
+  function countChanges(key, from, to) {
+    let n = 0;
+    for (let i = from; i <= to; i++) { const d = rawDays[toS(T0 + i * DAY)]; if (d && d[key] != null) n++; }
+    return n;
+  }
+
+  // ------------------------------------------------------------------ activities
+  const TYPE = {
+    running: "Run", trail_running: "Trail run", treadmill_running: "Treadmill run", track_running: "Track run",
+    virtual_run: "Virtual run", indoor_running: "Indoor run", cycling: "Ride", road_biking: "Road ride",
+    mountain_biking: "Mountain bike", indoor_cycling: "Indoor ride", virtual_ride: "Virtual ride", gravel_cycling: "Gravel ride",
+    walking: "Walk", hiking: "Hike", lap_swimming: "Pool swim", open_water_swimming: "Open water swim",
+    strength_training: "Strength", yoga: "Yoga", hiit: "HIIT", indoor_rowing: "Row", rowing: "Row",
+    elliptical: "Elliptical", stair_climbing: "Stairs", pilates: "Pilates", cardio: "Cardio",
+    tennis: "Tennis", pickleball: "Pickleball", basketball: "Basketball", soccer: "Soccer",
+    bouldering: "Bouldering", indoor_climbing: "Climbing", resort_skiing_snowboarding_ws: "Ski / snowboard",
+  };
+  const typeName = (t) => TYPE[t] || t.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  const dur = (s) => {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.round(s % 60);
+    return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}:${String(sec).padStart(2, "0")}`;
+  };
+  let actLimit = 8;
+  function renderActivities() {
+    const ul = $("acts"); ul.replaceChildren();
+    const list = activities.slice(0, actLimit);
+    if (!list.length) {
+      const li = document.createElement("li"); li.textContent = "No activities yet."; li.style.color = "var(--muted)"; ul.append(li);
+    }
+    const thisYear = new Date().getFullYear();
+    for (const a of list) {
+      const li = document.createElement("li");
+      const l = document.createElement("div");
+      const t = document.createElement("div"); t.className = "a"; t.textContent = typeName(a.t);
+      const d = document.createElement("div"); d.className = "b";
+      const when = toT(a.d);
+      d.textContent = fmtDate(when, new Date(when).getUTCFullYear() !== thisYear) + (a.hr ? ` · ${a.hr} bpm avg` : "");
+      l.append(t, d);
+      const r = document.createElement("div"); r.className = "r num";
+      const big = document.createElement("div"); big.className = "a";
+      const small = document.createElement("div"); small.className = "b";
+      if (a.m && a.m > 50) {
+        big.textContent = `${fmtN(dist(a.m), 2)} ${distUnit()}`;
+        small.textContent = a.s ? dur(a.s) : "";
+      } else {
+        big.textContent = a.s ? dur(a.s) : "";
+        small.textContent = a.kcal ? `${fmtN(a.kcal, 0)} kcal` : "";
+      }
+      r.append(big, small);
+      li.append(l, r);
+      ul.append(li);
+    }
+    $("more").hidden = activities.length <= actLimit || actLimit >= 50;
+  }
+  $("more").addEventListener("click", () => { actLimit = 50; renderActivities(); });
+
+  // ------------------------------------------------------------------ watchlist
+  const NS = "http://www.w3.org/2000/svg";
+  function renderList() {
+    const box = $("list"); box.replaceChildren();
+    const r = RANGES.find((x) => x.id === state.range);
+    for (const m of METRICS) {
+      if (!has(m)) continue;
+      const v = computeView(m, r);
+      const btn = document.createElement("button");
+      btn.className = "row";
+      btn.setAttribute("aria-pressed", String(m.key === state.metric));
+      const left = document.createElement("div");
+      const n = document.createElement("div"); n.className = "n"; n.textContent = m.short || m.name;
+      const l = document.createElement("div"); l.className = "l num";
+      const latest = v && v.pts.length ? v.pts[v.pts.length - 1][1] : NaN;
+      l.textContent = isNaN(latest) ? "—" : fmtU(m, latest);
+      left.append(n, l);
+
+      const sv = document.createElementNS(NS, "svg");
+      sv.setAttribute("viewBox", "0 0 64 28");
+      const pill = document.createElement("div");
+      if (v && v.pts.length >= 2) {
+        const delta = v.pts[v.pts.length - 1][1] - v.pts[0][1];
+        const pct = v.pts[0][1] ? (delta / Math.abs(v.pts[0][1])) * 100 : 0;
+        const t = tone(m, delta);
+        const ys = v.pts.map((p) => p[1]);
+        const lo = Math.min(...ys), hi = Math.max(...ys);
+        const step = Math.max(1, Math.floor(v.pts.length / 64));
+        const pts = v.pts.filter((_, k) => k % step === 0 || k === v.pts.length - 1);
+        const span = Math.max(1, v.end - v.start);
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", pts.map(([i, y], k) => `${k ? "L" : "M"}${(((i - v.start) / span) * 64).toFixed(1)},${(2 + (1 - (y - lo) / ((hi - lo) || 1)) * 24).toFixed(1)}`).join(""));
+        p.setAttribute("stroke", `var(--${t})`);
+        sv.append(p);
+        pill.className = `pill num ${t}`;
+        const pAbs = fmtN(Math.abs(pct), Math.abs(pct) >= 100 ? 0 : 1);
+        pill.textContent = `${parseFloat(pAbs) ? (delta > 0 ? "+" : "−") : ""}${pAbs}%`;
+      } else {
+        pill.className = "pill num"; pill.textContent = "—"; pill.style.color = "var(--muted)";
+      }
+      btn.append(left, sv, pill);
+      btn.addEventListener("click", () => select({ metric: m.key }));
+      box.append(btn);
+    }
+  }
+
+  // ------------------------------------------------------------------ ranges
+  function renderRanges() {
+    const nav = $("ranges"); nav.replaceChildren();
+    const span = N; // days of history
+    for (const r of RANGES) {
+      if (r.days !== Infinity && r.days !== null && r.days > span * 1.5 && r.id !== state.range) continue;
+      const b = document.createElement("button");
+      b.textContent = r.id;
+      b.setAttribute("aria-pressed", String(r.id === state.range));
+      b.setAttribute("aria-label", r.label);
+      b.addEventListener("click", () => select({ range: r.id }));
+      nav.append(b);
+    }
+  }
+
+  // ------------------------------------------------------------------ orchestration
+  function select(patch) {
+    state = { ...state, ...patch };
+    history.replaceState(null, "", `#${state.metric}/${state.range}`);
+    render(true);
+  }
+  function render(animate) {
+    const m = METRICS.find((x) => x.key === state.metric);
+    const r = RANGES.find((x) => x.id === state.range);
+    view = computeView(m, r);
+    renderRanges();
+    renderHeadline();
+    drawChart(animate);
+    setHover(null);
+    renderStats();
+    renderList();
+  }
+
+  function ago(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
+    if (s < 86400) return `${Math.round(s / 3600)} hr ago`;
+    return `${Math.round(s / 86400)} days ago`;
+  }
+
+  async function init() {
+    let data;
+    try {
+      const res = await fetch("/fit/data.json", { cache: "no-cache" });
+      if (!res.ok) throw new Error(res.status);
+      data = await res.json();
+    } catch (e) {
+      $("title").textContent = "No data yet";
+      $("value").textContent = "";
+      $("empty").hidden = false; $("empty").textContent = "Garmin sync hasn’t run yet.";
+      return;
+    }
+    rawDays = data.days || {};
+    if (!build(data)) { $("title").textContent = "No data yet"; return; }
+    if (data.updated) { $("updated").textContent = `Updated ${ago(data.updated)}`; $("updated").title = new Date(data.updated).toLocaleString(); }
+
+    const [hm, hr] = location.hash.slice(1).split("/");
+    const available = METRICS.filter(has).map((m) => m.key);
+    state.metric = available.includes(hm) ? hm : available[0] || "rhr";
+    if (RANGES.some((r) => r.id === hr)) state.range = hr;
+    render(false);
+    renderActivities();
+    new ResizeObserver(() => { drawChart(false); setHover(hoverIdx); }).observe(wrap);
+  }
+  init();
+})();
+</script>
+</body>
+</html>

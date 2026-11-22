@@ -1,0 +1,94 @@
+name: Garmin sync
+
+# Pulls Garmin Connect data into fit/data.json (served at snehithn.com/fit).
+# Auth: the GARMIN_TOKENS secret seeds the session (set by `uv run scripts/garmin.py login`).
+# Garmin rotates tokens, so the latest ones are kept in the Actions cache, encrypted
+# with the secret, and reused on the next run.
+
+on:
+  schedule:
+    - cron: "23 3,14 * * *" # ~8pm and ~7am Pacific
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: garmin-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GARMIN_TOKENS: ${{ secrets.GARMIN_TOKENS }}
+      GARMINTOKENS: ${{ runner.temp }}/garmin/garmin_tokens.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install "garminconnect>=0.3.2,<0.4"
+
+      - name: Restore Garmin session
+        uses: actions/cache/restore@v4
+        with:
+          path: .garmin-session
+          key: garmin-session-${{ github.run_id }}
+          restore-keys: garmin-session-
+
+      - name: Load tokens
+        run: |
+          if [ -z "$GARMIN_TOKENS" ]; then
+            echo "::error::GARMIN_TOKENS secret is missing. Run: uv run scripts/garmin.py login"
+            exit 1
+          fi
+          mkdir -p "$(dirname "$GARMINTOKENS")"
+          if [ -f .garmin-session/tokens.enc ] \
+             && openssl enc -d -aes-256-cbc -pbkdf2 -pass env:GARMIN_TOKENS \
+                  -in .garmin-session/tokens.enc -out "$GARMINTOKENS" 2>/dev/null \
+             && python -c "import json,sys; assert json.load(open(sys.argv[1]))['di_refresh_token']" "$GARMINTOKENS" 2>/dev/null
+          then
+            echo "Using cached session"
+          else
+            echo "Using GARMIN_TOKENS secret"
+            printf '%s' "$GARMIN_TOKENS" > "$GARMINTOKENS"
+          fi
+
+      - name: Sync
+        run: python scripts/garmin.py sync
+
+      - name: Encrypt session
+        id: enc
+        if: always()
+        run: |
+          [ -s "$GARMINTOKENS" ] || exit 1
+          mkdir -p .garmin-session
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:GARMIN_TOKENS \
+            -in "$GARMINTOKENS" -out .garmin-session/tokens.enc
+
+      - name: Save Garmin session
+        if: always() && steps.enc.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .garmin-session
+          key: garmin-session-${{ github.run_id }}
+
+      - name: Commit data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fit/data.json
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "fit: sync Garmin data"
+          git pull --rebase
+          git push
+
+      - name: Rebuild Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
