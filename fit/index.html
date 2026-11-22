@@ -542,8 +542,9 @@
     const u = unitOf(m);
     if (u) { const s = document.createElement("span"); s.className = "unit"; s.textContent = u; valEl.appendChild(s); }
 
-    const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
-    const dtxt = m.dfmt ? m.dfmt(delta) : sign + fmtU(m, Math.abs(delta));
+    const shownAbs = m.fmt ? hmShort(Math.abs(delta)) : fmtV(m, Math.abs(delta));
+    const sign = !parseFloat(shownAbs.replace(/[^0-9.]/g, "")) ? "" : delta > 0 ? "+" : "−";
+    const dtxt = m.dfmt ? sign + hmShort(Math.abs(delta)) : sign + fmtU(m, Math.abs(delta));
     const pctAbs = fmtN(Math.abs(pct), 2);
     const pctTxt = `(${parseFloat(pctAbs) ? sign : ""}${pctAbs}%)`;
     chEl.replaceChildren();
