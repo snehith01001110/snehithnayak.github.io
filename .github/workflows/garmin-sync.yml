@@ -11,8 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
+  contents: write # the bot's push also triggers the Pages build
 
 concurrency:
   group: garmin-sync
@@ -88,8 +87,3 @@ jobs:
           git commit -m "fit: sync Garmin data"
           git pull --rebase
           git push
-
-      - name: Rebuild Pages
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
