@@ -5,13 +5,18 @@
 # ///
 """Pull Garmin Connect history into fit/data.json for snehithn.com/fit.
 
-    uv run scripts/garmin.py login        # once: email + password (+ MFA), saves tokens, sets GH secret
-    uv run scripts/garmin.py sync         # incremental; backfills all history on the first run
-    uv run scripts/garmin.py sync --since 2021-01-01
+    uv run scripts/garmin.py login        # email + password + MFA; sets the GARMIN_TOKENS secret
+                                          # and starts a sync in GitHub Actions
     uv run scripts/garmin.py push-secret  # copy local tokens into the GARMIN_TOKENS repo secret
+    gh workflow run garmin-sync.yml       # sync now (the Action also runs twice a day)
 
-Tokens live in ~/.garminconnect (or $GARMINTOKENS). The GitHub Action
-(.github/workflows/garmin-sync.yml) runs `sync` twice a day and commits the result.
+How the session stays alive (so you rarely log in):
+  Garmin hands out a short-lived access token (~30 h) plus a refresh token that is
+  replaced every time it is used. The Action owns that chain: each run renews the
+  session when needed and stores the newest tokens in its cache, encrypted with
+  GARMIN_TOKENS. Using the same tokens anywhere else (e.g. `sync` on your laptop)
+  spends the refresh token and logs the Action out, so `sync` only runs in CI unless
+  you pass --local. If the Action ever fails with an auth error, run `login` again.
 """
 
 from __future__ import annotations
@@ -38,6 +43,7 @@ from garminconnect import (
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "fit" / "data.json"
+SCHEMA = 2  # bump when the stored activity fields change; triggers a one-time refetch
 OVERLAP_DAYS = 5  # Garmin keeps filling in recent days (late syncs, sleep), so re-fetch these
 WORKERS = 4
 
@@ -113,13 +119,15 @@ def cmd_login(_args) -> None:
         lib.propagate = True
     save_tokens(g)
     log(f"Logged in as {g.full_name or g.display_name}. Tokens saved to {token_path()}")
-    cmd_push_secret(None)
+    if cmd_push_secret(None) and shutil.which("gh"):
+        subprocess.run(["gh", "workflow", "run", "garmin-sync.yml"], cwd=ROOT, check=False)
+        log("Started a sync in GitHub Actions. From here the Action keeps the session alive.")
 
 
-def cmd_push_secret(_args) -> None:
+def cmd_push_secret(_args) -> bool:
     if not shutil.which("gh"):
         log("gh CLI not found; skipped setting the GARMIN_TOKENS repo secret.")
-        return
+        return False
     subprocess.run(
         ["gh", "secret", "set", "GARMIN_TOKENS"],
         input=token_path().read_text(),
@@ -128,6 +136,7 @@ def cmd_push_secret(_args) -> None:
         cwd=ROOT,
     )
     log("Set GARMIN_TOKENS repo secret (used by the daily GitHub Action).")
+    return True
 
 
 # ---------------------------------------------------------------- fetching
@@ -248,15 +257,29 @@ def fetch_activities(g: Garmin, start: date, end: date) -> list[dict]:
         when = a.get("startTimeLocal") or ""
         if not a.get("activityId") or len(when) < 10:
             continue
-        out.append({
+        zones = [num(a.get(f"hrTimeInZone_{z}")) or 0 for z in range(1, 6)]
+        bb = a.get("differenceBodyBattery")
+        rec = {
             "id": a["activityId"],
             "d": when[:10],
+            "tm": when[11:16],
             "t": (a.get("activityType") or {}).get("typeKey") or "other",
             "m": num(a.get("distance")),
             "s": num(a.get("duration") or a.get("movingDuration")),
             "hr": num(a.get("averageHR")),
+            "mx": num(a.get("maxHR")),
             "kcal": num(a.get("calories")),
-        })
+            "el": num(a.get("elevationGain")),
+            "st": num(a.get("steps")),
+            "sets": num(a.get("activeSets")),
+            "te": num(a.get("aerobicTrainingEffect"), 1),
+            "ate": num(a.get("anaerobicTrainingEffect"), 1),
+            "load": num(a.get("activityTrainingLoad")),
+            "lbl": a.get("trainingEffectLabel") or None,
+            "z": zones if any(zones) else None,
+            "bb": int(bb) if isinstance(bb, (int, float)) else None,
+        }
+        out.append({k: v for k, v in rec.items() if v is not None and v != 0 or k in ("te", "ate", "bb") and v is not None})
     return out
 
 
@@ -284,6 +307,7 @@ def write(data: dict) -> None:
         "{",
         f'"updated": {json.dumps(data["updated"])},',
         f'"units": {json.dumps(data.get("units") or "metric")},',
+        f'"v": {SCHEMA},',
         '"days": {',
         ",\n".join(f"{json.dumps(d)}: {json.dumps(v, separators=(',', ':'))}" for d, v in days.items()),
         "},",
@@ -292,11 +316,22 @@ def write(data: dict) -> None:
         "]",
         "}",
     ]
+    text = "\n".join(lines) + "\n"
+    json.loads(text)  # never publish a file the page can't parse
     DATA.parent.mkdir(parents=True, exist_ok=True)
-    DATA.write_text("\n".join(lines) + "\n")
+    tmp = DATA.with_suffix(".json.tmp")
+    tmp.write_text(text)
+    os.replace(tmp, DATA)
 
 
 def cmd_sync(args) -> None:
+    if not os.environ.get("CI") and not args.local:
+        sys.exit(
+            "sync runs in GitHub Actions, which owns the Garmin session. Running it here can\n"
+            "renew the session outside the Action and log it out (MFA re-login needed).\n"
+            "Start a sync with:  gh workflow run garmin-sync.yml\n"
+            "(pass --local only if you just ran `login` and haven't pushed the secret yet)"
+        )
     g = connect()
     data = load()
     today = datetime.now(timezone.utc).date() + timedelta(days=1)  # covers any timezone
@@ -334,8 +369,12 @@ def cmd_sync(args) -> None:
         fetch_ranges(g, start, today, data["days"])
 
         log("Activities…")
+        acts_from = start
+        if data.get("v", 1) < SCHEMA and data["days"]:
+            acts_from = min(start, date.fromisoformat(min(data["days"])))
+            log(f"  activity format changed — refetching all since {acts_from}")
         acts = {a["id"]: a for a in data["activities"]}
-        for a in fetch_activities(g, start, today):
+        for a in fetch_activities(g, acts_from, today):
             acts[a["id"]] = a
         data["activities"] = list(acts.values())
     except AuthError as e:
@@ -356,6 +395,7 @@ def main() -> None:
     sub.add_parser("push-secret").set_defaults(fn=cmd_push_secret)
     s = sub.add_parser("sync")
     s.add_argument("--since", help="YYYY-MM-DD; re-fetch everything from this date")
+    s.add_argument("--local", action="store_true", help="allow running outside GitHub Actions")
     s.set_defaults(fn=cmd_sync)
     args = ap.parse_args()
     args.fn(args)
