@@ -1,0 +1,21 @@
+name: Checks
+
+on:
+  pull_request:
+
+jobs:
+  fit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "garminconnect>=0.3.2,<0.4"
+      - name: Sync script tests
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Page script parses
+        run: node --check fit/fit.js
+      - name: Data file is valid JSON
+        run: python -m json.tool fit/data.json > /dev/null
