@@ -24,7 +24,6 @@ jobs:
     timeout-minutes: 90
     env:
       GARMIN_TOKENS: ${{ secrets.GARMIN_TOKENS }}
-      GARMINTOKENS: ${{ runner.temp }}/garmin/garmin_tokens.json
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +46,8 @@ jobs:
             echo "::error::GARMIN_TOKENS secret is missing. Run: uv run scripts/garmin.py login"
             exit 1
           fi
+          GARMINTOKENS="$RUNNER_TEMP/garmin/garmin_tokens.json"
+          echo "GARMINTOKENS=$GARMINTOKENS" >> "$GITHUB_ENV"
           mkdir -p "$(dirname "$GARMINTOKENS")"
           if [ -f .garmin-session/tokens.enc ] \
              && openssl enc -d -aes-256-cbc -pbkdf2 -pass env:GARMIN_TOKENS \
