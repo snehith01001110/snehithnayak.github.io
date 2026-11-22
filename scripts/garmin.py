@@ -147,7 +147,10 @@ def call(fn, *args):
                 raise AuthError(msg) from e
             if "429" in msg:
                 wait = 60 * (attempt + 1)
-            elif "No data" in msg or "(400" in msg or "(404" in msg or "API Error 40" in msg:
+            elif "No data" in msg or "API Error 404" in msg or "API Error 400" in msg:
+                return None
+            elif "API Error 403" in msg:
+                log(f"  ! {getattr(fn, '__name__', fn)}{args}: {msg[:160]}")
                 return None
             elif attempt < 2:
                 wait = 3 * (attempt + 1)
@@ -310,7 +313,7 @@ def cmd_sync(args) -> None:
     try:
         dates = [(start + timedelta(days=i)).isoformat() for i in range((today - start).days + 1)]
         log(f"Daily summaries + sleep: {len(dates)} days ({dates[0]} → {dates[-1]})")
-        done = 0
+        done = with_data = 0
         with ThreadPoolExecutor(max_workers=WORKERS) as pool:
             futures = {pool.submit(fetch_day, g, d): d for d in dates}
             for f in as_completed(futures):
@@ -318,9 +321,14 @@ def cmd_sync(args) -> None:
                 vals = f.result()
                 if vals:
                     data["days"].setdefault(d, {}).update(vals)
+                    with_data += 1
                 done += 1
                 if done % 100 == 0:
                     log(f"  {done}/{len(dates)}")
+
+        log(f"  {with_data} of {len(dates)} days returned data")
+        if with_data == 0 and len(dates) >= 3:
+            raise AuthError("no data came back for any recent day")
 
         log("HRV, VO2 max, weight…")
         fetch_ranges(g, start, today, data["days"])
