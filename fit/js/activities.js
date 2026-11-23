@@ -1,7 +1,7 @@
 // Activities tab: headline, training calendar, totals, history, breakdown by type.
 import {
   D, REST, state, imperial, fmtN, hmShort, dist, distUnit, fmtDate, fmtDay, clock, idx, tOf, toT,
-  typeName, globalRange, currentRange, $, el, stat,
+  typeName, globalRange, currentRange, $, el, stat, oneColumn, scrollBehavior,
 } from "./core.js";
 
 const ZONE_COLORS = ["#8e8e93", "#0a84ff", "#30d158", "#ff9f0a", "#ff453a"];   // Garmin Z1–Z5
@@ -52,10 +52,11 @@ export function initActivities() {
       const t = acts.filter((a) => !REST.test(a.t)).reduce((s, a) => s + (a.s || 0), 0);
       tip.append(document.createTextNode(` · ${hmShort(t / 3600)} · ${acts.map((a) => typeName(a.t)).join(", ")}`));
     }
-    const rect = c.getBoundingClientRect();
-    tip.style.left = Math.max(90, Math.min(innerWidth - 90, rect.left + rect.width / 2)) + "px";
-    tip.style.top = rect.top + "px";
     tip.hidden = false;
+    // centre over the day, but keep the whole tip on screen (phones are narrow)
+    const rect = c.getBoundingClientRect(), half = tip.offsetWidth / 2 + 8;
+    tip.style.left = Math.max(half, Math.min(innerWidth - half, rect.left + rect.width / 2)) + "px";
+    tip.style.top = rect.top + "px";
   });
   cal.addEventListener("pointerleave", () => { tip.hidden = true; });
   cal.addEventListener("click", (e) => {
@@ -138,6 +139,8 @@ function renderTypes(list) {
       filter = filter && filter.type === g.t ? null : { type: g.t };
       limit = 10;
       renderActivities();
+      // on one column the history is below this card: bring the filtered list into view
+      if (filter && oneColumn()) $("historySec").scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     });
     box.append(b);
   }

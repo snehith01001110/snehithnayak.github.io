@@ -50,6 +50,7 @@
 
 <main id="view-metrics" role="tabpanel" aria-labelledby="tab-metrics" hidden>
   <div class="hero">
+    <nav class="picker" id="picker" aria-label="Metric"></nav>
     <h1 class="title" id="title"></h1>
     <p class="value num" id="value"></p>
     <div class="status" id="status"></div>
@@ -64,6 +65,7 @@
           <clipPath id="clipOff"><rect id="clipOffRect" x="100000" y="-20" height="2000" width="100000"></rect></clipPath>
         </defs>
         <rect class="band" id="band" x="0" width="0" height="0"></rect>
+        <g id="raw"></g>
         <path class="line off" id="lineOff" clip-path="url(#clipOff)"></path>
         <path class="line on" id="lineOn" stroke="url(#zg)" clip-path="url(#clipOn)"></path>
         <g id="pts" clip-path="url(#clipOn)"></g>
@@ -110,7 +112,7 @@
         <div class="cal" id="cal"></div>
       </div>
       <div class="cal-foot">
-        <span>Training time per day · click a day to see it</span>
+        <span>Training time per day · <span class="on-hover">click</span><span class="on-touch">tap</span> a day to see it</span>
         <span class="cal-key">Less <i></i><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i> More</span>
       </div>
     </div>
@@ -124,7 +126,7 @@
       <div class="tiles" id="actTiles"></div>
     </section>
 
-    <section>
+    <section id="historySec">
       <h2>History <span id="filterChip"></span></h2>
       <div id="actList"></div>
       <button class="more" id="more" hidden>Show more</button>

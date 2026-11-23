@@ -54,6 +54,24 @@ async def main() -> int:
             await check("#sleep/1M", "#stats .stat", "stats")
             await check("#activities/1Y", "#cal [data-i]", "training calendar")
             await check("#activities/1Y", "#actList details", "activity history")
+
+            # hover marker must sit on a plotted daily reading (the value the headline shows),
+            # not on the averaged line
+            for hash_ in ("#rhr/1Y", "#sleep/3M", "#steps/1M"):
+                await page.goto(base + hash_)
+                await page.wait_for_timeout(800)
+                box = await page.locator("#chartWrap").bounding_box()
+                for f in (0.25, 0.6, 0.95):
+                    await page.mouse.move(box["x"] + box["width"] * f, box["y"] + box["height"] / 2)
+                    on_reading = await page.evaluate("""() => {
+                        const d = document.getElementById('dot');
+                        if (d.getAttribute('visibility') !== 'visible') return false;
+                        const x = d.cx.baseVal.value, y = d.cy.baseVal.value;
+                        return [...document.querySelectorAll('#raw circle, #pts circle')].some((c) =>
+                            Math.abs(c.cx.baseVal.value - x) < 0.5 && Math.abs(c.cy.baseVal.value - y) < 0.5);
+                    }""")
+                    if not on_reading:
+                        failures.append(f"[{width}px] {hash_}: hover marker at {f:.0%} is not on a daily reading")
             await page.close()
         await browser.close()
     for line in errors + failures:

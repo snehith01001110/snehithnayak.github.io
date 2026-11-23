@@ -20,6 +20,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button, summary, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
 .num { font-variant-numeric: tabular-nums; }
 [hidden] { display: none !important; }   /* hidden tabs/sections stay hidden despite display rules */
@@ -42,7 +43,7 @@ header {
   font-size: 14px; font-weight: 600; padding: 7px 16px; border-radius: 980px;
   color: var(--muted); transition: background .15s, color .15s;
 }
-.tabs button:hover { color: var(--ink); background: var(--well); }
+@media (hover: hover) { .tabs button:hover { color: var(--ink); background: var(--well); } }
 .tabs button[aria-selected="true"] { background: var(--ink); color: #000; }
 .tabs button:focus-visible { outline: 2px solid var(--ink-2); outline-offset: 2px; }
 
@@ -59,12 +60,30 @@ aside { grid-area: aside; }
 .title { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 2px; }
 .value { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0; line-height: 1.15; }
 .value .unit { font-size: 0.56em; color: var(--muted); font-weight: 500; margin-left: 4px; letter-spacing: 0; }
-.status { margin-top: 6px; font-size: 14px; font-weight: 600; min-height: 20px; display: flex; align-items: center; gap: 6px; }
+.status { margin-top: 6px; font-size: 14px; font-weight: 600; min-height: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
 .status .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .status .when { color: var(--muted); font-weight: 500; }
 
+/* ---------- metric picker (one column only) ---------- */
+.picker {
+  display: none; position: relative; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -24px 20px; padding: 0 24px; scroll-padding: 0 24px;
+}
+.picker::-webkit-scrollbar { display: none; }
+.picker button {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: 980px;
+  background: var(--well); color: var(--ink-2);
+}
+.picker button i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.picker button[aria-pressed="true"] { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.picker button:focus-visible { outline: 2px solid var(--ink-2); outline-offset: 2px; }
+
 /* ---------- chart ---------- */
-.chart-wrap { position: relative; margin: 26px 0 0; height: 320px; touch-action: pan-y; outline: none; }
+.chart-wrap {
+  position: relative; margin: 26px 0 0; height: 320px; touch-action: pan-y; outline: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
 .chart-wrap:focus-visible { box-shadow: 0 0 0 2px var(--hair-2); border-radius: 8px; }
 #chart { display: block; width: 100%; height: 100%; overflow: visible; }
 #chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
@@ -74,11 +93,12 @@ aside { grid-area: aside; }
 #chart .cursor { stroke: var(--hair-2); stroke-width: 1; }
 #chart .dot { stroke: var(--bg); stroke-width: 2; }
 #chart .pt { stroke: var(--bg); stroke-width: 1.5; }
+#chart .rd { opacity: 0.38; }
 .hover-label {
   position: absolute; top: -20px; transform: translateX(-50%);
   font-size: 12px; color: var(--muted); white-space: nowrap; pointer-events: none;
 }
-.note { position: absolute; left: 0; top: -20px; font-size: 12px; color: var(--muted); }
+.note { position: absolute; left: 0; top: -20px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .empty {
   position: absolute; inset: 0; display: grid; place-items: center;
   color: var(--muted); font-size: 14px; text-align: center; padding: 0 24px;
@@ -96,11 +116,12 @@ aside { grid-area: aside; }
   font-size: 13px; font-weight: 700; padding: 8px 10px 6px; letter-spacing: 0.02em; color: var(--muted);
   border-bottom: 2px solid transparent; transition: color .15s;
 }
-.ranges button:hover { color: var(--ink); }
+@media (hover: hover) { .ranges button:hover { color: var(--ink); } }
 .ranges button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 
 /* ---------- sections ---------- */
 section h2 {
+  scroll-margin-top: 12px;
   font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
   margin: 40px 0 0; padding-bottom: 14px; border-bottom: 1px solid var(--hair);
   display: flex; align-items: center; gap: 10px;
@@ -119,7 +140,7 @@ section h2 {
   text-align: left; background: var(--well); border-radius: 14px; padding: 14px 16px 16px;
   transition: background .15s; min-width: 0;
 }
-.sig:hover { background: #262628; }
+@media (hover: hover) { .sig:hover { background: #262628; } }
 .sig:focus-visible { outline: 2px solid var(--ink-2); outline-offset: 2px; }
 .sig .k { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .sig .v { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px; white-space: nowrap; }
@@ -144,7 +165,7 @@ section h2 {
   width: 100%; text-align: left; padding: 12px 20px; transition: background .15s;
 }
 .wrow + .wrow { border-top: 1px solid var(--hair); }
-.wrow:hover { background: #0e0e0f; }
+@media (hover: hover) { .wrow:hover { background: #0e0e0f; } }
 .wrow .n { font-size: 14px; font-weight: 600; }
 .wrow .d { font-size: 12px; color: var(--muted); margin-top: 1px; }
 .wrow .r { text-align: right; }
@@ -170,7 +191,7 @@ section h2 {
   font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 980px;
   background: var(--well); color: var(--ink);
 }
-.chip:hover { background: var(--hair-2); }
+@media (hover: hover) { .chip:hover { background: var(--hair-2); } }
 
 /* ---------- activities ---------- */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
@@ -189,7 +210,9 @@ section h2 {
 .cal .out { opacity: 0.3; }
 .cal .sel { box-shadow: inset 0 0 0 1.5px var(--ink); }
 .cal div[data-i] { cursor: pointer; }
-.cal div[data-i]:hover { box-shadow: inset 0 0 0 1.5px var(--ink-2); }
+@media (hover: hover) { .cal div[data-i]:hover { box-shadow: inset 0 0 0 1.5px var(--ink-2); } }
+.on-touch { display: none; }
+@media (hover: none) { .on-hover { display: none; } .on-touch { display: inline; } }
 .cal-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 11px; color: var(--muted); }
 .cal-key { display: inline-flex; align-items: center; gap: 3px; }
 .cal-key i { width: 10px; height: 10px; border-radius: 2px; background: var(--well); }
@@ -202,7 +225,8 @@ section h2 {
 .tip {
   position: fixed; z-index: 10; pointer-events: none; transform: translate(-50%, calc(-100% - 8px));
   background: var(--well); border: 1px solid var(--hair-2); border-radius: 8px;
-  padding: 6px 10px; font-size: 12px; white-space: nowrap; color: var(--ink-2);
+  padding: 6px 10px; font-size: 12px; color: var(--ink-2);
+  width: max-content; max-width: calc(100vw - 16px);
 }
 .tip b { color: var(--ink); font-weight: 600; }
 
@@ -211,14 +235,14 @@ section h2 {
   width: 100%; text-align: left; padding: 12px 20px; transition: background .15s;
 }
 .trow + .trow { border-top: 1px solid var(--hair); }
-.trow:hover { background: #0e0e0f; }
+@media (hover: hover) { .trow:hover { background: #0e0e0f; } }
 aside .empty-row { padding: 16px 20px; }
 .trow .tn b, .trow .tv { font-weight: 600; }
 .trow small { display: block; font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 1px; }
 .trow .tv { text-align: right; }
 .trow .tbar { grid-column: 1 / -1; height: 4px; background: var(--well); border-radius: 2px; overflow: hidden; }
 .trow .tbar i { display: block; height: 100%; background: #636366; border-radius: 2px; transition: background .15s; }
-.trow:hover .tbar i { background: var(--muted); }
+@media (hover: hover) { .trow:hover .tbar i { background: var(--muted); } }
 .trow[aria-pressed="true"] .tbar i { background: var(--ink); }
 
 details.act { border-bottom: 1px solid var(--hair); }
@@ -259,7 +283,7 @@ aside h3 {
   width: 100%; padding: 12px 20px; text-align: left; transition: background .15s;
 }
 .row + .row { border-top: 1px solid var(--hair); }
-.row:hover { background: #0e0e0f; }
+@media (hover: hover) { .row:hover { background: #0e0e0f; } }
 .row[aria-pressed="true"] { background: #141415; }
 .row .n { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .l { font-size: 12px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -283,17 +307,29 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 24px 40px; color: var(--m
 @media (max-width: 900px) {
   main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "aside" "rest"; }
   aside { position: static; margin-top: 32px; }
+  /* metrics: the chart's own stats come right after it; switch metric with the picker */
+  #view-metrics { grid-template-areas: "hero" "rest" "aside"; }
+  #view-metrics aside { margin-top: 40px; }
+  .picker { display: flex; }
 }
 @media (max-width: 560px) {
   header, main, footer { padding-left: 16px; padding-right: 16px; }
   .title, .value { font-size: 28px; }
-  .chart-wrap { height: 240px; }
+  .chart-wrap { height: 240px; margin-top: 30px; }
   .ranges { justify-content: space-between; gap: 0; }
-  .ranges button { padding: 8px 6px 6px; }
+  .ranges button { padding: 13px 8px 11px; min-width: 40px; }
+  .picker { margin: 0 -16px 18px; padding: 0 16px; scroll-padding: 0 16px; }
+  .tabs button { padding: 10px 18px; }
   .stats, .tiles, .facts, .signals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tabs { padding: 0 16px; }
   .lede { font-size: 15px; }
   .ibar { grid-template-columns: 96px minmax(0, 1fr) 56px; }
   .wd { gap: 6px; }
+  .wd .val { font-size: 11px; white-space: normal; text-align: center; line-height: 1.15; }   /* "5h 44m" wraps, never overlaps */
+}
+@media (max-width: 380px) {
+  .row { grid-template-columns: minmax(0, 1fr) 52px 66px; gap: 10px; padding: 12px 16px; }
+  .row svg { width: 52px; }
+  .pill { min-width: 0; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

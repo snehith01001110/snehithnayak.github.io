@@ -262,11 +262,15 @@ export function globalRange(r) {
 }
 export const currentRange = () => RANGES.find((r) => r.id === state.range) || RANGES[4];
 
+// pts: the plotted line (a w-day trailing average when w > 1)
+// days: each day's own reading in the range, which is what the headline and hover show
 export function computeView(m, r) {
-  const b = rangeBounds(D.series[m.key], r);
+  const a = D.series[m.key], b = rangeBounds(a, r);
   if (!b) return null;
   const w = m.ffill ? 1 : r.w;
-  return { m, r, w, pts: smooth(D.series[m.key], w, b.start, b.end), start: b.start, end: b.end };
+  const days = [];
+  for (let i = b.start; i <= b.end; i++) if (!isNaN(a[i])) days.push([i, a[i]]);
+  return { m, r, w, pts: smooth(a, w, b.start, b.end), days, start: b.start, end: b.end };
 }
 
 // ---------------------------------------------------------------- activity helpers
@@ -285,6 +289,9 @@ export const typeName = (t) => TYPE[t] || t.replace(/_/g, " ").replace(/^\w/, (c
 
 // ---------------------------------------------------------------- DOM
 export const $ = (id) => document.getElementById(id);
+// phones and narrow tablets: one column, side card below the main content
+export const oneColumn = () => matchMedia("(max-width: 900px)").matches;
+export const scrollBehavior = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 export const el = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;

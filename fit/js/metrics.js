@@ -2,7 +2,7 @@
 import {
   NS, COLOR, STATUS, D, state, hooks, METRICS, metric, visible, status, colorOf, labelOf,
   fmtV, fmtU, fmtT, fmtN, fmtDelta, fmtDate, unitOf, latestIdx, idx, tOf, weekday, WEEKDAYS,
-  computeView, currentRange, $, el, stat, mean,
+  computeView, currentRange, $, el, stat, mean, oneColumn, scrollBehavior,
 } from "./core.js";
 
 const svg = $("chart"), wrap = $("chartWrap");
@@ -17,6 +17,7 @@ export function renderMetrics(animate) {
   setHover(null);
   renderStats(m);
   renderWeekdays(m);
+  renderPicker();
   renderList();
 }
 
@@ -29,7 +30,7 @@ export function initMetrics() {
   wrap.addEventListener("blur", () => setHover(null));
   wrap.addEventListener("keydown", (e) => {
     if (!view || !view.g) return;
-    const n = view.pts.length;
+    const n = view.days.length;
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
       const at = hoverIdx == null ? n - 1 : hoverIdx;
@@ -41,9 +42,11 @@ export function initMetrics() {
 }
 
 // ---------------------------------------------------------------- chart
+// the y-axis fits both the line and every daily reading, so hover dots never leave the chart
 function geometry(v) {
-  const ys = v.pts.map((p) => p[1]);
-  let lo = Math.min(...ys), hi = Math.max(...ys);
+  let lo = Infinity, hi = -Infinity;
+  for (const p of v.pts) { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }
+  for (const p of v.days) { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }
   if (v.m.z) { lo = Math.min(lo, v.m.z.lo); hi = Math.max(hi, v.m.z.hi); }
   if (hi - lo < 1e-9) { lo -= 1; hi += 1; }
   const pad = (hi - lo) * 0.08;
@@ -101,8 +104,9 @@ function drawChart(animate) {
   const ok = v && v.pts.length >= 2;
   $("empty").hidden = ok;
   svg.style.visibility = ok ? "visible" : "hidden";
-  $("note").textContent = ok && v.w > 1 ? `Line shows the ${v.w}-day average` : "";
+  $("note").textContent = ok && v.w > 1 ? `Dots: each day · line: ${v.w}-day average` : "";
   $("pts").replaceChildren();
+  $("raw").replaceChildren();
   if (!ok) { $("empty").textContent = "Not enough data for this range yet."; shown = null; return; }
 
   const g = geometry(v);
@@ -132,27 +136,47 @@ function drawChart(animate) {
     $("pts").append(frag);
   }
 
+  // when the line is an average, each day's own reading sits behind it as a faint dot;
+  // the hover marker lands on these, so the marker and the headline number always agree
+  if (v.w > 1) {
+    const r = Math.max(1.25, Math.min(2.25, W / v.days.length / 2.5));
+    const frag = document.createDocumentFragment();
+    for (const [i, val] of v.days) {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("class", "rd"); c.setAttribute("r", r);
+      c.setAttribute("cx", g.x(i)); c.setAttribute("cy", g.y(val));
+      c.setAttribute("fill", colorOf(status(v.m, val)));
+      frag.append(c);
+    }
+    $("raw").append(frag);
+  }
+
+  const dots = [$("pts"), $("raw")];
+  const showDots = (on) => { for (const d of dots) d.style.opacity = on ? "" : 0; };
   const target = resample(v, g), finalD = pathFromPts(v.pts, g);
   cancelAnimationFrame(anim);
   if (!animate || !shown || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    setPath(finalD); shown = target; return;
+    setPath(finalD); showDots(true); shown = target; return;
   }
   const from = shown, t0 = performance.now(), dur = 420, tmp = new Float64Array(K);
-  $("pts").style.opacity = 0;
+  showDots(false);
   const step = (now) => {
     const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
     for (let k = 0; k < K; k++) tmp[k] = from[k] + (target[k] - from[k]) * e;
     if (t < 1) { setPath(pathFromYs(tmp)); anim = requestAnimationFrame(step); }
-    else { setPath(finalD); $("pts").style.opacity = 1; }
+    else { setPath(finalD); showDots(true); }
   };
   shown = target;
   anim = requestAnimationFrame(step);
 }
 
 // ---------------------------------------------------------------- hover / scrub
+// Hover steps through days that have a reading (k indexes view.days). The marker sits on
+// that day's own value, the same number the headline shows; on averaged ranges the label
+// also gives the line's value there.
 function setHover(k) {
   const v = view;
-  if (!v || !v.g || v.pts.length < 2) { renderHeadline(null); return; }
+  if (!v || !v.g || v.pts.length < 2 || !v.days.length) { renderHeadline(null); return; }
   if (k == null) {
     hoverIdx = null;
     $("cursor").setAttribute("visibility", "hidden");
@@ -164,19 +188,20 @@ function setHover(k) {
     renderHeadline(null);
     return;
   }
-  hoverIdx = Math.max(0, Math.min(v.pts.length - 1, k));
-  const [i, val] = v.pts[hoverIdx];
+  hoverIdx = Math.max(0, Math.min(v.days.length - 1, k));
+  const [i, val] = v.days[hoverIdx];
   const x = v.g.x(i), y = v.g.y(val);
   const c = $("cursor");
   c.setAttribute("x1", x); c.setAttribute("x2", x); c.setAttribute("y1", 0); c.setAttribute("y2", H);
   c.setAttribute("visibility", "visible");
   const dot = $("dot");
   dot.setAttribute("cx", x); dot.setAttribute("cy", y); dot.setAttribute("visibility", "visible");
-  dot.setAttribute("fill", colorOf(status(v.m, D.series[v.m.key][i])));
+  dot.setAttribute("fill", colorOf(status(v.m, val)));
   $("clipOnRect").setAttribute("width", Math.max(0, x + 10));
   $("clipOffRect").setAttribute("x", x);
   const lab = $("hoverLabel");
-  lab.textContent = fmtDate(tOf(i));
+  const avg = v.w > 1 ? lineAt(v, i) : NaN;
+  lab.textContent = fmtDate(tOf(i)) + (isNaN(avg) ? "" : ` · ${v.w}-day avg ${fmtU(v.m, avg)}`);
   lab.hidden = false;
   const half = lab.offsetWidth / 2;
   lab.style.left = Math.max(half, Math.min(W - half, x)) + "px";
@@ -184,14 +209,26 @@ function setHover(k) {
   renderHeadline(i);
 }
 
+// first index in a list of [day, value] pairs (sorted by day) whose day is >= i
+function lowerBound(list, i) {
+  let lo = 0, hi = list.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (list[mid][0] < i) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+// the plotted line's value on day i (NaN where the line hasn't started)
+function lineAt(v, i) {
+  const k = lowerBound(v.pts, i);
+  return k < v.pts.length && v.pts[k][0] === i ? v.pts[k][1] : NaN;
+}
+
 function nearest(clientX) {
   const v = view, X = clientX - wrap.getBoundingClientRect().left;
-  let lo = 0, hi = v.pts.length - 1;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (v.g.x(v.pts[mid][0]) < X) lo = mid + 1; else hi = mid; }
-  let best = lo, bd = Infinity;
+  const span = Math.max(1, v.end - v.start), day = v.start + (X / W) * span;
+  const lo = lowerBound(v.days, day);
+  let best = Math.min(lo, v.days.length - 1), bd = Infinity;
   for (const k of [lo - 1, lo]) {
-    if (k < 0 || k >= v.pts.length) continue;
-    const d = Math.abs(v.g.x(v.pts[k][0]) - X);
+    if (k < 0 || k >= v.days.length) continue;
+    const d = Math.abs(v.days[k][0] - day);
     if (d < bd) { bd = d; best = k; }
   }
   return best;
@@ -334,6 +371,25 @@ function renderWeekdays(m) {
   }
 }
 
+// ---------------------------------------------------------------- metric picker (phones)
+// A swipeable row of metrics above the chart; on one column the full list sits at the bottom.
+function renderPicker() {
+  const box = $("picker"); box.replaceChildren();
+  let active = null;
+  for (const m of METRICS) {
+    if (!visible(m)) continue;
+    const b = el("button");
+    b.setAttribute("aria-pressed", String(m.key === state.metric));
+    const d = el("i");
+    d.style.background = colorOf(status(m, D.series[m.key][latestIdx(m)]));
+    b.append(d, document.createTextNode(m.short || m.name));
+    b.addEventListener("click", () => hooks.select({ metric: m.key }));
+    box.append(b);
+    if (m.key === state.metric) active = b;
+  }
+  if (active && box.clientWidth) box.scrollLeft = active.offsetLeft - (box.clientWidth - active.offsetWidth) / 2;
+}
+
 // ---------------------------------------------------------------- metric list
 function renderList() {
   const box = $("list"); box.replaceChildren();
@@ -373,7 +429,10 @@ function renderList() {
     }
     const pill = el("div", `pill num ${s == null ? "mid" : STATUS[s]}`, isNaN(latest) ? "—" : fmtV(m, latest));
     btn.append(left, sv, pill);
-    btn.addEventListener("click", () => hooks.select({ metric: m.key }));
+    btn.addEventListener("click", () => {
+      hooks.select({ metric: m.key });
+      if (oneColumn()) scrollTo({ top: 0, behavior: scrollBehavior() });   // list is below the chart
+    });
     box.append(btn);
   }
 }
