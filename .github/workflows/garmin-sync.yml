@@ -7,7 +7,10 @@ name: Garmin sync
 
 on:
   schedule:
-    - cron: "17 * * * *" # hourly; off the :00 mark, when GitHub delays scheduled runs most
+    # Twice an hour: GitHub drops scheduled runs under load (it skipped three in a
+    # row on November 23), so a dropped one is covered within 30 minutes. Off the
+    # :00 mark, when GitHub delays scheduled runs most.
+    - cron: "17,47 * * * *"
   workflow_dispatch:
 
 permissions:
