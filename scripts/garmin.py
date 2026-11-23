@@ -8,7 +8,7 @@
     uv run scripts/garmin.py login        # email + password + MFA; sets the GARMIN_TOKENS secret
                                           # and starts a sync in GitHub Actions
     uv run scripts/garmin.py push-secret  # copy local tokens into the GARMIN_TOKENS repo secret
-    gh workflow run garmin-sync.yml       # sync now (the Action also runs twice a day)
+    gh workflow run garmin-sync.yml       # sync now (the Action also runs every hour)
 
 How the session stays alive (so you rarely log in):
   Garmin hands out a short-lived access token (~30 h) plus a refresh token that is

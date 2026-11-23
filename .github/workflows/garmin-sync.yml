@@ -7,7 +7,7 @@ name: Garmin sync
 
 on:
   schedule:
-    - cron: "23 3,14 * * *" # ~8pm and ~7am Pacific
+    - cron: "17 * * * *" # hourly; off the :00 mark, when GitHub delays scheduled runs most
   workflow_dispatch:
 
 permissions:
