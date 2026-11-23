@@ -1,5 +1,5 @@
 {
-"updated": "2026-11-23T13:14:17+00:00",
+"updated": "2026-11-23T18:53:29+00:00",
 "units": "statute_us",
 "v": 2,
 "days": {
@@ -284,7 +284,7 @@
 "2026-11-20": {"steps":7048,"rhr":45,"stress":53,"bb":51,"im":99,"kcal":935,"floors":3.0,"dist":32022,"sleep":5.85,"sleepScore":72,"hrv":64,"vo2":44.5},
 "2026-11-21": {"steps":9550,"rhr":45,"stress":46,"bb":68,"im":101,"kcal":1028,"floors":1.1,"dist":8304,"sleep":7.17,"sleepScore":76,"hrv":79},
 "2026-11-22": {"steps":13065,"rhr":47,"stress":51,"bb":44,"im":0,"kcal":454,"floors":0.0,"dist":11354,"sleep":5.55,"sleepScore":58,"hrv":74},
-"2026-11-23": {"steps":304,"rhr":49,"stress":66,"bb":5,"im":2,"kcal":76,"floors":0.0,"dist":264}
+"2026-11-23": {"steps":918,"rhr":46,"stress":38,"bb":40,"im":2,"kcal":83,"floors":0.0,"dist":798,"sleep":4.9,"sleepScore":60,"hrv":68}
 },
 "activities": [
 {"id":25157343005,"d":"2026-11-21","tm":"15:41","t":"indoor_cardio","s":1444,"hr":165,"mx":183,"kcal":341,"st":152,"te":4.0,"ate":2.0,"load":119,"lbl":"LACTATE_THRESHOLD","z":[0,57,248,834,305],"bb":-5},
