@@ -637,6 +637,18 @@
     <div class="projects-grid">
 
       <div class="project-card" role="button" tabindex="0">
+        <div class="p-date">Oct 2026 &mdash; Present</div>
+        <h3>Noon &mdash; A Mac App for Running Coding Agents in Parallel</h3>
+        <p data-detail="A macOS app for running several Claude Code and Codex sessions on the same repo at once without them stepping on each other. Every task gets its own git worktree and branch, and the codebase is drawn as a map with a marker for each agent on the file it's working in. When two tasks edit the same file, or one gets merged into the other's base, Noon tells the affected agent through its hooks and a read-only MCP server. Tasks can also run on a Linux box over SSH, where a small Rust helper keeps them alive if the laptop sleeps or the connection drops. The front end is SwiftUI and the runtime underneath is Rust, shipped as a signed, notarized download that updates itself.">Mac app for running several coding agents on one repo and seeing what each of them is touching.</p>
+        <div class="tags">
+          <span class="tag">SwiftUI</span><span class="tag">Rust</span><span class="tag">Git</span><span class="tag">SSH</span><span class="tag">MCP</span><span class="tag">macOS</span>
+        </div>
+        <div class="p-links">
+          <a href="https://thenoonlight.com" target="_blank" rel="noopener">thenoonlight.com</a>
+        </div>
+      </div>
+
+      <div class="project-card" role="button" tabindex="0">
         <div class="p-date">May 2026 &mdash; Present</div>
         <h3>Pixel Pane &mdash; Local-First macOS AI Assistant</h3>
         <p data-detail="A model-agnostic, notch-native AI assistant for macOS, built in SwiftUI. Runs on-device MLX models by default and supports Anthropic Claude and Apple Foundation Models, with per-provider health detection and lifecycle management. Backed by a Cloudflare Workers proxy that normalizes Anthropic streaming into SSE with per-user rate limiting, KV quota enforcement, and cryptographic request tracing. Built on an extensible action-dispatch system with heuristic content classification and built-in handlers for translation and code debugging. Enforces a permission-gated security model with explicit file grants and scoped side-effect authorization before any system-level operation.">Notch-native macOS assistant that runs on-device by default, with permission-gated side effects.</p>
