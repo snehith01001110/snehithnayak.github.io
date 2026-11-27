@@ -1,5 +1,5 @@
 {
-"updated": "2026-11-27T04:17:47+00:00",
+"updated": "2026-11-27T14:24:57+00:00",
 "units": "statute_us",
 "v": 2,
 "days": {
@@ -287,7 +287,8 @@
 "2026-11-23": {"steps":5006,"rhr":46,"stress":46,"bb":40,"im":2,"kcal":172,"floors":2.5,"dist":4350,"sleep":4.9,"sleepScore":60,"hrv":68},
 "2026-11-24": {"steps":8335,"rhr":45,"stress":53,"bb":68,"im":25,"kcal":644,"floors":5.2,"dist":7264,"vo2":44.4},
 "2026-11-25": {"rhr":45,"stress":52,"bb":68,"im":77,"kcal":1207,"floors":4.2,"steps":11206,"dist":10171,"sleep":5.22,"sleepScore":71,"hrv":74,"vo2":44.0},
-"2026-11-26": {"steps":3953,"rhr":47,"stress":30,"bb":58,"im":26,"kcal":268,"floors":2.6,"dist":3424,"sleep":6.48,"sleepScore":54,"hrv":70,"vo2":44.0}
+"2026-11-26": {"steps":6638,"rhr":47,"stress":40,"bb":58,"im":26,"kcal":298,"floors":2.6,"dist":5757,"sleep":6.48,"sleepScore":54,"hrv":70,"vo2":44.0},
+"2026-11-27": {"steps":103,"rhr":46,"stress":27,"bb":12,"im":0,"kcal":0,"floors":0.0,"dist":90}
 },
 "activities": [
 {"id":25210893599,"d":"2026-11-26","tm":"14:13","t":"walking","m":1793,"s":1788,"hr":106,"mx":122,"kcal":179,"el":8,"st":2072,"te":1.1,"ate":0.0,"load":7,"lbl":"RECOVERY","z":[1603,66,0,0,0],"bb":-3},
